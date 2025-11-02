@@ -53,7 +53,7 @@ public class PatchingService(IMutagenService mutagenService, ILoggingService log
         {
             try
             {
-                var validMatches = matches.Where(m => m.TargetArmor != null).ToList();
+                var validMatches = matches.Where(m => m.TargetArmor != null || m.IsGlamOnly).ToList();
                 var requiredMasters = new HashSet<ModKey>();
 
                 _logger.Information("Beginning patch creation. Destination: {OutputPath}. Matches: {MatchCount}", outputPath, validMatches.Count);
@@ -64,8 +64,29 @@ public class PatchingService(IMutagenService mutagenService, ILoggingService log
                     return (false, "No valid matches to patch.");
                 }
 
-                // Create new patch mod
-                var patchMod = new SkyrimMod(ModKey.FromFileName(Path.GetFileName(outputPath)), SkyrimRelease.SkyrimSE);
+                var modKey = ModKey.FromFileName(Path.GetFileName(outputPath));
+                SkyrimMod patchMod;
+
+                if (File.Exists(outputPath))
+                {
+                    try
+                    {
+                        _logger.Information("Existing patch detected at {OutputPath}; loading for append.", outputPath);
+                        patchMod = SkyrimMod.CreateFromBinary(outputPath, SkyrimRelease.SkyrimSE);
+                        _logger.Information("Loaded existing patch containing {ArmorCount} armor overrides.", patchMod.Armors.Count);
+                    }
+                    catch (Exception ex)
+                    {
+                        _logger.Error(ex, "Failed to load existing patch at {OutputPath}.", outputPath);
+                        return (false, $"Unable to load existing patch: {ex.Message}");
+                    }
+                }
+                else
+                {
+                    patchMod = new SkyrimMod(modKey, SkyrimRelease.SkyrimSE);
+                }
+
+                requiredMasters.UnionWith(patchMod.ModHeader.MasterReferences.Select(m => m.Master));
 
                 var current = 0;
                 var total = validMatches.Count;
@@ -80,19 +101,23 @@ public class PatchingService(IMutagenService mutagenService, ILoggingService log
                     var patchedArmor = patchMod.Armors.GetOrAddAsOverride(match.SourceArmor);
 
                     requiredMasters.Add(match.SourceArmor.FormKey.ModKey);
-                    if (match.TargetArmor is { } targetArmor)
+                    if (match.IsGlamOnly)
                     {
-                        requiredMasters.Add(targetArmor.FormKey.ModKey);
+                        ApplyGlamOnlyAdjustments(patchedArmor);
+                        continue;
                     }
 
+                    var targetArmor = match.TargetArmor!;
+                    requiredMasters.Add(targetArmor.FormKey.ModKey);
+
                     // Copy stats from target
-                    CopyArmorStats(patchedArmor, match.TargetArmor!);
+                    CopyArmorStats(patchedArmor, targetArmor);
 
                     // Copy keywords from target
-                    CopyKeywords(patchedArmor, match.TargetArmor!);
+                    CopyKeywords(patchedArmor, targetArmor);
 
                     // Copy enchantment from target
-                    CopyEnchantment(patchedArmor, match.TargetArmor!);
+                    CopyEnchantment(patchedArmor, targetArmor);
 
                     // Note: Tempering recipes are separate records (COBJ) and are handled separately
                 }
@@ -118,6 +143,11 @@ public class PatchingService(IMutagenService mutagenService, ILoggingService log
                 return (false, $"Error creating patch: {ex.Message}");
             }
         });
+    }
+
+    private static void ApplyGlamOnlyAdjustments(Armor target)
+    {
+        target.ArmorRating = 0;
     }
 
     private static void CopyArmorStats(Armor target, IArmorGetter source)
@@ -224,17 +254,26 @@ public class PatchingService(IMutagenService mutagenService, ILoggingService log
 
     private void EnsureMasters(SkyrimMod patchMod, HashSet<ModKey> requiredMasters)
     {
+        var masterList = patchMod.ModHeader.MasterReferences;
+        if (masterList == null)
+        {
+            _logger.Warning("Patch mod header did not expose a master list; skipping master update.");
+            return;
+        }
+        var existing = masterList.Select(m => m.Master).ToHashSet();
+
         foreach (var master in requiredMasters)
         {
-            if (master == patchMod.ModKey)
+            if (master == patchMod.ModKey || master.IsNull)
                 continue;
 
-            var alreadyPresent = patchMod.ModHeader.MasterReferences.Any(m => m.Master == master);
-            if (!alreadyPresent)
+            if (existing.Add(master))
             {
-                patchMod.ModHeader.MasterReferences.Add(new MasterReference { Master = master });
+                masterList.Add(new MasterReference { Master = master });
                 _logger.Debug("Added master {Master} to patch header.", master);
             }
         }
+
+        _logger.Information("Patch master list: {Masters}", string.Join(", ", masterList.Select(m => m.Master.FileName)));
     }
 }

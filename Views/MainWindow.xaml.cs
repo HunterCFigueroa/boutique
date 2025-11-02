@@ -30,6 +30,15 @@ public partial class MainWindow : Window
         });
         _bindings.Add(notificationDisposable);
 
+        var confirmDisposable = viewModel.ConfirmOverwritePatch.RegisterHandler(async interaction =>
+        {
+            var message = interaction.Input;
+            var result = await Dispatcher.InvokeAsync(() =>
+                MessageBox.Show(this, message, "Overwrite Existing Patch?", MessageBoxButton.YesNo, MessageBoxImage.Warning, MessageBoxResult.No));
+            interaction.SetOutput(result == MessageBoxResult.Yes);
+        });
+        _bindings.Add(confirmDisposable);
+
         SourceArmorsGrid.Loaded += (_, _) => SynchronizeSourceSelection();
 
         TargetArmorsGrid.Loaded += (_, _) =>

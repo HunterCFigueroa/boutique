@@ -2,15 +2,16 @@ using System;
 using System.Collections;
 using System.Collections.ObjectModel;
 using System.ComponentModel;
+using System.IO;
 using System.Linq;
 using System.Reactive;
+using System.Reactive.Threading.Tasks;
 using System.Windows.Data;
 using System.Windows.Input;
 using ReactiveUI;
 using RequiemGlamPatcher.Models;
 using RequiemGlamPatcher.Services;
 using Serilog;
-using System.Reactive.Threading.Tasks;
 
 namespace RequiemGlamPatcher.ViewModels;
 
@@ -22,6 +23,7 @@ public class MainViewModel : ReactiveObject
     private readonly ILogger _logger;
 
     public Interaction<string, Unit> PatchCreatedNotification { get; } = new();
+    public Interaction<string, bool> ConfirmOverwritePatch { get; } = new();
 
     private ObservableCollection<string> _availablePlugins = new();
     private ObservableCollection<ArmorRecordViewModel> _sourceArmors = new();
@@ -255,6 +257,7 @@ public class MainViewModel : ReactiveObject
     public ICommand CreatePatchCommand { get; }
     public ICommand ClearMappingsCommand { get; }
     public ICommand MapSelectedCommand { get; }
+    public ICommand MapGlamOnlyCommand { get; }
     public ReactiveCommand<ArmorMatchViewModel, Unit> RemoveMappingCommand { get; }
 
     public MainViewModel(
@@ -288,6 +291,10 @@ public class MainViewModel : ReactiveObject
                 x => x.SelectedSourceArmors,
                 x => x.SelectedTargetArmor,
                 (sources, target) => sources.OfType<ArmorRecordViewModel>().Any() && target != null));
+        MapGlamOnlyCommand = ReactiveCommand.Create(MapSelectedAsGlamOnly,
+            this.WhenAnyValue(
+                x => x.SelectedSourceArmors,
+                sources => sources.OfType<ArmorRecordViewModel>().Any()));
         RemoveMappingCommand = ReactiveCommand.Create<ArmorMatchViewModel>(RemoveMapping);
     }
 
@@ -389,6 +396,45 @@ public class MainViewModel : ReactiveObject
         {
             _logger.Error(ex, "Failed to map {SourceCount} armor(s) to {TargetName}", sources.Count, target.DisplayName);
             StatusMessage = $"Error mapping armors: {ex.Message}";
+        }
+    }
+
+    private void MapSelectedAsGlamOnly()
+    {
+        var sources = SelectedSourceArmors.OfType<ArmorRecordViewModel>().ToList();
+
+        if (!sources.Any())
+        {
+            _logger.Debug("MapSelectedAsGlamOnly invoked without source selection.");
+            return;
+        }
+
+        try
+        {
+            foreach (var source in sources)
+            {
+                var existing = Matches.FirstOrDefault(m => m.Source.Armor.FormKey == source.Armor.FormKey);
+                if (existing != null)
+                {
+                    existing.ApplyGlamOnly();
+                }
+                else
+                {
+                    var match = new ArmorMatch(source.Armor, null, 1.0, true, true);
+                    var mapping = new ArmorMatchViewModel(match, source, null);
+                    Matches.Add(mapping);
+                }
+
+                source.IsMapped = true;
+            }
+
+            StatusMessage = $"Marked {sources.Count} armor(s) as glam-only.";
+            _logger.Information("Marked {SourceCount} armor(s) as glam-only.", sources.Count);
+        }
+        catch (Exception ex)
+        {
+            StatusMessage = $"Error marking glam-only: {ex.Message}";
+            _logger.Error(ex, "Failed to mark {SourceCount} armor(s) as glam-only.", sources.Count);
         }
     }
 
@@ -639,22 +685,36 @@ public class MainViewModel : ReactiveObject
             });
 
             var matchesToPatch = Matches
-                .Where(m => m.Match.TargetArmor != null)
+                .Where(m => m.Match.TargetArmor != null || m.Match.IsGlamOnly)
                 .Select(m => m.Match)
                 .ToList();
 
             if (matchesToPatch.Count == 0)
             {
                 StatusMessage = "No mapped armors to patch.";
-                _logger.Warning("Patch creation aborted — no mapped armors available.");
+                _logger.Warning("Patch creation aborted - no mapped armors available.");
                 return;
+            }
+
+            var outputPath = Settings.FullOutputPath;
+            if (File.Exists(outputPath))
+            {
+                var confirmationMessage =
+                    "The selected patch file already exists. Adding new data will overwrite any records with matching FormIDs in that ESP.\n\nDo you want to continue?";
+                var confirmed = await ConfirmOverwritePatch.Handle(confirmationMessage).ToTask();
+                if (!confirmed)
+                {
+                    StatusMessage = "Patch creation canceled.";
+                    _logger.Information("Patch creation canceled by user to avoid overwriting existing patch at {OutputPath}", outputPath);
+                    return;
+                }
             }
 
             _logger.Information("Starting patch creation for {MatchCount} matches to {OutputPath}", matchesToPatch.Count, Settings.FullOutputPath);
 
             var (success, message) = await _patchingService.CreatePatchAsync(
                 matchesToPatch,
-                Settings.FullOutputPath,
+                outputPath,
                 progress);
 
             StatusMessage = message;
@@ -695,17 +755,20 @@ public class ArmorMatchViewModel : ReactiveObject
         private set
         {
             this.RaiseAndSetIfChanged(ref _target, value);
-            this.RaisePropertyChanged(nameof(TargetSummary));
-            this.RaisePropertyChanged(nameof(CombinedSummary));
-            this.RaisePropertyChanged(nameof(HasTarget));
+            RefreshState();
         }
     }
 
-    public bool HasTarget => Target != null;
+    public bool HasTarget => Match.IsGlamOnly || Target != null;
+    public bool IsGlamOnly => Match.IsGlamOnly;
     public double Confidence => Match.MatchConfidence;
     public string ConfidenceText => Confidence > 0 ? $"{Confidence:P0}" : string.Empty;
     public string SourceSummary => Source.SummaryLine;
-    public string TargetSummary => Target != null ? Target.SummaryLine : "Not mapped";
+    public string TargetSummary => Match.IsGlamOnly
+        ? "✨ Glam-only (armor rating set to 0)"
+        : Target != null
+            ? Target.SummaryLine
+            : "Not mapped";
     public string CombinedSummary => $"{SourceSummary} <> {TargetSummary}";
 
     public ArmorMatchViewModel(
@@ -720,30 +783,61 @@ public class ArmorMatchViewModel : ReactiveObject
         {
             ApplyAutoTarget(target);
         }
+        else if (match.IsGlamOnly)
+        {
+            ApplyGlamOnly();
+        }
+        else
+        {
+            RefreshState();
+        }
     }
 
     public void ApplyManualTarget(ArmorRecordViewModel target)
     {
         Match.IsManualMatch = true;
         Match.MatchConfidence = 1.0;
+        Match.IsGlamOnly = false;
         ApplyTargetInternal(target);
     }
 
     public void ApplyAutoTarget(ArmorRecordViewModel target)
     {
         Match.IsManualMatch = false;
+        Match.IsGlamOnly = false;
         ApplyTargetInternal(target);
     }
 
     public void ClearTarget()
     {
         Match.TargetArmor = null;
+        Match.IsGlamOnly = false;
+        Match.MatchConfidence = 0.0;
         Target = null;
+    }
+
+    public void ApplyGlamOnly()
+    {
+        Match.IsManualMatch = true;
+        Match.IsGlamOnly = true;
+        Match.MatchConfidence = 1.0;
+        Match.TargetArmor = null;
+        Target = null;
+        RefreshState();
     }
 
     private void ApplyTargetInternal(ArmorRecordViewModel target)
     {
+        Match.IsGlamOnly = false;
         Match.TargetArmor = target.Armor;
         Target = target;
+    }
+
+    private void RefreshState()
+    {
+        this.RaisePropertyChanged(nameof(TargetSummary));
+        this.RaisePropertyChanged(nameof(CombinedSummary));
+        this.RaisePropertyChanged(nameof(HasTarget));
+        this.RaisePropertyChanged(nameof(IsGlamOnly));
     }
 }
