@@ -953,12 +953,32 @@ public class MainViewModel : ReactiveObject
             return false;
         }
 
-        var combinedPieces = draft.GetPieces().Concat(distinctPieces).ToList();
-        if (!ValidateOutfitPieces(combinedPieces, out var validationMessage))
+        var existingPieces = draft.GetPieces();
+        var stagedPieces = new List<ArmorRecordViewModel>();
+
+        foreach (var piece in distinctPieces)
         {
-            StatusMessage = validationMessage;
-            _logger.Warning("Cannot add armor to outfit {EditorId}: {Message}", draft.EditorId, validationMessage);
-            return false;
+            var existingConflict = existingPieces.FirstOrDefault(ep => piece.ConflictsWithSlot(ep));
+            if (existingConflict != null)
+            {
+                var overlap = piece.SlotMask & existingConflict.SlotMask;
+                var slot = overlap != 0 ? overlap.ToString() : piece.SlotSummary;
+                StatusMessage = $"Slot conflict: {piece.DisplayName} overlaps {existingConflict.DisplayName} ({slot}).";
+                _logger.Warning("Prevented adding {Piece} to outfit {EditorId} due to conflict with {Existing} on slot {Slot}.", piece.DisplayName, draft.EditorId, existingConflict.DisplayName, slot);
+                return false;
+            }
+
+            var stagedConflict = stagedPieces.FirstOrDefault(sp => piece.ConflictsWithSlot(sp));
+            if (stagedConflict != null)
+            {
+                var overlap = piece.SlotMask & stagedConflict.SlotMask;
+                var slot = overlap != 0 ? overlap.ToString() : piece.SlotSummary;
+                StatusMessage = $"Slot conflict: {piece.DisplayName} overlaps {stagedConflict.DisplayName} ({slot}).";
+                _logger.Warning("Prevented adding {Piece} to outfit {EditorId} due to conflict with staged piece {Staged} on slot {Slot}.", piece.DisplayName, draft.EditorId, stagedConflict.DisplayName, slot);
+                return false;
+            }
+
+            stagedPieces.Add(piece);
         }
 
         var (added, _) = draft.AddPieces(distinctPieces);
