@@ -4,8 +4,10 @@ using System.IO;
 using System.Linq;
 using System.Numerics;
 using System.Windows;
+using System.Windows.Input;
 using System.Windows.Media;
 using System.Windows.Media.Media3D;
+using HelixToolkit.SharpDX;
 using HelixToolkit.Wpf.SharpDX;
 using HelixToolkit.Wpf.SharpDX.Model;
 using RequiemGlamPatcher.Models;
@@ -25,6 +27,11 @@ public partial class OutfitPreviewWindow : Window
 {
     private readonly ArmorPreviewScene _scene;
     private readonly GroupModel3D _meshGroup = new();
+    private readonly AmbientLight3D _ambientLight = new();
+    private readonly DirectionalLight3D _frontLeftLight = new();
+    private readonly DirectionalLight3D _frontRightLight = new();
+    private readonly DirectionalLight3D _backLight = new();
+    private readonly DirectionalLight3D _cameraAlignedLight = new();
     private readonly DefaultEffectsManager _effectsManager = new();
     private PerspectiveCamera? _initialCamera;
 
@@ -41,26 +48,39 @@ public partial class OutfitPreviewWindow : Window
     {
         PreviewViewport.EffectsManager = _effectsManager;
         PreviewViewport.Items.Clear();
+        PreviewViewport.MSAA = MSAALevel.Eight;
+        PreviewViewport.CameraMode = CameraMode.Inspect;
+        PreviewViewport.CameraRotationMode = CameraRotationMode.Trackball;
+        PreviewViewport.RotateAroundMouseDownPoint = true;
+        PreviewViewport.ZoomAroundMouseDownPoint = true;
+        PreviewViewport.IsPanEnabled = true;
+        PreviewViewport.IsZoomEnabled = true;
+        PreviewViewport.IsRotationEnabled = true;
+        PreviewViewport.IsInertiaEnabled = false;
+        PreviewViewport.InfiniteSpin = false;
 
-        PreviewViewport.Items.Add(new AmbientLight3D
-        {
-            Color = ToMediaColor(new Color4(0.35f, 0.35f, 0.35f, 1f))
-        });
-        PreviewViewport.Items.Add(new DirectionalLight3D
-        {
-            Color = ToMediaColor(new Color4(0.85f, 0.85f, 0.85f, 1f)),
-            Direction = new Vector3D(-0.3f, -0.5f, -0.7f)
-        });
-        PreviewViewport.Items.Add(new DirectionalLight3D
-        {
-            Color = ToMediaColor(new Color4(0.65f, 0.65f, 0.65f, 1f)),
-            Direction = new Vector3D(0.45f, 0.1f, -0.35f)
-        });
-        PreviewViewport.Items.Add(new DirectionalLight3D
-        {
-            Color = ToMediaColor(new Color4(0.45f, 0.45f, 0.45f, 1f)),
-            Direction = new Vector3D(-0.2f, 0.4f, -0.5f)
-        });
+        PreviewViewport.UseDefaultGestures = false;
+        PreviewViewport.InputBindings.Clear();
+        PreviewViewport.InputBindings.Add(new MouseBinding(ViewportCommands.Rotate, new MouseGesture(MouseAction.LeftClick)));
+        PreviewViewport.InputBindings.Add(new MouseBinding(ViewportCommands.Pan, new MouseGesture(MouseAction.MiddleClick)));
+        PreviewViewport.InputBindings.Add(new MouseBinding(ViewportCommands.Zoom, new MouseGesture(MouseAction.RightClick)));
+        PreviewViewport.InputBindings.Add(new MouseBinding(ViewportCommands.ZoomExtents, new MouseGesture(MouseAction.LeftDoubleClick)));
+        PreviewViewport.InputBindings.Add(new MouseBinding(ViewportCommands.ZoomExtents, new MouseGesture(MouseAction.RightDoubleClick)));
+        PreviewViewport.InputBindings.Add(new KeyBinding(ViewportCommands.ZoomExtents, Key.F, ModifierKeys.Control));
+        PreviewViewport.BackgroundColor = GetViewportBackgroundColor();
+
+        ConfigureLights();
+
+        PreviewViewport.Items.Add(_ambientLight);
+        PreviewViewport.Items.Add(_frontLeftLight);
+        PreviewViewport.Items.Add(_frontRightLight);
+        PreviewViewport.Items.Add(_backLight);
+        var flipMatrix = new Matrix3D(
+            -1, 0, 0, 0,
+             0,-1, 0, 0,
+             0, 0, 1, 0,
+             0, 0, 0, 1);
+        _meshGroup.Transform = new MatrixTransform3D(flipMatrix);
 
         PreviewViewport.Items.Add(_meshGroup);
     }
@@ -196,12 +216,12 @@ public partial class OutfitPreviewWindow : Window
 
     private void ConfigureCamera(float radius)
     {
-        var baseDistance = Math.Max(radius * 3.0f, 150.0f);
-        var height = baseDistance * 0.6;
+        var baseDistance = Math.Max(radius * 2.6f, 115.0f);
+        var height = baseDistance * 0.2;
 
         var camera = new PerspectiveCamera
         {
-            FieldOfView = 45,
+            FieldOfView = 37,
             Position = new Point3D(0, -baseDistance, height),
             LookDirection = new Vector3D(0, baseDistance, -height),
             UpDirection = new Vector3D(0, 0, 1)
@@ -209,6 +229,29 @@ public partial class OutfitPreviewWindow : Window
 
         PreviewViewport.Camera = camera;
         _initialCamera = (PerspectiveCamera)camera.Clone();
+    }
+
+    private void ConfigureLights()
+    {
+        _ambientLight.Color = ToMediaColor(new Color4(0.25f, 0.25f, 0.25f, 1f));
+
+        _frontLeftLight.Color = ToMediaColor(new Color4(1.15f, 1.12f, 1.08f, 1f));
+        _frontLeftLight.Direction = Normalize(new Vector3D(0.1, -0.7, -1.0));
+
+        _frontRightLight.Color = ToMediaColor(new Color4(0.5f, 0.48f, 0.46f, 1f));
+        _frontRightLight.Direction = Normalize(new Vector3D(-0.8, -0.4, -0.9));
+
+        _backLight.Color = ToMediaColor(new Color4(0.85f, 0.88f, 0.98f, 1f));
+        _backLight.Direction = Normalize(new Vector3D(0.2, 0.6, 0.7));
+    }
+
+    private static Vector3D Normalize(Vector3D direction)
+    {
+        var length = Math.Sqrt(direction.X * direction.X + direction.Y * direction.Y + direction.Z * direction.Z);
+        if (length < 1e-6)
+            return new Vector3D(0, -1, 0);
+
+        return new Vector3D(direction.X / length, direction.Y / length, direction.Z / length);
     }
 
     private static Material CreateMaterialForMesh(PreviewMeshShape mesh)
@@ -222,9 +265,10 @@ public partial class OutfitPreviewWindow : Window
         return new PhongMaterial
         {
             DiffuseColor = diffuse,
-            AmbientColor = new Color4(diffuse.Red * 0.4f, diffuse.Green * 0.4f, diffuse.Blue * 0.4f, 1f),
-            SpecularColor = new Color4(0.15f, 0.15f, 0.15f, 1f),
-            SpecularShininess = 16f
+            AmbientColor = new Color4(diffuse.Red * 0.18f, diffuse.Green * 0.18f, diffuse.Blue * 0.18f, 1f),
+            SpecularColor = new Color4(0.1f, 0.1f, 0.1f, 1f),
+            SpecularShininess = 28f,
+            EmissiveColor = new Color4(0f, 0f, 0f, 1f)
         };
     }
 
@@ -248,10 +292,11 @@ public partial class OutfitPreviewWindow : Window
             var material = new PhongMaterial
             {
                 DiffuseMap = new TextureModel(texturePath),
-                DiffuseColor = new Color4(1f, 1f, 1f, 1f),
-                AmbientColor = new Color4(0.35f, 0.35f, 0.35f, 1f),
-                SpecularColor = new Color4(0.18f, 0.18f, 0.18f, 1f),
-                SpecularShininess = 32f
+                DiffuseColor = new Color4(1.02f, 1.01f, 1.0f, 1f),
+                AmbientColor = new Color4(0.16f, 0.16f, 0.16f, 1f),
+                SpecularColor = new Color4(0.1f, 0.1f, 0.1f, 1f),
+                SpecularShininess = 28f,
+                EmissiveColor = new Color4(0f, 0f, 0f, 1f)
             };
 
             Log.Debug("Successfully created textured material for {TexturePath}", texturePath);
@@ -293,6 +338,12 @@ public partial class OutfitPreviewWindow : Window
         return new Color4(color.R / 255f, color.G / 255f, color.B / 255f, color.A / 255f);
     }
 
+    private Color GetViewportBackgroundColor()
+    {
+        // Match BodySlide's light preview background (RGB 210,210,210).
+        return Color.FromRgb(210, 210, 210);
+    }
+
     private void OnResetView(object sender, RoutedEventArgs e)
     {
         if (_initialCamera == null)
@@ -309,6 +360,7 @@ public partial class OutfitPreviewWindow : Window
         {
             PreviewViewport.Camera = (PerspectiveCamera)_initialCamera.Clone();
         }
+
     }
 
     private void OnClose(object sender, RoutedEventArgs e)
