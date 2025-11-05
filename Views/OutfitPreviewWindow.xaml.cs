@@ -1,15 +1,8 @@
-using System;
-using System.Collections.Generic;
 using System.IO;
-using System.Linq;
-using System.Numerics;
 using System.Windows;
 using System.Windows.Input;
-using System.Windows.Media;
 using System.Windows.Media.Media3D;
-using HelixToolkit.SharpDX;
 using HelixToolkit.Wpf.SharpDX;
-using HelixToolkit.Wpf.SharpDX.Model;
 using RequiemGlamPatcher.Models;
 using Serilog;
 using Color = System.Windows.Media.Color;
@@ -69,6 +62,8 @@ public partial class OutfitPreviewWindow : Window
         PreviewViewport.InputBindings.Add(new KeyBinding(ViewportCommands.ZoomExtents, Key.F, ModifierKeys.Control));
         PreviewViewport.BackgroundColor = GetViewportBackgroundColor();
 
+        _meshGroup.Transform = Transform3D.Identity;
+        
         ConfigureLights();
 
         PreviewViewport.Items.Add(_ambientLight);
@@ -76,16 +71,14 @@ public partial class OutfitPreviewWindow : Window
         PreviewViewport.Items.Add(_frontRightLight);
         PreviewViewport.Items.Add(_backLight);
         PreviewViewport.Items.Add(_frontalLight);
-        _meshGroup.Transform = Transform3D.Identity;
+        UpdateFrontalLightDirection();
 
         PreviewViewport.Items.Add(_meshGroup);
         PreviewViewport.CameraChanged += OnViewportCameraChanged;
-        UpdateFrontalLightDirection();
     }
 
     private void BuildScene()
     {
-        GenderLabel.Text = $"Gender: {_scene.Gender}";
         if (_scene.MissingAssets.Any())
         {
             MissingAssetsPanel.Visibility = Visibility.Visible;
@@ -139,18 +132,18 @@ public partial class OutfitPreviewWindow : Window
             var transformedVertices = new List<Vector3>(mesh.Vertices.Count);
             var transformedNormals = new List<Vector3>(mesh.Normals.Count);
 
-            for (int i = 0; i < mesh.Vertices.Count; i++)
+            foreach (var t in mesh.Vertices)
             {
-                var world = Vector3.Transform(mesh.Vertices[i], mesh.Transform);
+                var world = Vector3.Transform(t, mesh.Transform);
                 transformedVertices.Add(world);
 
                 min = Vector3.Min(min, world);
                 max = Vector3.Max(max, world);
             }
 
-            for (int i = 0; i < mesh.Normals.Count; i++)
+            foreach (var t in mesh.Normals)
             {
-                var normal = Vector3.TransformNormal(mesh.Normals[i], mesh.Transform);
+                var normal = Vector3.TransformNormal(t, mesh.Transform);
                 if (normal != Vector3.Zero)
                     normal = Vector3.Normalize(normal);
                 transformedNormals.Add(normal);
@@ -219,7 +212,7 @@ public partial class OutfitPreviewWindow : Window
 
         var camera = new PerspectiveCamera
         {
-            FieldOfView = 37,
+            FieldOfView = 47,
             Position = new Point3D(0, baseDistance, height),
             LookDirection = new Vector3D(0, -baseDistance, -height),
             UpDirection = new Vector3D(0, 0, 1)
@@ -234,20 +227,20 @@ public partial class OutfitPreviewWindow : Window
         // Ambient light from BodySlide config (20 → 0.2)
         _ambientLight.Color = ToMediaColor(new Color4(0.2f, 0.2f, 0.2f, 1f));
 
-        // Front-left key light (Directional0: -0.90, 0.10, 1.00)
-        _frontLeftLight.Color = ToMediaColor(new Color4(0.6f, 0.6f, 0.6f, 1f));
+        // // Front-left key light (Directional0: -0.90, 0.10, 1.00)
+        _frontLeftLight.Color = ToMediaColor(new Color4(1f, 1f, 1f, 1f));
         _frontLeftLight.Direction = new Vector3D(-0.667124384994991, 0.07412493166611012, 0.7412493166611012);
-
+        
         // Front-right fill light (Directional1: 0.70, 0.10, 1.00)
         _frontRightLight.Color = ToMediaColor(new Color4(0.6f, 0.6f, 0.6f, 1f));
         _frontRightLight.Direction = new Vector3D(0.5715476066494083, 0.08164965809277261, 0.8164965809277261);
-
+        
         // Back rim light (Directional2: 0.30, 0.20, -1.00)
         _backLight.Color = ToMediaColor(new Color4(0.85f, 0.85f, 0.85f, 1f));
         _backLight.Direction = new Vector3D(0.2822162605150792, 0.18814417367671948, -0.9407208683835974);
-
+        
         // Frontal light: matches BodySlide "frontal" intensity (20 → 0.2)
-        _frontalLight.Color = ToMediaColor(new Color4(0.2f, 0.2f, 0.2f, 1f));
+        _frontalLight.Color = ToMediaColor(new Color4(1f, 1f, 1f, 1f));
     }
 
     private static Material CreateMaterialForMesh(PreviewMeshShape mesh)
@@ -289,10 +282,10 @@ public partial class OutfitPreviewWindow : Window
             {
                 DiffuseMap = new TextureModel(texturePath),
                 DiffuseColor = new Color4(1f, 1f, 1f, 1f),
-                AmbientColor = new Color4(0.2f, 0.2f, 0.2f, 1f),
-                SpecularColor = new Color4(0.1f, 0.1f, 0.1f, 1f),
-                SpecularShininess = 32f,
-                EmissiveColor = new Color4(0f, 0f, 0f, 1f)
+                AmbientColor = new Color4(0.1f, 0.1f, 0.1f, 1f),
+                SpecularColor = new Color4(0f, 0f, 0f, 1f),
+                SpecularShininess = 1f,
+                EmissiveColor = new Color4(0.2f, 0.2f, 0.2f, 1f),
             };
 
             Log.Debug("Successfully created textured material for {TexturePath}", texturePath);
@@ -312,14 +305,12 @@ public partial class OutfitPreviewWindow : Window
 
     private void UpdateFrontalLightDirection()
     {
-        if (PreviewViewport.Camera is HelixToolkit.Wpf.SharpDX.ProjectionCamera camera)
+        if (PreviewViewport.Camera is not HelixToolkit.Wpf.SharpDX.ProjectionCamera camera) return;
+        var direction = camera.LookDirection;
+        if (direction.LengthSquared > 1e-6)
         {
-            var direction = camera.LookDirection;
-            if (direction.LengthSquared > 1e-6)
-            {
-                direction.Normalize();
-                _frontalLight.Direction = new Vector3D(-direction.X, -direction.Y, -direction.Z);
-            }
+            direction.Normalize();
+            // _frontalLight.Direction = new Vector3D(-direction.X, -direction.Y, -direction.Z);
         }
     }
 
@@ -342,9 +333,9 @@ public partial class OutfitPreviewWindow : Window
         return Color.FromRgb(r, g, b);
     }
 
-    private static System.Windows.Media.Color ToMediaColor(Color4 color)
+    private static Color ToMediaColor(Color4 color)
     {
-        return System.Windows.Media.Color.FromScRgb(color.Alpha, color.Red, color.Green, color.Blue);
+        return Color.FromScRgb(color.Alpha, color.Red, color.Green, color.Blue);
     }
 
     private static Color4 ToColor4(Color color)

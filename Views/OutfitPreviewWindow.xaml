@@ -29,10 +29,6 @@
                 Padding="12"
                 BorderThickness="0">
             <StackPanel>
-                <TextBlock x:Name="GenderLabel"
-                           FontWeight="Bold"
-                           Margin="0,0,0,4"/>
-
                 <StackPanel x:Name="MissingAssetsPanel"
                             Margin="0,0,0,8">
                     <TextBlock Text="Missing assets:" FontWeight="Bold"/>
