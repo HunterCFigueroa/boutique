@@ -241,13 +241,24 @@ public class ArmorPreviewService : IArmorPreviewService
             return false;
         }
 
-        var normals = ExtractNormals(shape);
-        if (normals == null || normals.Count != vertices.Count)
+        var extractedNormals = ExtractNormals(shape);
+        List<Vector3> normals;
+
+        if (extractedNormals != null && extractedNormals.Count == vertices.Count)
+        {
+            normals = extractedNormals;
+        }
+        else
         {
             normals = ComputeNormals(vertices, indices);
-            if (normals == null)
+            var shapeName = shape.Name?.ToString() ?? "<unnamed>";
+            if (extractedNormals == null)
             {
-                _logger.Debug("Shape {ShapeName} computed normals were null.", shape.Name?.ToString() ?? "<unnamed>");
+                _logger.Debug("Shape {ShapeName} provided no normals; computed fallback.", shapeName);
+            }
+            else
+            {
+                _logger.Debug("Shape {ShapeName} normals count {ProvidedCount} mismatched vertex count {VertexCount}; computed fallback.", shapeName, extractedNormals.Count, vertices.Count);
             }
         }
 
@@ -266,11 +277,7 @@ public class ArmorPreviewService : IArmorPreviewService
         var transform = ComputeWorldTransform(nif, shape);
         var diffuse = ExtractDiffuseTexturePath(nif, shape, dataPath);
 
-        if (!string.IsNullOrWhiteSpace(diffuse))
-        {
-            _logger.Debug("Shape {ShapeName} diffuse: {Texture}", shape.Name?.ToString() ?? "<unnamed>", diffuse);
-        }
-        else
+        if (diffuse == null)
         {
             _logger.Debug("Shape {ShapeName} has no diffuse texture.", shape.Name?.ToString() ?? "<unnamed>");
         }

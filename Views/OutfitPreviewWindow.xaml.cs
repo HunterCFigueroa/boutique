@@ -10,12 +10,14 @@ using HelixToolkit.Wpf.SharpDX;
 using HelixToolkit.Wpf.SharpDX.Model;
 using RequiemGlamPatcher.Models;
 using Serilog;
-using SharpDX;
 using Color = System.Windows.Media.Color;
 using Vector3 = System.Numerics.Vector3;
 using MeshGeometry3D = HelixToolkit.Wpf.SharpDX.MeshGeometry3D;
 using Material = HelixToolkit.Wpf.SharpDX.Material;
 using PerspectiveCamera = HelixToolkit.Wpf.SharpDX.PerspectiveCamera;
+using Color4 = SharpDX.Color4;
+using SharpDXVector2 = SharpDX.Vector2;
+using SharpDXVector3 = SharpDX.Vector3;
 
 namespace RequiemGlamPatcher.Views;
 
@@ -162,7 +164,7 @@ public partial class OutfitPreviewWindow : Window
             return null;
 
         var positions = new Vector3Collection(
-            evaluated.Vertices.Select(v => new SharpDX.Vector3(v.X - center.X, v.Y - center.Y, v.Z - center.Z)));
+            evaluated.Vertices.Select(v => new SharpDXVector3(v.X - center.X, v.Y - center.Y, v.Z - center.Z)));
 
         var geometry = new MeshGeometry3D
         {
@@ -173,14 +175,14 @@ public partial class OutfitPreviewWindow : Window
         if (evaluated.Normals.Count == evaluated.Vertices.Count)
         {
             geometry.Normals = new Vector3Collection(
-                evaluated.Normals.Select(n => new SharpDX.Vector3(n.X, n.Y, n.Z)));
+                evaluated.Normals.Select(n => new SharpDXVector3(n.X, n.Y, n.Z)));
         }
 
         var uvs = evaluated.Shape.TextureCoordinates;
         if (uvs != null && uvs.Count == evaluated.Vertices.Count)
         {
             geometry.TextureCoordinates = new Vector2Collection(
-                uvs.Select(tc => new SharpDX.Vector2(tc.X, tc.Y)));
+                uvs.Select(tc => new SharpDXVector2(tc.X, tc.Y)));
         }
         else if (uvs != null)
         {
