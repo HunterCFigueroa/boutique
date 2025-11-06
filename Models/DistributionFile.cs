@@ -21,11 +21,13 @@ public sealed record DistributionLine(
     DistributionLineKind Kind,
     string? SectionName,
     string? Key,
-    string? Value);
+    string? Value,
+    bool IsOutfitDistribution);
 
 public sealed record DistributionFile(
     string FileName,
     string FullPath,
     string RelativePath,
     DistributionFileType Type,
-    IReadOnlyList<DistributionLine> Lines);
+    IReadOnlyList<DistributionLine> Lines,
+    int OutfitDistributionCount);

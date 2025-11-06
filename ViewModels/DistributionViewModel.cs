@@ -87,7 +87,11 @@ public class DistributionViewModel : ReactiveObject
 
             StatusMessage = "Scanning for distribution files...";
             var discovered = await _discoveryService.DiscoverAsync(dataPath);
-            var viewModels = discovered
+            var outfitFiles = discovered
+                .Where(file => file.OutfitDistributionCount > 0)
+                .ToList();
+
+            var viewModels = outfitFiles
                 .Select(file => new DistributionFileViewModel(file))
                 .ToList();
 
@@ -95,8 +99,8 @@ public class DistributionViewModel : ReactiveObject
             SelectedFile = Files.FirstOrDefault();
 
             StatusMessage = Files.Count == 0
-                ? "No distribution files found."
-                : $"Found {Files.Count} distribution file(s).";
+                ? "No outfit distributions found."
+                : $"Found {Files.Count} outfit distribution file(s).";
         }
         catch (Exception ex)
         {

@@ -26,23 +26,33 @@ public class DistributionDiscoveryService(ILogger logger) : IDistributionDiscove
     {
         var files = new ConcurrentBag<DistributionFile>();
         var seenPaths = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+        var enumerationOptions = new EnumerationOptions
+        {
+            RecurseSubdirectories = true,
+            ReturnSpecialDirectories = false,
+            IgnoreInaccessible = true,
+            MatchCasing = MatchCasing.CaseInsensitive
+        };
 
         try
         {
-            foreach (var spidFile in Directory.EnumerateFiles(dataFolderPath, "*_DISTR.ini",
-                         SearchOption.AllDirectories))
+            foreach (var spidFile in Directory.EnumerateFiles(dataFolderPath, "*_DISTR.ini", enumerationOptions))
             {
                 cancellationToken.ThrowIfCancellationRequested();
                 TryParse(spidFile, DistributionFileType.Spid);
             }
 
-            foreach (var iniFile in Directory.EnumerateFiles(dataFolderPath, "*.ini", SearchOption.AllDirectories))
+            var skyPatcherRoot = Path.Combine(dataFolderPath, "skse", "plugins", "SkyPatcher");
+            if (Directory.Exists(skyPatcherRoot))
             {
-                cancellationToken.ThrowIfCancellationRequested();
-                if (seenPaths.Contains(iniFile))
-                    continue;
+                foreach (var iniFile in Directory.EnumerateFiles(skyPatcherRoot, "*.ini", enumerationOptions))
+                {
+                    cancellationToken.ThrowIfCancellationRequested();
+                    if (seenPaths.Contains(iniFile))
+                        continue;
 
-                if (IsSkyPatcherIni(dataFolderPath, iniFile)) TryParse(iniFile, DistributionFileType.SkyPatcher);
+                    if (IsSkyPatcherIni(dataFolderPath, iniFile)) TryParse(iniFile, DistributionFileType.SkyPatcher);
+                }
             }
         }
         catch (OperationCanceledException)
@@ -94,6 +104,8 @@ public class DistributionDiscoveryService(ILogger logger) : IDistributionDiscove
             var currentSection = string.Empty;
             var lineNumber = 0;
 
+            var outfitCount = 0;
+
             foreach (var raw in File.ReadLines(filePath, Encoding.UTF8))
             {
                 lineNumber++;
@@ -132,22 +144,57 @@ public class DistributionDiscoveryService(ILogger logger) : IDistributionDiscove
                     }
                 }
 
-                lines.Add(new DistributionLine(lineNumber, raw, kind, sectionName, key, value));
+                var isOutfitDistribution = IsOutfitDistributionLine(type, kind, trimmed);
+                if (isOutfitDistribution)
+                    outfitCount++;
+
+                lines.Add(new DistributionLine(lineNumber, raw, kind, sectionName, key, value, isOutfitDistribution));
             }
 
             var relativePath = Path.GetRelativePath(dataFolderPath, filePath);
+
+            if (outfitCount == 0)
+                return null;
 
             return new DistributionFile(
                 Path.GetFileName(filePath),
                 filePath,
                 relativePath,
                 type,
-                lines);
+                lines,
+                outfitCount);
         }
         catch (Exception ex)
         {
             _logger.Error(ex, "Failed to parse distribution file {FilePath}", filePath);
             return null;
         }
+    }
+
+    private static bool IsOutfitDistributionLine(DistributionFileType type, DistributionLineKind kind, string trimmed)
+    {
+        if (kind is DistributionLineKind.Comment or DistributionLineKind.Blank)
+            return false;
+
+        return type switch
+        {
+            DistributionFileType.Spid => IsSpidOutfitLine(trimmed),
+            DistributionFileType.SkyPatcher => IsSkyPatcherOutfitLine(trimmed),
+            _ => false
+        };
+    }
+
+    private static bool IsSpidOutfitLine(string trimmed)
+    {
+        if (!trimmed.StartsWith("Outfit", StringComparison.OrdinalIgnoreCase) || trimmed.Length <= 6)
+            return false;
+
+        var remainder = trimmed[6..].TrimStart();
+        return remainder.Length > 0 && remainder[0] == '=';
+    }
+
+    private static bool IsSkyPatcherOutfitLine(string trimmed)
+    {
+        return trimmed.IndexOf("filterByOutfits=", StringComparison.OrdinalIgnoreCase) >= 0;
     }
 }

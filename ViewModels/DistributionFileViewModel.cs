@@ -21,4 +21,5 @@ public class DistributionFileViewModel(DistributionFile file) : ReactiveObject
 
     public int RecordCount => file.Lines.Count(l => l.Kind == DistributionLineKind.KeyValue);
     public int CommentCount => file.Lines.Count(l => l.Kind == DistributionLineKind.Comment);
+    public int OutfitCount => file.OutfitDistributionCount;
 }

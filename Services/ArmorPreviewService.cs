@@ -196,21 +196,21 @@ public class ArmorPreviewService(IMutagenService mutagenService, IGameAssetLocat
             return GenderedModelVariant.Male;
 
         foreach (var piece in pieces)
-        foreach (var addonLink in piece.Armor.Armature)
-        {
-            if (!linkCache.TryResolve<IArmorAddonGetter>(addonLink.FormKey, out var addon))
-                continue;
+            foreach (var addonLink in piece.Armor.Armature)
+            {
+                if (!linkCache.TryResolve<IArmorAddonGetter>(addonLink.FormKey, out var addon))
+                    continue;
 
-            var worldModel = addon.WorldModel;
-            if (worldModel == null)
-                continue;
+                var worldModel = addon.WorldModel;
+                if (worldModel == null)
+                    continue;
 
-            if (worldModel.Female != null)
-                continue;
+                if (worldModel.Female != null)
+                    continue;
 
-            if (worldModel.Male != null)
-                return GenderedModelVariant.Male;
-        }
+                if (worldModel.Male != null)
+                    return GenderedModelVariant.Male;
+            }
 
         return GenderedModelVariant.Female;
     }

@@ -60,6 +60,7 @@
                         <DataGridTextColumn Header="File" Binding="{Binding FileName}" Width="*" />
                         <DataGridTextColumn Header="Type" Binding="{Binding TypeDisplay}" Width="100" />
                         <DataGridTextColumn Header="Entries" Binding="{Binding RecordCount}" Width="80" />
+                        <DataGridTextColumn Header="Outfits" Binding="{Binding OutfitCount}" Width="80" />
                     </DataGrid.Columns>
                 </DataGrid>
             </GroupBox>
@@ -80,16 +81,34 @@
                             BorderThickness="1">
                         <ScrollViewer VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Auto">
                             <ItemsControl ItemsSource="{Binding SelectedFile.Lines}">
+                                <ItemsControl.ItemContainerStyle>
+                                    <Style TargetType="ContentPresenter">
+                                        <Setter Property="HorizontalAlignment" Value="Stretch" />
+                                    </Style>
+                                </ItemsControl.ItemContainerStyle>
                                 <ItemsControl.ItemTemplate>
                                     <DataTemplate>
-                                        <StackPanel Orientation="Horizontal">
-                                            <TextBlock Text="{Binding LineNumber, StringFormat='{}{0,4}'}"
-                                                       FontFamily="Consolas"
-                                                       Margin="4,0,8,0" />
-                                            <TextBlock Text="{Binding RawText}"
-                                                       FontFamily="Consolas"
-                                                       TextWrapping="NoWrap" />
-                                        </StackPanel>
+                                        <Border Padding="0"
+                                                HorizontalAlignment="Stretch">
+                                            <Border.Style>
+                                                <Style TargetType="Border">
+                                                    <Setter Property="Background" Value="Transparent" />
+                                                    <Style.Triggers>
+                                                        <DataTrigger Binding="{Binding IsOutfitDistribution}" Value="True">
+                                                            <Setter Property="Background" Value="{DynamicResource Brush.HighlightOverlay}" />
+                                                        </DataTrigger>
+                                                    </Style.Triggers>
+                                                </Style>
+                                            </Border.Style>
+                                            <StackPanel Orientation="Horizontal">
+                                                <TextBlock Text="{Binding LineNumber, StringFormat='{}{0,4}'}"
+                                                           FontFamily="Consolas"
+                                                           Margin="4,0,8,0" />
+                                                <TextBlock Text="{Binding RawText}"
+                                                           FontFamily="Consolas"
+                                                           TextWrapping="NoWrap" />
+                                            </StackPanel>
+                                        </Border>
                                     </DataTemplate>
                                 </ItemsControl.ItemTemplate>
                             </ItemsControl>
