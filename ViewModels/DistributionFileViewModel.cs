@@ -4,28 +4,21 @@ using ReactiveUI;
 
 namespace Boutique.ViewModels;
 
-public class DistributionFileViewModel : ReactiveObject
+public class DistributionFileViewModel(DistributionFile file) : ReactiveObject
 {
-    private readonly DistributionFile _file;
+    public string FileName => file.FileName;
+    public string RelativePath => file.RelativePath;
+    public string Directory => Path.GetDirectoryName(file.RelativePath) ?? string.Empty;
+    public string FullPath => file.FullPath;
+    public IReadOnlyList<DistributionLine> Lines => file.Lines;
 
-    public DistributionFileViewModel(DistributionFile file)
-    {
-        _file = file;
-    }
-
-    public string FileName => _file.FileName;
-    public string RelativePath => _file.RelativePath;
-    public string Directory => Path.GetDirectoryName(_file.RelativePath) ?? string.Empty;
-    public string FullPath => _file.FullPath;
-    public IReadOnlyList<DistributionLine> Lines => _file.Lines;
-
-    public string TypeDisplay => _file.Type switch
+    public string TypeDisplay => file.Type switch
     {
         DistributionFileType.Spid => "SPID",
         DistributionFileType.SkyPatcher => "SkyPatcher",
-        _ => _file.Type.ToString()
+        _ => file.Type.ToString()
     };
 
-    public int RecordCount => _file.Lines.Count(l => l.Kind == DistributionLineKind.KeyValue);
-    public int CommentCount => _file.Lines.Count(l => l.Kind == DistributionLineKind.Comment);
+    public int RecordCount => file.Lines.Count(l => l.Kind == DistributionLineKind.KeyValue);
+    public int CommentCount => file.Lines.Count(l => l.Kind == DistributionLineKind.Comment);
 }

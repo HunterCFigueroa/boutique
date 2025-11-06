@@ -106,8 +106,7 @@ public class MatchingService : IMatchingService
             var tokens = normalized.Split(' ', StringSplitOptions.RemoveEmptyEntries).ToList();
 
             // Remove common armor type words
-            var armorTypes = new[]
-                { "boots", "gauntlets", "gloves", "helmet", "hood", "cuirass", "armor", "shield", "bracers" };
+            var armorTypes = new[] { "boots", "gauntlets", "gloves", "helmet", "hood", "cuirass", "armor", "shield", "bracers" };
             var baseTokens = tokens.Where(t => !armorTypes.Contains(t)).ToList();
 
             return string.Join(" ", baseTokens);

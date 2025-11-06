@@ -47,7 +47,7 @@ public class MutagenService : IMutagenService
             var pluginFiles = Directory.GetFiles(DataFolderPath, "*.esp")
                 .Concat(Directory.GetFiles(DataFolderPath, "*.esm"))
                 .Concat(Directory.GetFiles(DataFolderPath, "*.esl"))
-                .OrderBy(path => Path.GetFileName(path))
+                .OrderBy(Path.GetFileName)
                 .ToList();
 
             var armorPlugins = new List<string>();
@@ -57,11 +57,9 @@ public class MutagenService : IMutagenService
                 {
                     using var mod = SkyrimMod.CreateFromBinaryOverlay(pluginPath, SkyrimRelease.SkyrimSE);
 
-                    if (mod.Armors.Count > 0)
-                    {
-                        var name = Path.GetFileName(pluginPath);
-                        if (!string.IsNullOrEmpty(name)) armorPlugins.Add(name);
-                    }
+                    if (mod.Armors.Count <= 0) continue;
+                    var name = Path.GetFileName(pluginPath);
+                    if (!string.IsNullOrEmpty(name)) armorPlugins.Add(name);
                 }
                 catch
                 {
@@ -78,12 +76,12 @@ public class MutagenService : IMutagenService
         return await Task.Run(() =>
         {
             if (string.IsNullOrEmpty(DataFolderPath))
-                return Enumerable.Empty<IArmorGetter>();
+                return [];
 
             var pluginPath = Path.Combine(DataFolderPath, pluginFileName);
 
             if (!File.Exists(pluginPath))
-                return Enumerable.Empty<IArmorGetter>();
+                return [];
 
             try
             {

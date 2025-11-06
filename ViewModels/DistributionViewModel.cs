@@ -73,14 +73,14 @@ public class DistributionViewModel : ReactiveObject
 
             if (string.IsNullOrWhiteSpace(dataPath))
             {
-                Files = new ObservableCollection<DistributionFileViewModel>();
+                Files = [];
                 StatusMessage = "Set the Skyrim data path in Settings to scan distribution files.";
                 return;
             }
 
             if (!Directory.Exists(dataPath))
             {
-                Files = new ObservableCollection<DistributionFileViewModel>();
+                Files = [];
                 StatusMessage = $"Skyrim data path does not exist: {dataPath}";
                 return;
             }

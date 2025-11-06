@@ -156,11 +156,10 @@ public class PatchingService(IMutagenService mutagenService, ILoggingService log
             try
             {
                 var outfitList = outfits.ToList();
-                if (outfitList.Count == 0) return (false, "No outfits to create.", Array.Empty<OutfitCreationResult>());
+                if (outfitList.Count == 0) return (false, "No outfits to create.", []);
 
                 if (!mutagenService.IsInitialized)
-                    return (false, "Mutagen service is not initialized. Please set the Skyrim data path first.",
-                        Array.Empty<OutfitCreationResult>());
+                    return (false, "Mutagen service is not initialized. Please set the Skyrim data path first.", []);
 
                 _logger.Information("Beginning outfit creation. Destination: {OutputPath}. OutfitCount={Count}",
                     outputPath, outfitList.Count);
@@ -179,67 +178,57 @@ public class PatchingService(IMutagenService mutagenService, ILoggingService log
                     {
                         _logger.Error(ex, "Failed to load existing patch for outfit creation at {OutputPath}.",
                             outputPath);
-                        return (false, $"Unable to load existing patch: {ex.Message}",
-                            Array.Empty<OutfitCreationResult>());
+                        return (false, $"Unable to load existing patch: {ex.Message}", []);
                     }
                 else
                     patchMod = new SkyrimMod(modKey, SkyrimRelease.SkyrimSE);
 
-                var existingOutfitMasters = patchMod.ModHeader.MasterReferences?
-                    .Select(m => m.Master) ?? Enumerable.Empty<ModKey>();
+                var existingOutfitMasters = patchMod.ModHeader.MasterReferences.Select(m => m.Master);
                 requiredMasters.UnionWith(existingOutfitMasters);
 
                 var results = new List<OutfitCreationResult>();
                 var total = outfitList.Count;
                 var current = 0;
 
-                foreach (var request in outfitList)
+                foreach (var (name, editorId, pieces) in outfitList)
                 {
                     current++;
-                    progress?.Report((current, total, $"Writing outfit {request.Name}..."));
+                    progress?.Report((current, total, $"Writing outfit {name}..."));
 
                     var existing = patchMod.Outfits
                         .FirstOrDefault(o =>
-                            string.Equals(o.EditorID, request.EditorId, StringComparison.OrdinalIgnoreCase));
+                            string.Equals(o.EditorID, editorId, StringComparison.OrdinalIgnoreCase));
 
                     Outfit outfit;
                     if (existing != null)
                     {
                         outfit = existing;
                         _logger.Information("Updating existing outfit {EditorId} with {PieceCount} piece(s).",
-                            request.EditorId, request.Pieces.Count);
+                            editorId, pieces.Count);
                     }
                     else
                     {
                         outfit = patchMod.Outfits.AddNew();
-                        outfit.EditorID = request.EditorId;
+                        outfit.EditorID = editorId;
                         _logger.Information("Creating new outfit {EditorId} with {PieceCount} piece(s).",
-                            request.EditorId, request.Pieces.Count);
+                            editorId, pieces.Count);
                     }
 
-                    var pieces = request.Pieces;
-                    if (pieces == null || pieces.Count == 0)
+                    if (pieces.Count == 0)
                     {
-                        _logger.Warning("Skipping outfit {EditorId} because it has no armor pieces.", request.EditorId);
+                        _logger.Warning("Skipping outfit {EditorId} because it has no armor pieces.", editorId);
                         continue;
                     }
 
-                    var items = outfit.Items ??= new ExtendedList<IFormLinkGetter<IOutfitTargetGetter>>();
+                    var items = outfit.Items ??= [];
                     items.Clear();
                     foreach (var armor in pieces)
                     {
-                        if (armor == null)
-                        {
-                            _logger.Warning("Outfit {EditorId} contains a null armor entry; skipping.",
-                                request.EditorId);
-                            continue;
-                        }
-
                         items.Add(armor.ToLink());
                         requiredMasters.Add(armor.FormKey.ModKey);
                     }
 
-                    results.Add(new OutfitCreationResult(request.EditorId, outfit.FormKey));
+                    results.Add(new OutfitCreationResult(editorId, outfit.FormKey));
                 }
 
                 EnsureMasters(patchMod, requiredMasters);
@@ -259,7 +248,7 @@ public class PatchingService(IMutagenService mutagenService, ILoggingService log
                     var lockedMessage =
                         $"Unable to write to {outputPath}. It appears to be locked by another application (Mod Organizer, xEdit, or the Skyrim launcher). Close the application that has the file open, or pick a different output path, then try again.";
                     _logger.Error(ioEx, lockedMessage);
-                    return (false, lockedMessage, Array.Empty<OutfitCreationResult>());
+                    return (false, lockedMessage, []);
                 }
 
                 _logger.Information("Outfit creation completed successfully. File: {OutputPath}", outputPath);
@@ -270,7 +259,7 @@ public class PatchingService(IMutagenService mutagenService, ILoggingService log
             {
                 _logger.Error(ex, "Error creating outfits destined for {OutputPath}", outputPath);
                 return (false, $"Error creating outfits: {ex.Message}",
-                    (IReadOnlyList<OutfitCreationResult>)Array.Empty<OutfitCreationResult>());
+                    (IReadOnlyList<OutfitCreationResult>)[]);
             }
         });
     }
@@ -378,11 +367,6 @@ public class PatchingService(IMutagenService mutagenService, ILoggingService log
     private void EnsureMasters(SkyrimMod patchMod, HashSet<ModKey> requiredMasters)
     {
         var masterList = patchMod.ModHeader.MasterReferences;
-        if (masterList == null)
-        {
-            _logger.Warning("Patch mod header did not expose a master list; skipping master update.");
-            return;
-        }
 
         var existing = masterList.Select(m => m.Master).ToHashSet();
 
@@ -391,11 +375,9 @@ public class PatchingService(IMutagenService mutagenService, ILoggingService log
             if (master == patchMod.ModKey || master.IsNull)
                 continue;
 
-            if (existing.Add(master))
-            {
-                masterList.Add(new MasterReference { Master = master });
-                _logger.Debug("Added master {Master} to patch header.", master);
-            }
+            if (!existing.Add(master)) continue;
+            masterList.Add(new MasterReference { Master = master });
+            _logger.Debug("Added master {Master} to patch header.", master);
         }
 
         _logger.Information("Patch master list: {Masters}",

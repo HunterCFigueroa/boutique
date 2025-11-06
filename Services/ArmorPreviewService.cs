@@ -13,7 +13,8 @@ using Serilog;
 
 namespace Boutique.Services;
 
-public class ArmorPreviewService : IArmorPreviewService
+public class ArmorPreviewService(IMutagenService mutagenService, IGameAssetLocator assetLocator, ILogger logger)
+    : IArmorPreviewService
 {
     private const string FemaleBodyRelativePath = "meshes/actors/character/character assets/femalebody_0.nif";
     private const string MaleBodyRelativePath = "meshes/actors/character/character assets/malebody_0.nif";
@@ -76,27 +77,18 @@ public class ArmorPreviewService : IArmorPreviewService
         "_alpha"
     };
 
-    private readonly IGameAssetLocator _assetLocator;
-    private readonly ILogger _logger;
-    private readonly IMutagenService _mutagenService;
-
-    public ArmorPreviewService(IMutagenService mutagenService, IGameAssetLocator assetLocator, ILogger logger)
-    {
-        _mutagenService = mutagenService;
-        _assetLocator = assetLocator;
-        _logger = logger.ForContext<ArmorPreviewService>();
-    }
+    private readonly ILogger _logger = logger.ForContext<ArmorPreviewService>();
 
     public async Task<ArmorPreviewScene> BuildPreviewAsync(
         IEnumerable<ArmorRecordViewModel> armorPieces,
         GenderedModelVariant preferredGender,
         CancellationToken cancellationToken = default)
     {
-        if (!_mutagenService.IsInitialized)
+        if (!mutagenService.IsInitialized)
             throw new InvalidOperationException("Mutagen service has not been initialized.");
 
-        var dataPath = _mutagenService.DataFolderPath;
-        var linkCache = _mutagenService.LinkCache;
+        var dataPath = mutagenService.DataFolderPath;
+        var linkCache = mutagenService.LinkCache;
 
         if (string.IsNullOrWhiteSpace(dataPath) || !Directory.Exists(dataPath))
             throw new DirectoryNotFoundException("Skyrim Data path is not set or does not exist.");
@@ -126,7 +118,7 @@ public class ArmorPreviewService : IArmorPreviewService
         // Always add baseline body mesh
         var bodyRelative = GetBodyRelativePath(gender);
         var bodyAssetKey = NormalizeAssetPath(bodyRelative);
-        var bodyPath = _assetLocator.ResolveAssetPath(bodyAssetKey, SkyrimBaseModKey);
+        var bodyPath = assetLocator.ResolveAssetPath(bodyAssetKey, SkyrimBaseModKey);
         if (!string.IsNullOrWhiteSpace(bodyPath) && File.Exists(bodyPath))
         {
             meshes.AddRange(LoadMeshesFromNif("Base Body", bodyPath, gender, SkyrimBaseModKey, cancellationToken));
@@ -174,7 +166,7 @@ public class ArmorPreviewService : IArmorPreviewService
                 }
 
                 var meshAssetKey = NormalizeAssetPath(modelPath);
-                var fullPath = _assetLocator.ResolveAssetPath(meshAssetKey, addon.FormKey.ModKey);
+                var fullPath = assetLocator.ResolveAssetPath(meshAssetKey, addon.FormKey.ModKey);
                 if (string.IsNullOrWhiteSpace(fullPath) || !File.Exists(fullPath))
                 {
                     var expected = FormatExpectedPath(dataPath, meshAssetKey);
@@ -206,7 +198,7 @@ public class ArmorPreviewService : IArmorPreviewService
         foreach (var piece in pieces)
         foreach (var addonLink in piece.Armor.Armature)
         {
-            if (!linkCache.TryResolve<IArmorAddonGetter>(addonLink.FormKey, out var addon) || addon is null)
+            if (!linkCache.TryResolve<IArmorAddonGetter>(addonLink.FormKey, out var addon))
                 continue;
 
             var worldModel = addon.WorldModel;
@@ -353,7 +345,7 @@ public class ArmorPreviewService : IArmorPreviewService
     {
         switch (shape)
         {
-            case BSTriShape bsTriShape when bsTriShape.VertexPositions != null:
+            case BSTriShape { VertexPositions: not null } bsTriShape:
                 return bsTriShape.VertexPositions.Select(v => v).ToList();
             case NiTriShape niTriShape:
                 var data = niTriShape.GeometryData;
@@ -367,17 +359,12 @@ public class ArmorPreviewService : IArmorPreviewService
 
     private static List<int>? ExtractIndices(INiShape shape)
     {
-        IEnumerable<Triangle>? triangles = null;
-
-        switch (shape)
+        IEnumerable<Triangle>? triangles = shape switch
         {
-            case BSTriShape bsTriShape when bsTriShape.Triangles != null:
-                triangles = bsTriShape.Triangles;
-                break;
-            case NiTriShape niTriShape:
-                triangles = niTriShape.Triangles ?? niTriShape.GeometryData?.Triangles;
-                break;
-        }
+            BSTriShape { Triangles: not null } bsTriShape => bsTriShape.Triangles,
+            NiTriShape niTriShape => niTriShape.Triangles ?? niTriShape.GeometryData?.Triangles,
+            _ => null
+        };
 
         if (triangles == null)
             return null;
@@ -397,11 +384,11 @@ public class ArmorPreviewService : IArmorPreviewService
     {
         switch (shape)
         {
-            case BSTriShape bsTriShape when bsTriShape.Normals != null && bsTriShape.Normals.Count > 0:
+            case BSTriShape { Normals.Count: > 0 } bsTriShape:
                 return bsTriShape.Normals.Select(n => n).ToList();
             case NiTriShape niTriShape:
                 var data = niTriShape.GeometryData;
-                if (data?.Normals != null && data.Normals.Count > 0)
+                if (data?.Normals is { Count: > 0 })
                     return data.Normals.Select(n => n).ToList();
                 break;
         }
@@ -411,28 +398,22 @@ public class ArmorPreviewService : IArmorPreviewService
 
     private static List<Vector2>? ExtractTextureCoordinates(INiShape shape)
     {
-        switch (shape)
+        return shape switch
         {
-            case BSTriShape bsTriShape:
-                return ExtractFromBSTriShape(bsTriShape);
-            case NiTriShape niTriShape:
-                return ExtractFromNiTriShape(niTriShape);
-        }
-
-        return null;
+            BSTriShape bsTriShape => ExtractFromBsTriShape(bsTriShape),
+            NiTriShape niTriShape => ExtractFromNiTriShape(niTriShape),
+            _ => null
+        };
     }
 
-    private static List<Vector2>? ExtractFromBSTriShape(BSTriShape shape)
+    private static List<Vector2>? ExtractFromBsTriShape(BSTriShape shape)
     {
         var count = shape.VertexPositions?.Count ?? shape.VertexCount;
         if (count <= 0)
             return null;
 
         var fromSse = TryExtractFromVertexData(shape.VertexDataSSE, count);
-        if (fromSse != null)
-            return fromSse;
-
-        return TryExtractFromVertexData(shape.VertexData, count);
+        return fromSse ?? TryExtractFromVertexData(shape.VertexData, count);
     }
 
     private static List<Vector2>? TryExtractFromVertexData(IReadOnlyList<BSVertexDataSSE>? data, int count)
@@ -450,7 +431,7 @@ public class ArmorPreviewService : IArmorPreviewService
         return list;
     }
 
-    private static List<Vector2>? TryExtractFromVertexData(IReadOnlyList<BSVertexData>? data, int count)
+    private static List<Vector2>? TryExtractFromVertexData(List<BSVertexData>? data, int count)
     {
         if (data == null || data.Count < count)
             return null;
@@ -570,11 +551,6 @@ public class ArmorPreviewService : IArmorPreviewService
         var shapeName = shape.Name?.ToString() ?? "<unnamed>";
         var candidates = new List<string>();
 
-        void CollectCandidates(BSLightingShaderProperty? shader)
-        {
-            foreach (var candidate in EnumerateTexturePaths(nif, shader)) candidates.Add(candidate);
-        }
-
         CollectCandidates(nif.GetBlock<BSLightingShaderProperty>(shape.ShaderPropertyRef));
 
         if (candidates.Count == 0 && shape.Properties != null)
@@ -597,7 +573,7 @@ public class ArmorPreviewService : IArmorPreviewService
             }
 
             var normalized = NormalizeAssetPath(candidate);
-            var resolved = _assetLocator.ResolveAssetPath(normalized, ownerModKey);
+            var resolved = assetLocator.ResolveAssetPath(normalized, ownerModKey);
             if (!string.IsNullOrWhiteSpace(resolved) && File.Exists(resolved))
             {
                 _logger.Debug("Resolved texture candidate {Texture} to {ResolvedPath} for shape {Shape}", candidate,
@@ -615,6 +591,11 @@ public class ArmorPreviewService : IArmorPreviewService
             _logger.Debug("No texture path resolved for shape {Shape}", shapeName);
 
         return null;
+
+        void CollectCandidates(BSLightingShaderProperty? shader)
+        {
+            candidates.AddRange(EnumerateTexturePaths(nif, shader));
+        }
     }
 
     private static IEnumerable<string> EnumerateTexturePaths(NifFile nif, BSLightingShaderProperty? shader)
@@ -647,17 +628,9 @@ public class ArmorPreviewService : IArmorPreviewService
             return true;
 
         var lower = name.ToLowerInvariant();
-        var segments = lower.Split(new[] { '_', '-', ' ' }, StringSplitOptions.RemoveEmptyEntries);
+        var segments = lower.Split(['_', '-', ' '], StringSplitOptions.RemoveEmptyEntries);
 
-        foreach (var segment in segments)
-            if (_nonDiffuseSegments.Contains(segment))
-                return false;
-
-        foreach (var keyword in _nonDiffuseSubstrings)
-            if (lower.Contains(keyword))
-                return false;
-
-        return true;
+        return !segments.Any(segment => _nonDiffuseSegments.Contains(segment)) && _nonDiffuseSubstrings.All(keyword => !lower.Contains(keyword));
     }
 
     private static IModelGetter? SelectModel(
@@ -705,16 +678,11 @@ public class ArmorPreviewService : IArmorPreviewService
     private static string? ResolveModelPath(ISimpleModelGetter model)
     {
         var file = model.File;
-        if (file == null)
-            return null;
 
         if (!string.IsNullOrWhiteSpace(file.DataRelativePath.Path))
             return NormalizeAssetPath(file.DataRelativePath.Path);
 
-        if (!string.IsNullOrWhiteSpace(file.GivenPath))
-            return NormalizeAssetPath(file.GivenPath);
-
-        return null;
+        return !string.IsNullOrWhiteSpace(file.GivenPath) ? NormalizeAssetPath(file.GivenPath) : null;
     }
 
     private static string GetBodyRelativePath(GenderedModelVariant gender)
@@ -725,7 +693,7 @@ public class ArmorPreviewService : IArmorPreviewService
     private static string NormalizeAssetPath(string path)
     {
         var normalized = path.Replace('\\', '/').Trim();
-        while (normalized.StartsWith("/"))
+        while ("/".StartsWith(normalized))
             normalized = normalized[1..];
         return normalized;
     }

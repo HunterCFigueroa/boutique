@@ -14,16 +14,16 @@ namespace Boutique.Services;
 
 public class GameAssetLocator : IGameAssetLocator
 {
-    private static readonly GameRelease Release = GameRelease.SkyrimSE;
+    private const GameRelease Release = GameRelease.SkyrimSE;
 
     private static readonly ModKey[] FallbackModKeys =
-    {
+    [
         ModKey.FromNameAndExtension("Skyrim.esm"),
         ModKey.FromNameAndExtension("Update.esm"),
         ModKey.FromNameAndExtension("Dawnguard.esm"),
         ModKey.FromNameAndExtension("HearthFires.esm"),
         ModKey.FromNameAndExtension("Dragonborn.esm")
-    };
+    ];
 
     private readonly Dictionary<ModKey, IReadOnlyList<CachedArchive>> _archivesByMod = new();
     private readonly ConcurrentDictionary<string, string> _extractedAssets = new(StringComparer.OrdinalIgnoreCase);
@@ -46,6 +46,7 @@ public class GameAssetLocator : IGameAssetLocator
         EnsureDirectoryExists(_extractionRoot);
     }
 
+    // TODO: This needs to be better optimized, I think we're extracting too much.
     public string? ResolveAssetPath(string relativePath, ModKey? modKeyHint = null)
     {
         if (string.IsNullOrWhiteSpace(relativePath))
@@ -149,13 +150,13 @@ public class GameAssetLocator : IGameAssetLocator
             yield return fallback;
     }
 
-    private IReadOnlyList<CachedArchive> LoadArchivesForMod(ModKey modKey)
+    private List<CachedArchive> LoadArchivesForMod(ModKey modKey)
     {
         var dataPath = _currentDataPath!;
         var directoryPath = new DirectoryPath(dataPath);
         var results = new List<CachedArchive>();
 
-        foreach (var filePath in Archive.GetApplicableArchivePaths(Release, directoryPath, modKey, _fileSystem, true))
+        foreach (var filePath in Archive.GetApplicableArchivePaths(Release, directoryPath, modKey, _fileSystem))
             TryAddArchive(results, filePath);
 
         return results;
@@ -172,7 +173,7 @@ public class GameAssetLocator : IGameAssetLocator
 
         var dataPath = _currentDataPath!;
         var pluginPath = Path.Combine(dataPath, modKey.FileName);
-        IReadOnlyList<ModKey> masters = Array.Empty<ModKey>();
+        IReadOnlyList<ModKey> masters = [];
 
         if (File.Exists(pluginPath))
             try
@@ -215,7 +216,7 @@ public class GameAssetLocator : IGameAssetLocator
         }
     }
 
-    private bool TryExtractFromArchive(CachedArchive archive, string assetKey, out string extractedPath)
+    private bool TryExtractFromArchive(CachedArchive archive, string assetKey, out string? extractedPath)
     {
         extractedPath = string.Empty;
         var file = archive.FindFile(assetKey);

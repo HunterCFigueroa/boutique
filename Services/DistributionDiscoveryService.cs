@@ -6,14 +6,9 @@ using Serilog;
 
 namespace Boutique.Services;
 
-public class DistributionDiscoveryService : IDistributionDiscoveryService
+public class DistributionDiscoveryService(ILogger logger) : IDistributionDiscoveryService
 {
-    private readonly ILogger _logger;
-
-    public DistributionDiscoveryService(ILogger logger)
-    {
-        _logger = logger.ForContext<DistributionDiscoveryService>();
-    }
+    private readonly ILogger _logger = logger.ForContext<DistributionDiscoveryService>();
 
     public async Task<IReadOnlyList<DistributionFile>> DiscoverAsync(string dataFolderPath,
         CancellationToken cancellationToken = default)
@@ -21,7 +16,7 @@ public class DistributionDiscoveryService : IDistributionDiscoveryService
         if (string.IsNullOrWhiteSpace(dataFolderPath) || !Directory.Exists(dataFolderPath))
         {
             _logger.Warning("Distribution discovery skipped because data path is invalid: {DataPath}", dataFolderPath);
-            return Array.Empty<DistributionFile>();
+            return [];
         }
 
         return await Task.Run(() => DiscoverInternal(dataFolderPath, cancellationToken), cancellationToken);
@@ -31,15 +26,6 @@ public class DistributionDiscoveryService : IDistributionDiscoveryService
     {
         var files = new ConcurrentBag<DistributionFile>();
         var seenPaths = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
-
-        void TryParse(string path, DistributionFileType type)
-        {
-            if (!seenPaths.Add(path))
-                return;
-
-            var parsed = ParseDistributionFile(path, dataFolderPath, type);
-            if (parsed != null) files.Add(parsed);
-        }
 
         try
         {
@@ -72,6 +58,15 @@ public class DistributionDiscoveryService : IDistributionDiscoveryService
             .OrderBy(f => f.Type)
             .ThenBy(f => f.RelativePath, StringComparer.OrdinalIgnoreCase)
             .ToList();
+
+        void TryParse(string path, DistributionFileType type)
+        {
+            if (!seenPaths.Add(path))
+                return;
+
+            var parsed = ParseDistributionFile(path, dataFolderPath, type);
+            if (parsed != null) files.Add(parsed);
+        }
     }
 
     private static bool IsSkyPatcherIni(string dataFolderPath, string iniFile)
