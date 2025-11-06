@@ -41,8 +41,10 @@
                     </ItemsControl>
                 </StackPanel>
 
-                <StackPanel Margin="0,0,0,12">
-                    <TextBlock Text="Lighting multipliers" FontWeight="SemiBold"/>
+                <Expander x:Name="LightingDebugExpander"
+                          Header="Lighting multipliers (Debug)"
+                          IsExpanded="False"
+                          Margin="0,0,0,12">
                     <Grid Margin="0,6,0,0">
                         <Grid.RowDefinitions>
                             <RowDefinition Height="Auto"/>
@@ -61,7 +63,7 @@
                                 Grid.Row="0"
                                 Grid.Column="1"
                                 Minimum="0"
-                                Maximum="1000"
+                                Maximum="5"
                                 Value="0"
                                 TickFrequency="0.1"
                                 ValueChanged="OnAmbientMultiplierChanged"
@@ -73,7 +75,7 @@
                                 Grid.Row="1"
                                 Grid.Column="1"
                                 Minimum="0"
-                                Maximum="1000"
+                                Maximum="5"
                                 Value="1.6"
                                 TickFrequency="0.1"
                                 ValueChanged="OnKeyFillMultiplierChanged"
@@ -85,7 +87,7 @@
                                 Grid.Row="2"
                                 Grid.Column="1"
                                 Minimum="0"
-                                Maximum="1000"
+                                Maximum="5"
                                 Value="1"
                                 TickFrequency="0.1"
                                 ValueChanged="OnRimMultiplierChanged"
@@ -97,14 +99,14 @@
                                 Grid.Row="3"
                                 Grid.Column="1"
                                 Minimum="0"
-                                Maximum="1000"
-                                Value="0"
+                                Maximum="10"
+                                Value="7"
                                 TickFrequency="0.1"
                                 ValueChanged="OnFrontalMultiplierChanged"
                                 Margin="0,6,8,0"/>
                         <TextBlock Grid.Row="3" Grid.Column="2" Text="{Binding Value, ElementName=FrontalMultiplierSlider, StringFormat=F2}" Width="48" VerticalAlignment="Center" TextAlignment="Right"/>
                     </Grid>
-                </StackPanel>
+                </Expander>
 
                 <StackPanel Orientation="Horizontal" HorizontalAlignment="Right">
                     <Button Content="Reset View"

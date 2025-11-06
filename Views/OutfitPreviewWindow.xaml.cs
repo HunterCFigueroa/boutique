@@ -1,3 +1,4 @@
+using System.Diagnostics;
 using System.IO;
 using System.Windows;
 using System.Windows.Input;
@@ -40,13 +41,14 @@ public partial class OutfitPreviewWindow : Window
     private float _ambientMultiplier = 0f;
     private float _keyFillMultiplier = 1.6f;
     private float _rimMultiplier = 1f;
-    private float _frontalMultiplier = 0f;
+    private float _frontalMultiplier = 7f;
     private PerspectiveCamera? _initialCamera;
 
     public OutfitPreviewWindow(ArmorPreviewScene scene)
     {
         InitializeComponent();
         _scene = scene ?? throw new ArgumentNullException(nameof(scene));
+        LightingDebugExpander.Visibility = Debugger.IsAttached ? Visibility.Visible : Visibility.Collapsed;
 
         InitializeViewport();
         BuildScene();
