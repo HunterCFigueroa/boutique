@@ -34,8 +34,44 @@ public class DistributionViewModel : ReactiveObject
 
     private ObservableCollection<DistributionFileViewModel> _files = new();
     private ObservableCollection<DistributionEntryViewModel> _distributionEntries = new();
+    
+    private void OnDistributionEntriesChanged(object? sender, System.Collections.Specialized.NotifyCollectionChangedEventArgs e)
+    {
+        _logger.Debug("OnDistributionEntriesChanged: Action={Action}, NewItems={NewCount}, OldItems={OldCount}", 
+            e.Action, e.NewItems?.Count ?? 0, e.OldItems?.Count ?? 0);
+        
+        // Raise PropertyChanged synchronously - this is fast and necessary for bindings
+        this.RaisePropertyChanged(nameof(DistributionEntriesCount));
+        
+        // Subscribe to property changes on new entries
+        if (e.NewItems != null)
+        {
+            foreach (DistributionEntryViewModel entry in e.NewItems)
+            {
+                entry.WhenAnyValue(evm => evm.SelectedOutfit)
+                    .Subscribe(_ => UpdateDistributionPreview());
+                entry.WhenAnyValue(evm => evm.SelectedNpcs)
+                    .Subscribe(_ => UpdateDistributionPreview());
+                entry.SelectedNpcs.CollectionChanged += (s, args) => UpdateDistributionPreview();
+            }
+        }
+        
+        // Unsubscribe from removed entries
+        if (e.OldItems != null)
+        {
+            // No need to unsubscribe - entries will be garbage collected
+        }
+        
+        // Update preview whenever entries change
+        UpdateDistributionPreview();
+        
+        _logger.Debug("OnDistributionEntriesChanged completed");
+    }
+    
+    private int DistributionEntriesCount => _distributionEntries.Count;
     private ObservableCollection<NpcRecordViewModel> _availableNpcs = new();
     private ObservableCollection<IOutfitGetter> _availableOutfits = new();
+    private bool _outfitsLoaded;
     private ObservableCollection<DistributionFileSelectionItem> _availableDistributionFiles = new();
     private bool _isLoading;
     private bool _isEditMode;
@@ -48,6 +84,7 @@ public class DistributionViewModel : ReactiveObject
     private string _newFileName = string.Empty;
     private bool _isCreatingNewFile;
     private string _npcSearchText = string.Empty;
+    private string _distributionPreviewText = string.Empty;
 
     public DistributionViewModel(
         IDistributionDiscoveryService discoveryService,
@@ -69,21 +106,37 @@ public class DistributionViewModel : ReactiveObject
         RefreshCommand = ReactiveCommand.CreateFromTask(RefreshAsync);
         PreviewLineCommand = ReactiveCommand.CreateFromTask<DistributionLine>(PreviewLineAsync, 
             this.WhenAnyValue(vm => vm.IsLoading).Select(loading => !loading));
+        PreviewEntryCommand = ReactiveCommand.CreateFromTask<DistributionEntryViewModel>(PreviewEntryAsync,
+            this.WhenAnyValue(vm => vm.IsLoading).Select(loading => !loading));
+        
+        // Subscribe to collection changes to update computed count property
+        _distributionEntries.CollectionChanged += OnDistributionEntriesChanged;
         
         AddDistributionEntryCommand = ReactiveCommand.Create(AddDistributionEntry);
         RemoveDistributionEntryCommand = ReactiveCommand.Create<DistributionEntryViewModel>(RemoveDistributionEntry);
         SelectEntryCommand = ReactiveCommand.Create<DistributionEntryViewModel>(SelectEntry);
-        AddSelectedNpcsToEntryCommand = ReactiveCommand.Create(AddSelectedNpcsToEntry,
-            this.WhenAnyValue(vm => vm.DistributionEntries.Count, count => count > 0));
-        SaveDistributionFileCommand = ReactiveCommand.CreateFromTask(SaveDistributionFileAsync,
-            this.WhenAnyValue(
-                vm => vm.DistributionEntries.Count, 
-                vm => vm.DistributionFilePath,
-                vm => vm.IsCreatingNewFile,
-                vm => vm.NewFileName,
-                (count, path, isNew, newName) => 
-                    count > 0 && 
-                    (!string.IsNullOrWhiteSpace(path) || (isNew && !string.IsNullOrWhiteSpace(newName)))));
+        
+        // Use the computed property that raises PropertyChanged when collection changes
+        // Defer evaluation to avoid blocking
+        var hasEntries = this.WhenAnyValue(vm => vm.DistributionEntriesCount)
+            .Select(count => count > 0)
+            .DistinctUntilChanged()
+            .ObserveOn(RxApp.MainThreadScheduler);
+        
+        AddSelectedNpcsToEntryCommand = ReactiveCommand.Create(AddSelectedNpcsToEntry, hasEntries);
+        
+        var canSave = Observable.CombineLatest(
+            hasEntries,
+            this.WhenAnyValue(vm => vm.DistributionFilePath),
+            this.WhenAnyValue(vm => vm.IsCreatingNewFile),
+            this.WhenAnyValue(vm => vm.NewFileName),
+            (hasEntries, path, isNew, newName) => 
+                hasEntries && 
+                (!string.IsNullOrWhiteSpace(path) || (isNew && !string.IsNullOrWhiteSpace(newName))))
+            .DistinctUntilChanged()
+            .ObserveOn(RxApp.MainThreadScheduler);
+        
+        SaveDistributionFileCommand = ReactiveCommand.CreateFromTask(SaveDistributionFileAsync, canSave);
         LoadDistributionFileCommand = ReactiveCommand.CreateFromTask(LoadDistributionFileAsync,
             this.WhenAnyValue(vm => vm.IsLoading).Select(loading => !loading));
         ScanNpcsCommand = ReactiveCommand.CreateFromTask(ScanNpcsAsync,
@@ -115,7 +168,9 @@ public class DistributionViewModel : ReactiveObject
                             SelectedDistributionFile = newFileItem;
                         }
                     }
-                    LoadAvailableOutfits();
+                    // Don't load outfits upfront - load lazily when ComboBox opens
+                    // Update preview when entering edit mode
+                    UpdateDistributionPreview();
                 }
             });
 
@@ -155,6 +210,7 @@ public class DistributionViewModel : ReactiveObject
 
     public ReactiveCommand<Unit, Unit> RefreshCommand { get; }
     public ReactiveCommand<DistributionLine, Unit> PreviewLineCommand { get; }
+    public ReactiveCommand<DistributionEntryViewModel, Unit> PreviewEntryCommand { get; }
     public ReactiveCommand<Unit, Unit> AddDistributionEntryCommand { get; }
     public ReactiveCommand<DistributionEntryViewModel, Unit> RemoveDistributionEntryCommand { get; }
     public ReactiveCommand<DistributionEntryViewModel, Unit> SelectEntryCommand { get; }
@@ -202,13 +258,41 @@ public class DistributionViewModel : ReactiveObject
     public ObservableCollection<DistributionEntryViewModel> DistributionEntries
     {
         get => _distributionEntries;
-        private set => this.RaiseAndSetIfChanged(ref _distributionEntries, value);
+        private set
+        {
+            var oldCollection = _distributionEntries;
+            if (oldCollection != null)
+            {
+                oldCollection.CollectionChanged -= OnDistributionEntriesChanged;
+            }
+            this.RaiseAndSetIfChanged(ref _distributionEntries, value);
+            if (value != null)
+            {
+                value.CollectionChanged += OnDistributionEntriesChanged;
+                this.RaisePropertyChanged(nameof(DistributionEntriesCount));
+            }
+        }
     }
 
     public DistributionEntryViewModel? SelectedEntry
     {
         get => _selectedEntry;
-        set => this.RaiseAndSetIfChanged(ref _selectedEntry, value);
+        set
+        {
+            // Clear previous selection
+            if (_selectedEntry != null)
+            {
+                _selectedEntry.IsSelected = false;
+            }
+            
+            this.RaiseAndSetIfChanged(ref _selectedEntry, value);
+            
+            // Set new selection
+            if (value != null)
+            {
+                value.IsSelected = true;
+            }
+        }
     }
 
     public ObservableCollection<NpcRecordViewModel> AvailableNpcs
@@ -295,6 +379,12 @@ public class DistributionViewModel : ReactiveObject
     {
         get => _npcSearchText;
         set => this.RaiseAndSetIfChanged(ref _npcSearchText, value ?? string.Empty);
+    }
+
+    public string DistributionPreviewText
+    {
+        get => _distributionPreviewText;
+        private set => this.RaiseAndSetIfChanged(ref _distributionPreviewText, value);
     }
 
     public IEnumerable<NpcRecordViewModel> FilteredNpcs
@@ -412,6 +502,44 @@ public class DistributionViewModel : ReactiveObject
         }
 
         StatusMessage = "Unable to resolve outfit for preview.";
+    }
+
+    private async Task PreviewEntryAsync(DistributionEntryViewModel? entry)
+    {
+        if (entry == null || entry.SelectedOutfit == null)
+        {
+            StatusMessage = "No outfit selected for preview.";
+            return;
+        }
+
+        if (!_mutagenService.IsInitialized || _mutagenService.LinkCache is not ILinkCache<ISkyrimMod, ISkyrimModGetter> linkCache)
+        {
+            StatusMessage = "Initialize Skyrim data path before previewing outfits.";
+            return;
+        }
+
+        var outfit = entry.SelectedOutfit;
+        var label = outfit.EditorID ?? outfit.FormKey.ToString();
+
+        var armorPieces = GatherArmorPieces(outfit, linkCache);
+        if (armorPieces.Count == 0)
+        {
+            StatusMessage = $"Outfit '{label}' has no armor pieces to preview.";
+            return;
+        }
+
+        try
+        {
+            StatusMessage = $"Building preview for {label}...";
+            var scene = await _armorPreviewService.BuildPreviewAsync(armorPieces, GenderedModelVariant.Female);
+            await ShowPreview.Handle(scene);
+            StatusMessage = $"Preview ready for {label}.";
+        }
+        catch (Exception ex)
+        {
+            _logger.Error(ex, "Failed to preview outfit {Identifier}", label);
+            StatusMessage = $"Failed to preview outfit: {ex.Message}";
+        }
     }
 
     private bool TryResolveOutfit(
@@ -633,11 +761,33 @@ public class DistributionViewModel : ReactiveObject
 
     private void AddDistributionEntry()
     {
-        var entry = new DistributionEntry();
-        var entryVm = new DistributionEntryViewModel(entry, RemoveDistributionEntry);
-        DistributionEntries.Add(entryVm);
-        SelectedEntry = entryVm; // Select the newly created entry
-        _logger.Debug("Added new distribution entry.");
+        _logger.Debug("AddDistributionEntry called");
+        try
+        {
+            _logger.Debug("Creating DistributionEntry");
+            var entry = new DistributionEntry();
+            
+            _logger.Debug("Creating DistributionEntryViewModel");
+            var entryVm = new DistributionEntryViewModel(entry, RemoveDistributionEntry);
+            
+            _logger.Debug("Adding to DistributionEntries collection");
+            DistributionEntries.Add(entryVm);
+            
+            _logger.Debug("Deferring SelectedEntry assignment");
+            // Defer SelectedEntry assignment to avoid blocking UI thread
+            System.Windows.Application.Current?.Dispatcher.BeginInvoke(new Action(() =>
+            {
+                SelectedEntry = entryVm;
+                _logger.Debug("SelectedEntry set");
+            }), System.Windows.Threading.DispatcherPriority.Background);
+            
+            _logger.Debug("AddDistributionEntry completed successfully");
+        }
+        catch (Exception ex)
+        {
+            _logger.Error(ex, "Failed to add distribution entry.");
+            StatusMessage = $"Error adding entry: {ex.Message}";
+        }
     }
 
     private void AddSelectedNpcsToEntry()
@@ -653,10 +803,16 @@ public class DistributionViewModel : ReactiveObject
             }
         }
 
-        // Get all NPCs that are checked
+        // Get all NPCs that are checked - check FilteredNpcs first since that's what the user sees
+        // The instances are the same, but we want to check what's actually visible in the DataGrid
         var selectedNpcs = FilteredNpcs
             .Where(npc => npc.IsSelected)
             .ToList();
+
+        _logger.Debug("AddSelectedNpcsToEntry: Total NPCs={Total}, Filtered={Filtered}, Selected={Selected}", 
+            AvailableNpcs.Count, 
+            FilteredNpcs.Count(),
+            selectedNpcs.Count);
 
         if (selectedNpcs.Count == 0)
         {
@@ -673,6 +829,14 @@ public class DistributionViewModel : ReactiveObject
                 SelectedEntry.AddNpc(npc);
                 addedCount++;
             }
+        }
+
+        // Clear the selection state in the NPC picker after adding to entry
+        // This prevents previously selected NPCs from being added to the next entry
+        // The IsSelected property in the picker is only for selection, not for tracking entries
+        foreach (var npc in selectedNpcs)
+        {
+            npc.IsSelected = false;
         }
 
         if (addedCount > 0)
@@ -700,8 +864,8 @@ public class DistributionViewModel : ReactiveObject
 
     private void SelectEntry(DistributionEntryViewModel entryVm)
     {
-        SelectedEntry = entryVm;
-        _logger.Debug("Selected distribution entry: {Outfit}", entryVm.SelectedOutfit?.EditorID ?? "(No outfit)");
+        SelectedEntry = entryVm; // Property setter handles IsSelected updates
+        _logger.Debug("Selected distribution entry: {Outfit}", entryVm?.SelectedOutfit?.EditorID ?? "(No outfit)");
     }
 
     private async Task SaveDistributionFileAsync()
@@ -779,9 +943,36 @@ public class DistributionViewModel : ReactiveObject
 
             DistributionEntries.Clear();
 
+            // Ensure outfits are loaded before creating entries so ComboBox bindings work
+            EnsureOutfitsLoaded();
+            
+            // Wait for outfits to load if they're being loaded asynchronously
+            // Poll until loaded or timeout (max 5 seconds)
+            var timeout = DateTime.Now.AddSeconds(5);
+            while (!_outfitsLoaded && AvailableOutfits.Count == 0 && DateTime.Now < timeout)
+            {
+                await Task.Delay(50);
+            }
+
             foreach (var entry in entries)
             {
                 var entryVm = new DistributionEntryViewModel(entry, RemoveDistributionEntry);
+                
+                // Find the outfit in AvailableOutfits to ensure ComboBox binding works
+                // The ComboBox needs the same instance reference from AvailableOutfits
+                if (entryVm.SelectedOutfit != null)
+                {
+                    var outfitFormKey = entryVm.SelectedOutfit.FormKey;
+                    var matchingOutfit = AvailableOutfits.FirstOrDefault(o => o.FormKey == outfitFormKey);
+                    if (matchingOutfit != null)
+                    {
+                        entryVm.SelectedOutfit = matchingOutfit;
+                    }
+                    else
+                    {
+                        _logger.Debug("Outfit {FormKey} not found in AvailableOutfits, ComboBox may not display it", outfitFormKey);
+                    }
+                }
                 
                 // Resolve NPCs from FormKeys - try to match with AvailableNpcs first
                 var npcVms = new List<NpcRecordViewModel>();
@@ -791,7 +982,7 @@ public class DistributionViewModel : ReactiveObject
                     var existingNpc = AvailableNpcs.FirstOrDefault(npc => npc.FormKey == npcFormKey);
                     if (existingNpc != null)
                     {
-                        existingNpc.IsSelected = true;
+                        // Don't set IsSelected - that's only for temporary picker selection
                         npcVms.Add(existingNpc);
                     }
                     else if (_mutagenService.LinkCache is ILinkCache<ISkyrimMod, ISkyrimModGetter> linkCache)
@@ -805,7 +996,7 @@ public class DistributionViewModel : ReactiveObject
                                 npc.Name?.String,
                                 npc.FormKey.ModKey);
                             var npcVm = new NpcRecordViewModel(npcRecord);
-                            npcVm.IsSelected = true;
+                            // Don't set IsSelected - that's only for temporary picker selection
                             npcVms.Add(npcVm);
                         }
                     }
@@ -816,9 +1007,21 @@ public class DistributionViewModel : ReactiveObject
                     entryVm.SelectedNpcs = new ObservableCollection<NpcRecordViewModel>(npcVms);
                     entryVm.UpdateEntryNpcs();
                 }
-
+                
                 DistributionEntries.Add(entryVm);
             }
+            
+            // Subscribe to property changes on all loaded entries
+            foreach (var entryVm in DistributionEntries)
+            {
+                entryVm.WhenAnyValue(evm => evm.SelectedOutfit)
+                    .Subscribe(_ => UpdateDistributionPreview());
+                entryVm.WhenAnyValue(evm => evm.SelectedNpcs)
+                    .Subscribe(_ => UpdateDistributionPreview());
+                entryVm.SelectedNpcs.CollectionChanged += (s, args) => UpdateDistributionPreview();
+            }
+            
+            UpdateDistributionPreview();
 
             // Update selected file in dropdown to match loaded file
             var matchingFile = Files.FirstOrDefault(f => 
@@ -1002,8 +1205,51 @@ public class DistributionViewModel : ReactiveObject
         DistributionFilePath = defaultPath;
     }
 
+    private void UpdateDistributionPreview()
+    {
+        var lines = new List<string>();
+
+        // Add header comment
+        lines.Add("; SkyPatcher Distribution File");
+        lines.Add("; Generated by Boutique");
+        lines.Add("");
+
+        if (_mutagenService.LinkCache is not ILinkCache<ISkyrimMod, ISkyrimModGetter> linkCache)
+        {
+            DistributionPreviewText = string.Join(Environment.NewLine, lines) + Environment.NewLine + "; LinkCache not available";
+            return;
+        }
+
+        foreach (var entryVm in DistributionEntries)
+        {
+            if (entryVm.SelectedOutfit == null || entryVm.SelectedNpcs.Count == 0)
+                continue;
+
+            var npcFormKeys = entryVm.SelectedNpcs
+                .Select(npc => FormatFormKey(npc.FormKey))
+                .ToList();
+
+            var npcList = string.Join(",", npcFormKeys);
+            var outfitFormKey = FormatFormKey(entryVm.SelectedOutfit.FormKey);
+
+            var line = $"filterByNpcs={npcList}:outfitDefault={outfitFormKey}";
+            lines.Add(line);
+        }
+
+        DistributionPreviewText = string.Join(Environment.NewLine, lines);
+    }
+
+    private static string FormatFormKey(FormKey formKey)
+    {
+        return $"{formKey.ModKey.FileName}|{formKey.ID:X8}";
+    }
+
     private void LoadAvailableOutfits()
     {
+        // Only load once, and only if not already loaded
+        if (_outfitsLoaded || AvailableOutfits.Count > 0)
+            return;
+
         if (_mutagenService.LinkCache is not ILinkCache<ISkyrimMod, ISkyrimModGetter> linkCache)
         {
             AvailableOutfits.Clear();
@@ -1012,14 +1258,33 @@ public class DistributionViewModel : ReactiveObject
 
         try
         {
-            var outfits = linkCache.PriorityOrder.WinningOverrides<IOutfitGetter>().ToList();
-            AvailableOutfits = new ObservableCollection<IOutfitGetter>(outfits);
-            _logger.Debug("Loaded {Count} available outfits.", outfits.Count);
+            // Load outfits on background thread to avoid blocking UI
+            Task.Run(() =>
+            {
+                var outfits = linkCache.PriorityOrder.WinningOverrides<IOutfitGetter>().ToList();
+                
+                // Dispatch back to UI thread to update collection
+                System.Windows.Application.Current?.Dispatcher.Invoke(() =>
+                {
+                    AvailableOutfits = new ObservableCollection<IOutfitGetter>(outfits);
+                    _outfitsLoaded = true;
+                    _logger.Debug("Loaded {Count} available outfits.", outfits.Count);
+                }, System.Windows.Threading.DispatcherPriority.Background);
+            });
         }
         catch (Exception ex)
         {
             _logger.Error(ex, "Failed to load available outfits.");
             AvailableOutfits.Clear();
+        }
+    }
+    
+    // Public method to trigger lazy loading when ComboBox opens
+    public void EnsureOutfitsLoaded()
+    {
+        if (!_outfitsLoaded)
+        {
+            LoadAvailableOutfits();
         }
     }
 }

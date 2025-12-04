@@ -184,11 +184,40 @@ Always test patches in-game:
 
 ## Common Pitfalls
 
+### Mutagen/Bethesda Plugin Pitfalls
+
 - **Don't forget to add masters**: Track every referenced ModKey and add to patch header
 - **Override records, don't duplicate**: Use `GetOrAddAsOverride()` to modify existing records
 - **LinkCache is required**: Initialize MutagenService before accessing armor records
 - **Binary overlay vs. full load**: Use overlay for reading, full mod for writing
 - **File locks**: The output ESP can be locked by MO2, xEdit, or Skyrim launcher
+
+### WPF/XAML Pitfalls
+
+- **DataTrigger.Value cannot use Binding**: The `Value` property of `DataTrigger` must be a static value, NOT a binding. To compare two bound values, add a computed property to the ViewModel instead.
+
+  #### ❌ WRONG - Will cause XamlParseException:
+  ```xaml
+  <DataTrigger Binding="{Binding DataContext.SelectedEntry, RelativeSource={RelativeSource AncestorType=UserControl}}" 
+               Value="{Binding}">
+      <Setter Property="BorderBrush" Value="#0078D4" />
+  </DataTrigger>
+  ```
+
+  #### ✅ CORRECT - Use a computed property:
+  ```xaml
+  <!-- In ViewModel, add: -->
+  public bool IsSelected { get; set; }
+  
+  <!-- In XAML: -->
+  <DataTrigger Binding="{Binding IsSelected}" Value="True">
+      <Setter Property="BorderBrush" Value="#0078D4" />
+  </DataTrigger>
+  ```
+
+- **ObservableCollection.Count doesn't notify**: `ObservableCollection` raises `CollectionChanged` but doesn't raise `PropertyChanged` for `Count`. Use a computed property that raises `PropertyChanged` when the collection changes, or subscribe to `CollectionChanged` events.
+
+- **ComboBox performance with large lists**: When binding to hundreds/thousands of items, use lazy loading (load on `DropDownOpened` event) and make the ComboBox editable with autocomplete for better UX.
 
 ## CRITICAL: File Editing on Windows
 

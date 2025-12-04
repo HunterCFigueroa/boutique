@@ -39,6 +39,8 @@ public partial class App
         builder.RegisterType<MatchingService>().As<IMatchingService>().SingleInstance();
         builder.RegisterType<ArmorPreviewService>().As<IArmorPreviewService>().SingleInstance();
         builder.RegisterType<DistributionDiscoveryService>().As<IDistributionDiscoveryService>().SingleInstance();
+        builder.RegisterType<NpcScanningService>().As<INpcScanningService>().SingleInstance();
+        builder.RegisterType<DistributionFileWriterService>().As<IDistributionFileWriterService>().SingleInstance();
 
         // Register ViewModels
         builder.RegisterType<MainViewModel>().AsSelf().SingleInstance();

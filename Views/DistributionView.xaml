@@ -146,7 +146,7 @@
                                             <Style TargetType="Border">
                                                 <Setter Property="BorderBrush" Value="Gray" />
                                                 <Style.Triggers>
-                                                    <DataTrigger Binding="{Binding DataContext.SelectedEntry, RelativeSource={RelativeSource AncestorType=UserControl}}" Value="{Binding}">
+                                                    <DataTrigger Binding="{Binding IsSelected}" Value="True">
                                                         <Setter Property="BorderBrush" Value="#0078D4" />
                                                         <Setter Property="BorderThickness" Value="2" />
                                                     </DataTrigger>
@@ -154,23 +154,48 @@
                                             </Style>
                                         </Border.Style>
                                         <Grid>
-                                            <Grid.InputBindings>
-                                                <MouseBinding Gesture="LeftClick" Command="{Binding DataContext.SelectEntryCommand, RelativeSource={RelativeSource AncestorType=UserControl}}" CommandParameter="{Binding}" />
-                                            </Grid.InputBindings>
                                             <Grid.RowDefinitions>
                                                 <RowDefinition Height="Auto" />
                                                 <RowDefinition Height="Auto" />
                                                 <RowDefinition Height="Auto" />
                                             </Grid.RowDefinitions>
 
-                                            <!-- Header with Remove Button -->
+                                            <!-- Header with Assign Button and Remove Button -->
                                             <StackPanel Grid.Row="0" Orientation="Horizontal" Margin="0,0,0,4">
+                                                <RadioButton Content="Assign"
+                                                             IsChecked="{Binding IsSelected}"
+                                                             Command="{Binding DataContext.SelectEntryCommand, RelativeSource={RelativeSource AncestorType=UserControl}}"
+                                                             CommandParameter="{Binding}"
+                                                             Margin="0,0,12,0"
+                                                             VerticalAlignment="Center"
+                                                             FontWeight="Bold" />
                                                 <TextBlock Text="Outfit:" VerticalAlignment="Center" Margin="0,0,6,0" />
                                                 <ComboBox ItemsSource="{Binding DataContext.AvailableOutfits, RelativeSource={RelativeSource AncestorType=UserControl}}"
                                                           SelectedItem="{Binding SelectedOutfit}"
                                                           DisplayMemberPath="EditorID"
                                                           MinWidth="200"
-                                                          Margin="0,0,6,0" />
+                                                          Margin="0,0,6,0"
+                                                          MaxDropDownHeight="300"
+                                                          IsEditable="True"
+                                                          IsTextSearchEnabled="True"
+                                                          TextSearch.TextPath="EditorID"
+                                                          DropDownOpened="ComboBox_DropDownOpened" />
+                                                <Button Margin="0,0,6,0"
+                                                        Padding="4,2"
+                                                        HorizontalAlignment="Left"
+                                                        VerticalAlignment="Center"
+                                                        ToolTip="Preview Outfit"
+                                                        Background="Transparent"
+                                                        BorderBrush="Transparent"
+                                                        BorderThickness="0"
+                                                        Command="{Binding DataContext.PreviewEntryCommand, RelativeSource={RelativeSource AncestorType=UserControl}}"
+                                                        CommandParameter="{Binding}">
+                                                    <Image Source="pack://application:,,,/Assets/eye.png"
+                                                           Width="16"
+                                                           Height="16"
+                                                           Stretch="Uniform"
+                                                           RenderOptions.BitmapScalingMode="HighQuality" />
+                                                </Button>
                                                 <Button Content="Remove"
                                                         Command="{Binding RemoveCommand}"
                                                         Padding="6,2" />
@@ -214,6 +239,20 @@
                             </ItemsControl.ItemTemplate>
                         </ItemsControl>
                     </ScrollViewer>
+
+                    <!-- Preview Text Panel -->
+                    <GroupBox Grid.Row="3" Header="File Preview" Margin="0,6,0,0" Padding="6">
+                        <TextBox Text="{Binding DistributionPreviewText, Mode=OneWay}"
+                                 IsReadOnly="True"
+                                 TextWrapping="Wrap"
+                                 AcceptsReturn="True"
+                                 VerticalScrollBarVisibility="Auto"
+                                 HorizontalScrollBarVisibility="Auto"
+                                 FontFamily="Consolas"
+                                 FontSize="11"
+                                 MinHeight="120"
+                                 MaxHeight="200" />
+                    </GroupBox>
                 </Grid>
             </GroupBox>
 
@@ -325,19 +364,12 @@
                 <Grid>
                     <Grid.RowDefinitions>
                         <RowDefinition Height="Auto" />
-                        <RowDefinition Height="Auto" />
                         <RowDefinition Height="*" />
                         <RowDefinition Height="Auto" />
                     </Grid.RowDefinitions>
 
-                    <!-- Scan Button -->
-                    <Button Grid.Row="0" Content="Scan NPCs from Modlist"
-                            Command="{Binding ScanNpcsCommand}"
-                            Margin="0,0,0,6"
-                            Padding="8,2" />
-
                     <!-- Search Box -->
-                    <StackPanel Grid.Row="1" Orientation="Horizontal" Margin="0,0,0,6">
+                    <StackPanel Grid.Row="0" Orientation="Horizontal" Margin="0,0,0,6">
                         <TextBlock Text="Search:" VerticalAlignment="Center" Margin="0,0,6,0" />
                         <TextBox Text="{Binding NpcSearchText, UpdateSourceTrigger=PropertyChanged}"
                                  MinWidth="200"
@@ -346,7 +378,7 @@
 
                     <!-- NPC List -->
                     <DataGrid x:Name="NpcDataGrid"
-                             Grid.Row="2" 
+                             Grid.Row="1" 
                              ItemsSource="{Binding FilteredNpcs}"
                              AutoGenerateColumns="False"
                              CanUserAddRows="False"
@@ -356,29 +388,29 @@
                              SelectionUnit="FullRow"
                              GridLinesVisibility="All"
                              HeadersVisibility="Column"
-                             IsReadOnly="True">
+                             EnableRowVirtualization="True"
+                             EnableColumnVirtualization="True">
                         <DataGrid.Columns>
-                            <DataGridTemplateColumn Header="" Width="Auto" SortMemberPath="IsSelected">
-                                <DataGridTemplateColumn.CellTemplate>
-                                    <DataTemplate>
-                                        <CheckBox IsChecked="{Binding IsSelected, Mode=TwoWay}"
-                                                  HorizontalAlignment="Center"
-                                                  VerticalAlignment="Center" />
-                                    </DataTemplate>
-                                </DataGridTemplateColumn.CellTemplate>
-                            </DataGridTemplateColumn>
+                            <DataGridCheckBoxColumn Header="" 
+                                                    Binding="{Binding IsSelected, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                                                    Width="Auto"
+                                                    SortMemberPath="IsSelected"
+                                                    IsReadOnly="False" />
                             <DataGridTextColumn Header="Name" 
                                                 Binding="{Binding DisplayName}" 
                                                 Width="*"
-                                                CanUserSort="True" />
+                                                CanUserSort="True"
+                                                IsReadOnly="True" />
                             <DataGridTextColumn Header="EditorID" 
                                                 Binding="{Binding EditorID}" 
                                                 Width="200"
-                                                CanUserSort="True" />
+                                                CanUserSort="True"
+                                                IsReadOnly="True" />
                             <DataGridTextColumn Header="FormKey" 
                                                 Binding="{Binding FormKeyString}" 
                                                 Width="150"
-                                                CanUserSort="True">
+                                                CanUserSort="True"
+                                                IsReadOnly="True">
                                 <DataGridTextColumn.ElementStyle>
                                     <Style TargetType="TextBlock">
                                         <Setter Property="FontFamily" Value="Consolas" />
@@ -389,7 +421,8 @@
                             <DataGridTextColumn Header="Mod" 
                                                 Binding="{Binding ModDisplayName}" 
                                                 Width="150"
-                                                CanUserSort="True">
+                                                CanUserSort="True"
+                                                IsReadOnly="True">
                                 <DataGridTextColumn.ElementStyle>
                                     <Style TargetType="TextBlock">
                                         <Setter Property="FontSize" Value="10" />
@@ -401,7 +434,7 @@
                     </DataGrid>
 
                     <!-- Add Selected NPCs Button -->
-                    <StackPanel Grid.Row="3" Margin="0,6,0,0">
+                    <StackPanel Grid.Row="2" Margin="0,6,0,0">
                         <TextBlock Text="{Binding SelectedEntry.SelectedOutfit.EditorID, StringFormat='Target Entry: {0}', FallbackValue='Target Entry: (None selected - click an entry to select)'}"
                                    FontStyle="Italic"
                                    Margin="0,0,0,4"

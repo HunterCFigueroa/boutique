@@ -1,6 +1,7 @@
 using System;
 using System.Linq;
 using System.Reactive;
+using System.Reactive.Linq;
 using System.Windows;
 using System.Windows.Controls;
 using Boutique.ViewModels;
@@ -16,6 +17,7 @@ public partial class DistributionView
     {
         InitializeComponent();
         DataContextChanged += OnDataContextChanged;
+        Loaded += OnLoaded;
         Unloaded += OnUnloaded;
     }
 
@@ -45,6 +47,56 @@ public partial class DistributionView
 
             interaction.SetOutput(Unit.Default);
         });
+
+        // Trigger refresh and NPC scan if view is already loaded
+        if (IsLoaded)
+        {
+            TriggerInitialLoadIfNeeded(viewModel);
+        }
+    }
+
+    private void OnLoaded(object sender, RoutedEventArgs e)
+    {
+        // Automatically load distribution files and scan NPCs when the view first loads
+        if (DataContext is DistributionViewModel viewModel)
+        {
+            TriggerInitialLoadIfNeeded(viewModel);
+        }
+    }
+
+    private void TriggerInitialLoadIfNeeded(DistributionViewModel viewModel)
+    {
+        // First, refresh distribution files if they haven't been loaded yet
+        if (viewModel.Files.Count == 0 && !viewModel.IsLoading)
+        {
+            // Start refresh and subscribe to wait for it to complete
+            _ = viewModel.RefreshCommand.Execute();
+            
+            // Subscribe to wait for refresh to complete, then trigger NPC scan
+            viewModel.WhenAnyValue(vm => vm.IsLoading)
+                .Where(isLoading => !isLoading) // Wait for loading to complete
+                .Take(1) // Only take the first completion
+                .ObserveOn(RxApp.MainThreadScheduler)
+                .Subscribe(_ =>
+                {
+                    // Now trigger NPC scan after refresh completes
+                    TriggerNpcScanIfNeeded(viewModel);
+                });
+        }
+        else
+        {
+            // If refresh isn't needed, trigger NPC scan immediately
+            TriggerNpcScanIfNeeded(viewModel);
+        }
+    }
+
+    private void TriggerNpcScanIfNeeded(DistributionViewModel viewModel)
+    {
+        // Only scan if NPCs haven't been loaded yet and we're not already loading
+        if (viewModel.AvailableNpcs.Count == 0 && !viewModel.IsLoading)
+        {
+            _ = viewModel.ScanNpcsCommand.Execute();
+        }
     }
 
     private void DisposePreviewSubscription()
@@ -58,6 +110,14 @@ public partial class DistributionView
         if (DataContext is DistributionViewModel viewModel)
         {
             viewModel.IsEditMode = !viewModel.IsEditMode;
+        }
+    }
+
+    private void ComboBox_DropDownOpened(object sender, EventArgs e)
+    {
+        if (DataContext is DistributionViewModel viewModel)
+        {
+            viewModel.EnsureOutfitsLoaded();
         }
     }
 
