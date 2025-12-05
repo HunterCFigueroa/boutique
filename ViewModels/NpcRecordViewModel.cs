@@ -37,7 +37,11 @@ public class NpcRecordViewModel : ReactiveObject
     public bool HasConflict
     {
         get => _hasConflict;
-        set => this.RaiseAndSetIfChanged(ref _hasConflict, value);
+        set
+        {
+            this.RaiseAndSetIfChanged(ref _hasConflict, value);
+            this.RaisePropertyChanged(nameof(ConflictTooltip));
+        }
     }
 
     /// <summary>
@@ -46,14 +50,18 @@ public class NpcRecordViewModel : ReactiveObject
     public string? ConflictingFileName
     {
         get => _conflictingFileName;
-        set => this.RaiseAndSetIfChanged(ref _conflictingFileName, value);
+        set
+        {
+            this.RaiseAndSetIfChanged(ref _conflictingFileName, value);
+            this.RaisePropertyChanged(nameof(ConflictTooltip));
+        }
     }
 
     /// <summary>
     /// Tooltip text for the conflict warning.
     /// </summary>
     public string ConflictTooltip => HasConflict && !string.IsNullOrEmpty(ConflictingFileName)
-        ? $"⚠ Conflict: This NPC already has an outfit distribution in '{ConflictingFileName}'"
+        ? $"Conflict: This NPC already has an outfit distribution in '{ConflictingFileName}'"
         : string.Empty;
 
     public bool MatchesSearch(string searchTerm)

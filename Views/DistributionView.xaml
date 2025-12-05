@@ -219,7 +219,7 @@
                                             Command="{Binding SelectDistributionFilePathCommand}"
                                             Padding="8,2" />
                                 </StackPanel>
-                                <!-- Conflict Warning Banner -->
+                                <!-- Conflict Warning Banner (unresolved) -->
                                 <Border Margin="0,6,0,0" Padding="8" CornerRadius="4"
                                         Visibility="{Binding HasConflicts, Converter={StaticResource BoolToVisConverter}}">
                                     <Border.Background>
@@ -260,6 +260,38 @@
                                                            FontSize="11" />
                                             </StackPanel>
                                         </StackPanel>
+                                    </Grid>
+                                </Border>
+                                
+                                <!-- Conflict Resolved Banner (conflicts exist but resolved by filename) -->
+                                <Border Margin="0,6,0,0" Padding="8" CornerRadius="4"
+                                        Visibility="{Binding ConflictsResolvedByFilename, Converter={StaticResource BoolToVisConverter}}">
+                                    <Border.Background>
+                                        <SolidColorBrush Color="#228B22" Opacity="0.15" />
+                                    </Border.Background>
+                                    <Border.BorderBrush>
+                                        <SolidColorBrush Color="#228B22" />
+                                    </Border.BorderBrush>
+                                    <Border.BorderThickness>
+                                        <Thickness>1</Thickness>
+                                    </Border.BorderThickness>
+                                    <Grid>
+                                        <Grid.ColumnDefinitions>
+                                            <ColumnDefinition Width="Auto" />
+                                            <ColumnDefinition Width="*" />
+                                        </Grid.ColumnDefinitions>
+                                        <TextBlock Grid.Column="0" 
+                                                   Text="✓" 
+                                                   FontSize="18" 
+                                                   FontWeight="Bold" 
+                                                   Foreground="#228B22"
+                                                   VerticalAlignment="Top"
+                                                   Margin="0,0,8,0" />
+                                        <TextBlock Grid.Column="1"
+                                                   Text="{Binding ConflictSummary}" 
+                                                   TextWrapping="Wrap" 
+                                                   Foreground="#1B6B1B" 
+                                                   FontSize="11" />
                                     </Grid>
                                 </Border>
                             </StackPanel>

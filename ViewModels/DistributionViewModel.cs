@@ -98,6 +98,7 @@ public class DistributionViewModel : ReactiveObject
     private string _distributionPreviewText = string.Empty;
     private ObservableCollection<NpcRecordViewModel> _filteredNpcs = new();
     private bool _hasConflicts;
+    private bool _conflictsResolvedByFilename;
     private string _conflictSummary = string.Empty;
     private string _suggestedFileName = string.Empty;
     
@@ -396,6 +397,22 @@ public class DistributionViewModel : ReactiveObject
                 }
                 else if (value.IsNewFile)
                 {
+                    // Clear entries when switching to New File mode (don't copy from previous selection)
+                    if (previous != null && !previous.IsNewFile)
+                    {
+                        _isBulkLoading = true;
+                        try
+                        {
+                            DistributionEntries.Clear();
+                        }
+                        finally
+                        {
+                            _isBulkLoading = false;
+                        }
+                        this.RaisePropertyChanged(nameof(DistributionEntriesCount));
+                        UpdateDistributionPreview();
+                    }
+                    
                     // Set default filename if empty
                     if (string.IsNullOrWhiteSpace(NewFileName))
                     {
@@ -526,6 +543,15 @@ public class DistributionViewModel : ReactiveObject
     {
         get => _hasConflicts;
         private set => this.RaiseAndSetIfChanged(ref _hasConflicts, value);
+    }
+
+    /// <summary>
+    /// Indicates whether conflicts exist but are resolved by the current filename ordering.
+    /// </summary>
+    public bool ConflictsResolvedByFilename
+    {
+        get => _conflictsResolvedByFilename;
+        private set => this.RaiseAndSetIfChanged(ref _conflictsResolvedByFilename, value);
     }
 
     /// <summary>
@@ -1344,34 +1370,76 @@ public class DistributionViewModel : ReactiveObject
             }
         }
 
-        HasConflicts = conflicts.Count > 0;
+        // Check if the current filename already loads after all conflicting files
+        var currentFileLoadsLast = DoesFileLoadAfterAll(NewFileName, conflictingFileNames);
 
-        if (HasConflicts)
+        // Only show as conflict if the user's file wouldn't load last
+        HasConflicts = conflicts.Count > 0 && !currentFileLoadsLast;
+        ConflictsResolvedByFilename = conflicts.Count > 0 && currentFileLoadsLast;
+
+        if (conflicts.Count > 0)
         {
-            // Build conflict summary
-            var sb = new System.Text.StringBuilder();
-            sb.AppendLine($"⚠ {conflicts.Count} NPC(s) already have outfit distributions in existing files:");
-            
-            foreach (var conflict in conflicts.Take(5)) // Show first 5
+            if (currentFileLoadsLast)
             {
-                sb.AppendLine($"  • {conflict.DisplayName ?? conflict.NpcFormKey.ToString()} ({conflict.ExistingFileName})");
+                // Conflict exists but is resolved by filename ordering
+                ConflictSummary = $"✓ {conflicts.Count} NPC(s) have existing distributions, but your filename '{NewFileName}' will load after them.";
+                SuggestedFileName = NewFileName;
+                
+                // Clear NPC conflict indicators since the conflict is resolved
+                ClearNpcConflictIndicators();
             }
-            
-            if (conflicts.Count > 5)
+            else
             {
-                sb.AppendLine($"  ... and {conflicts.Count - 5} more");
-            }
-            
-            ConflictSummary = sb.ToString().TrimEnd();
+                // Build conflict summary
+                var sb = new System.Text.StringBuilder();
+                sb.AppendLine($"⚠ {conflicts.Count} NPC(s) already have outfit distributions in existing files:");
+                
+                foreach (var conflict in conflicts.Take(5)) // Show first 5
+                {
+                    sb.AppendLine($"  • {conflict.DisplayName ?? conflict.NpcFormKey.ToString()} ({conflict.ExistingFileName})");
+                }
+                
+                if (conflicts.Count > 5)
+                {
+                    sb.AppendLine($"  ... and {conflicts.Count - 5} more");
+                }
+                
+                ConflictSummary = sb.ToString().TrimEnd();
 
-            // Calculate suggested filename with Z-prefix
-            SuggestedFileName = CalculateZPrefixedFileName(conflictingFileNames);
+                // Calculate suggested filename with Z-prefix
+                SuggestedFileName = CalculateZPrefixedFileName(conflictingFileNames);
+            }
         }
         else
         {
             ConflictSummary = string.Empty;
             SuggestedFileName = NewFileName;
+            ConflictsResolvedByFilename = false;
         }
+    }
+
+    /// <summary>
+    /// Checks if the given filename would alphabetically load after all the conflicting filenames.
+    /// </summary>
+    private static bool DoesFileLoadAfterAll(string fileName, HashSet<string> conflictingFileNames)
+    {
+        if (string.IsNullOrWhiteSpace(fileName))
+            return false;
+
+        // No conflicting files means we're already "after" all of them (vacuously true)
+        if (conflictingFileNames.Count == 0)
+            return true;
+
+        foreach (var conflictingFile in conflictingFileNames)
+        {
+            // Compare alphabetically (case-insensitive, like file systems)
+            if (string.Compare(fileName, conflictingFile, StringComparison.OrdinalIgnoreCase) <= 0)
+            {
+                return false;
+            }
+        }
+
+        return true;
     }
 
     /// <summary>
