@@ -94,7 +94,7 @@ If you prefer to run the tool standalone without MO2, follow these steps:
 1. **Skyrim Data Path**: Click "Auto-Detect" to automatically find your Skyrim SE Data folder, or use "Browse..." to
    manually select it
 2. **Output Path**: Set where the patch ESP will be created (typically your Skyrim Data folder)
-3. **Patch File Name**: Name your patch (default: `GlamPatch.esp`)
+3. **Patch File Name**: Name your patch (default: `BoutiquePatch.esp`)
 4. Click **Initialize** to load the Mutagen environment
 
 ### Step 2: Select Plugins
@@ -120,7 +120,7 @@ If you prefer to run the tool standalone without MO2, follow these steps:
 ### Step 5: Activate in Mod Manager
 
 1. Refresh your mod manager (MO2, Vortex, etc.)
-2. Activate `GlamPatch.esp` (or your chosen name)
+2. Activate `BoutiquePatch.esp` (or your chosen name)
 3. Ensure it loads **after** both:
     - The source armor mod
     - The target master ESP (e.g., Requiem.esp)
@@ -136,7 +136,7 @@ appearance with Requiem's "Leather Boots" stats.
 3. Manually select "Leather Boots" from Requiem for the Cleric boots
 4. Select all pieces of the Cleric outfit
 5. Click Create Patch
-6. Load `GlamPatch.esp` after both ClericOutfitSE.esp and Requiem.esp
+6. Load `BoutiquePatch.esp` after both ClericOutfitSE.esp and Requiem.esp
 
 Now the Cleric Outfit will have Requiem's stats, keywords, and balance!
 
