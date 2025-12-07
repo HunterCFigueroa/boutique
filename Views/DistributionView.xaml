@@ -333,6 +333,13 @@
                                                         <RowDefinition Height="Auto" />
                                                         <RowDefinition Height="Auto" />
                                                         <RowDefinition Height="Auto" />
+                                                        <RowDefinition Height="Auto" />
+                                                        <RowDefinition Height="Auto" />
+                                                        <RowDefinition Height="Auto" />
+                                                        <RowDefinition Height="Auto" />
+                                                        <RowDefinition Height="Auto" />
+                                                        <RowDefinition Height="Auto" />
+                                                        <RowDefinition Height="Auto" />
                                                     </Grid.RowDefinitions>
 
                                                     <!-- Header with Assign Button and Remove Button -->
@@ -377,8 +384,23 @@
                                                                 Padding="6,2" />
                                                     </StackPanel>
 
-                                                    <!-- NPC Selection -->
+                                                    <!-- Chance Input -->
                                                     <StackPanel Grid.Row="1" Orientation="Horizontal" Margin="0,0,0,4">
+                                                        <TextBlock Text="Chance (%):" VerticalAlignment="Center" Margin="0,0,6,0" />
+                                                        <TextBox Text="{Binding Chance, UpdateSourceTrigger=PropertyChanged}"
+                                                                 MinWidth="60"
+                                                                 MaxWidth="80"
+                                                                 ToolTip="Distribution chance (0-100). Leave empty for 100%." />
+                                                        <TextBlock Text="(0-100, optional)" 
+                                                                   VerticalAlignment="Center" 
+                                                                   Margin="6,0,0,0"
+                                                                   FontStyle="Italic"
+                                                                   Foreground="Gray"
+                                                                   FontSize="10" />
+                                                    </StackPanel>
+
+                                                    <!-- NPC Selection -->
+                                                    <StackPanel Grid.Row="2" Orientation="Horizontal" Margin="0,0,0,4">
                                                         <TextBlock Text="NPCs:" VerticalAlignment="Center" Margin="0,0,6,0" />
                                                         <TextBlock Text="{Binding SelectedNpcs.Count, StringFormat='{}{0} selected'}"
                                                                    VerticalAlignment="Center"
@@ -386,7 +408,7 @@
                                                     </StackPanel>
 
                                                     <!-- Selected NPCs List -->
-                                                    <ItemsControl Grid.Row="2" ItemsSource="{Binding SelectedNpcs}">
+                                                    <ItemsControl Grid.Row="3" ItemsSource="{Binding SelectedNpcs}">
                                                         <ItemsControl.ItemTemplate>
                                                             <DataTemplate>
                                                                 <Border Margin="0,2" Padding="4">
@@ -440,6 +462,105 @@
                                                             </DataTemplate>
                                                         </ItemsControl.ItemTemplate>
                                                     </ItemsControl>
+
+                                                    <!-- Factions Selection -->
+                                                    <StackPanel Grid.Row="4" Orientation="Horizontal" Margin="0,4,0,4">
+                                                        <TextBlock Text="Factions:" VerticalAlignment="Center" Margin="0,0,6,0" />
+                                                        <TextBlock Text="{Binding SelectedFactions.Count, StringFormat='{}{0} selected'}"
+                                                                   VerticalAlignment="Center"
+                                                                   FontStyle="Italic" />
+                                                    </StackPanel>
+
+                                                    <!-- Selected Factions List -->
+                                                    <ItemsControl Grid.Row="5" ItemsSource="{Binding SelectedFactions}">
+                                                        <ItemsControl.ItemTemplate>
+                                                            <DataTemplate>
+                                                                <Border Margin="0,2" Padding="4" BorderBrush="LightGray" BorderThickness="1">
+                                                                    <StackPanel Orientation="Horizontal">
+                                                                        <TextBlock Text="{Binding DisplayName}" VerticalAlignment="Center" Margin="0,0,6,0" />
+                                                                        <TextBlock Text="{Binding FormKeyString}" 
+                                                                                   FontFamily="Consolas"
+                                                                                   FontSize="10"
+                                                                                   VerticalAlignment="Center"
+                                                                                   Margin="0,0,6,0" />
+                                                                        <Button Content="×"
+                                                                                Click="RemoveFaction_Click"
+                                                                                Tag="{Binding}"
+                                                                                Padding="4,0"
+                                                                                FontWeight="Bold"
+                                                                                Background="Transparent"
+                                                                                BorderBrush="Transparent" />
+                                                                    </StackPanel>
+                                                                </Border>
+                                                            </DataTemplate>
+                                                        </ItemsControl.ItemTemplate>
+                                                    </ItemsControl>
+
+                                                    <!-- Keywords Selection -->
+                                                    <StackPanel Grid.Row="6" Orientation="Horizontal" Margin="0,4,0,4">
+                                                        <TextBlock Text="Keywords:" VerticalAlignment="Center" Margin="0,0,6,0" />
+                                                        <TextBlock Text="{Binding SelectedKeywords.Count, StringFormat='{}{0} selected'}"
+                                                                   VerticalAlignment="Center"
+                                                                   FontStyle="Italic" />
+                                                    </StackPanel>
+
+                                                    <!-- Selected Keywords List -->
+                                                    <ItemsControl Grid.Row="7" ItemsSource="{Binding SelectedKeywords}">
+                                                        <ItemsControl.ItemTemplate>
+                                                            <DataTemplate>
+                                                                <Border Margin="0,2" Padding="4" BorderBrush="LightGray" BorderThickness="1">
+                                                                    <StackPanel Orientation="Horizontal">
+                                                                        <TextBlock Text="{Binding DisplayName}" VerticalAlignment="Center" Margin="0,0,6,0" />
+                                                                        <TextBlock Text="{Binding FormKeyString}" 
+                                                                                   FontFamily="Consolas"
+                                                                                   FontSize="10"
+                                                                                   VerticalAlignment="Center"
+                                                                                   Margin="0,0,6,0" />
+                                                                        <Button Content="×"
+                                                                                Click="RemoveKeyword_Click"
+                                                                                Tag="{Binding}"
+                                                                                Padding="4,0"
+                                                                                FontWeight="Bold"
+                                                                                Background="Transparent"
+                                                                                BorderBrush="Transparent" />
+                                                                    </StackPanel>
+                                                                </Border>
+                                                            </DataTemplate>
+                                                        </ItemsControl.ItemTemplate>
+                                                    </ItemsControl>
+
+                                                    <!-- Races Selection -->
+                                                    <StackPanel Grid.Row="8" Orientation="Horizontal" Margin="0,4,0,4">
+                                                        <TextBlock Text="Races:" VerticalAlignment="Center" Margin="0,0,6,0" />
+                                                        <TextBlock Text="{Binding SelectedRaces.Count, StringFormat='{}{0} selected'}"
+                                                                   VerticalAlignment="Center"
+                                                                   FontStyle="Italic" />
+                                                    </StackPanel>
+
+                                                    <!-- Selected Races List -->
+                                                    <ItemsControl Grid.Row="9" ItemsSource="{Binding SelectedRaces}">
+                                                        <ItemsControl.ItemTemplate>
+                                                            <DataTemplate>
+                                                                <Border Margin="0,2" Padding="4" BorderBrush="LightGray" BorderThickness="1">
+                                                                    <StackPanel Orientation="Horizontal">
+                                                                        <TextBlock Text="{Binding DisplayName}" VerticalAlignment="Center" Margin="0,0,6,0" />
+                                                                        <TextBlock Text="{Binding FormKeyString}" 
+                                                                                   FontFamily="Consolas"
+                                                                                   FontSize="10"
+                                                                                   VerticalAlignment="Center"
+                                                                                   Margin="0,0,6,0" />
+                                                                        <Button Content="×"
+                                                                                Click="RemoveRace_Click"
+                                                                                Tag="{Binding}"
+                                                                                Padding="4,0"
+                                                                                FontWeight="Bold"
+                                                                                Background="Transparent"
+                                                                                BorderBrush="Transparent" />
+                                                                    </StackPanel>
+                                                                </Border>
+                                                            </DataTemplate>
+                                                        </ItemsControl.ItemTemplate>
+                                                    </ItemsControl>
                                                 </Grid>
                                             </Border>
                                         </DataTemplate>
@@ -463,91 +584,278 @@
                         </Grid>
                     </GroupBox>
 
-                    <!-- NPC Picker -->
-                    <GroupBox Grid.Column="2" Header="NPC Selection" Padding="6">
-                        <Grid>
-                            <Grid.RowDefinitions>
-                                <RowDefinition Height="Auto" />
-                                <RowDefinition Height="*" />
-                                <RowDefinition Height="Auto" />
-                            </Grid.RowDefinitions>
+                    <!-- Filter Selection (NPCs, Factions, Keywords, Races) -->
+                    <GroupBox Grid.Column="2" Header="Distribution Filters" Padding="6">
+                        <TabControl>
+                            <!-- NPCs Tab -->
+                            <TabItem Header="NPCs">
+                                <Grid>
+                                    <Grid.RowDefinitions>
+                                        <RowDefinition Height="Auto" />
+                                        <RowDefinition Height="*" />
+                                        <RowDefinition Height="Auto" />
+                                    </Grid.RowDefinitions>
 
-                            <!-- Search Box -->
-                            <StackPanel Grid.Row="0" Orientation="Horizontal" Margin="0,0,0,6">
-                                <TextBlock Text="Search:" VerticalAlignment="Center" Margin="0,0,6,0" />
-                                <TextBox Text="{Binding NpcSearchText, UpdateSourceTrigger=PropertyChanged}"
-                                         MinWidth="200"
-                                         ToolTip="Search NPCs by name, EditorID, or FormKey" />
-                            </StackPanel>
+                                    <!-- Search Box -->
+                                    <StackPanel Grid.Row="0" Orientation="Horizontal" Margin="0,0,0,6">
+                                        <TextBlock Text="Search:" VerticalAlignment="Center" Margin="0,0,6,0" />
+                                        <TextBox Text="{Binding NpcSearchText, UpdateSourceTrigger=PropertyChanged}"
+                                                 MinWidth="200"
+                                                 ToolTip="Search NPCs by name, EditorID, or FormKey" />
+                                    </StackPanel>
 
-                            <!-- NPC List -->
-                            <DataGrid x:Name="NpcDataGrid"
-                                     Grid.Row="1" 
-                                     ItemsSource="{Binding FilteredNpcs}"
-                                     AutoGenerateColumns="False"
-                                     CanUserAddRows="False"
-                                     CanUserDeleteRows="False"
-                                     CanUserSortColumns="True"
-                                     SelectionMode="Single"
-                                     SelectionUnit="FullRow"
-                                     GridLinesVisibility="All"
-                                     HeadersVisibility="Column"
-                                     EnableRowVirtualization="True"
-                                     EnableColumnVirtualization="True">
-                                <DataGrid.Columns>
-                                    <DataGridCheckBoxColumn Header="" 
-                                                            Binding="{Binding IsSelected, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
-                                                            Width="Auto"
-                                                            SortMemberPath="IsSelected"
-                                                            IsReadOnly="False" />
-                                    <DataGridTextColumn Header="Name" 
-                                                        Binding="{Binding DisplayName}" 
-                                                        Width="*"
-                                                        CanUserSort="True"
-                                                        IsReadOnly="True" />
-                                    <DataGridTextColumn Header="EditorID" 
-                                                        Binding="{Binding EditorID}" 
-                                                        Width="200"
-                                                        CanUserSort="True"
-                                                        IsReadOnly="True" />
-                                    <DataGridTextColumn Header="FormKey" 
-                                                        Binding="{Binding FormKeyString}" 
-                                                        Width="150"
-                                                        CanUserSort="True"
-                                                        IsReadOnly="True">
-                                        <DataGridTextColumn.ElementStyle>
-                                            <Style TargetType="TextBlock">
-                                                <Setter Property="FontFamily" Value="Consolas" />
-                                                <Setter Property="FontSize" Value="10" />
-                                            </Style>
-                                        </DataGridTextColumn.ElementStyle>
-                                    </DataGridTextColumn>
-                                    <DataGridTextColumn Header="Mod" 
-                                                        Binding="{Binding ModDisplayName}" 
-                                                        Width="150"
-                                                        CanUserSort="True"
-                                                        IsReadOnly="True">
-                                        <DataGridTextColumn.ElementStyle>
-                                            <Style TargetType="TextBlock">
-                                                <Setter Property="FontSize" Value="10" />
-                                                <Setter Property="Foreground" Value="Gray" />
-                                            </Style>
-                                        </DataGridTextColumn.ElementStyle>
-                                    </DataGridTextColumn>
-                                </DataGrid.Columns>
-                            </DataGrid>
+                                    <!-- NPC List -->
+                                    <DataGrid x:Name="NpcDataGrid"
+                                             Grid.Row="1" 
+                                             ItemsSource="{Binding FilteredNpcs}"
+                                             AutoGenerateColumns="False"
+                                             CanUserAddRows="False"
+                                             CanUserDeleteRows="False"
+                                             CanUserSortColumns="True"
+                                             SelectionMode="Single"
+                                             SelectionUnit="FullRow"
+                                             GridLinesVisibility="All"
+                                             HeadersVisibility="Column"
+                                             EnableRowVirtualization="True"
+                                             EnableColumnVirtualization="True">
+                                        <DataGrid.Columns>
+                                            <DataGridCheckBoxColumn Header="" 
+                                                                    Binding="{Binding IsSelected, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                                                                    Width="Auto"
+                                                                    SortMemberPath="IsSelected"
+                                                                    IsReadOnly="False" />
+                                            <DataGridTextColumn Header="Name" 
+                                                                Binding="{Binding DisplayName}" 
+                                                                Width="*"
+                                                                CanUserSort="True"
+                                                                IsReadOnly="True" />
+                                            <DataGridTextColumn Header="EditorID" 
+                                                                Binding="{Binding EditorID}" 
+                                                                Width="200"
+                                                                CanUserSort="True"
+                                                                IsReadOnly="True" />
+                                            <DataGridTextColumn Header="FormKey" 
+                                                                Binding="{Binding FormKeyString}" 
+                                                                Width="150"
+                                                                CanUserSort="True"
+                                                                IsReadOnly="True">
+                                                <DataGridTextColumn.ElementStyle>
+                                                    <Style TargetType="TextBlock">
+                                                        <Setter Property="FontFamily" Value="Consolas" />
+                                                        <Setter Property="FontSize" Value="10" />
+                                                    </Style>
+                                                </DataGridTextColumn.ElementStyle>
+                                            </DataGridTextColumn>
+                                            <DataGridTextColumn Header="Mod" 
+                                                                Binding="{Binding ModDisplayName}" 
+                                                                Width="150"
+                                                                CanUserSort="True"
+                                                                IsReadOnly="True">
+                                                <DataGridTextColumn.ElementStyle>
+                                                    <Style TargetType="TextBlock">
+                                                        <Setter Property="FontSize" Value="10" />
+                                                        <Setter Property="Foreground" Value="Gray" />
+                                                    </Style>
+                                                </DataGridTextColumn.ElementStyle>
+                                            </DataGridTextColumn>
+                                        </DataGrid.Columns>
+                                    </DataGrid>
 
-                            <!-- Add Selected NPCs Button -->
-                            <StackPanel Grid.Row="2" Margin="0,6,0,0">
-                                <TextBlock Text="{Binding SelectedEntry.SelectedOutfit.EditorID, StringFormat='Target Entry: {0}', FallbackValue='Target Entry: (None selected - click an entry to select)'}"
-                                           FontStyle="Italic"
-                                           Margin="0,0,0,4"
-                                           Foreground="Gray" />
-                                <Button Content="Add Selected NPCs to Entry"
-                                        Command="{Binding AddSelectedNpcsToEntryCommand}"
-                                        Padding="8,2" />
-                            </StackPanel>
-                        </Grid>
+                                    <!-- Add Selected NPCs Button -->
+                                    <StackPanel Grid.Row="2" Margin="0,6,0,0">
+                                        <TextBlock Text="{Binding SelectedEntry.SelectedOutfit.EditorID, StringFormat='Target Entry: {0}', FallbackValue='Target Entry: (None selected - click an entry to select)'}"
+                                                   FontStyle="Italic"
+                                                   Margin="0,0,0,4"
+                                                   Foreground="Gray" />
+                                        <Button Content="Add Selected NPCs to Entry"
+                                                Command="{Binding AddSelectedNpcsToEntryCommand}"
+                                                Padding="8,2" />
+                                    </StackPanel>
+                                </Grid>
+                            </TabItem>
+
+                            <!-- Factions Tab -->
+                            <TabItem Header="Factions">
+                                <Grid>
+                                    <Grid.RowDefinitions>
+                                        <RowDefinition Height="Auto" />
+                                        <RowDefinition Height="*" />
+                                        <RowDefinition Height="Auto" />
+                                    </Grid.RowDefinitions>
+
+                                    <StackPanel Grid.Row="0" Orientation="Horizontal" Margin="0,0,0,6">
+                                        <TextBlock Text="Search:" VerticalAlignment="Center" Margin="0,0,6,0" />
+                                        <TextBox Text="{Binding FactionSearchText, UpdateSourceTrigger=PropertyChanged}"
+                                                 MinWidth="200"
+                                                 ToolTip="Search factions by name or EditorID" />
+                                    </StackPanel>
+
+                                    <DataGrid Grid.Row="1"
+                                             ItemsSource="{Binding FilteredFactions}"
+                                             AutoGenerateColumns="False"
+                                             CanUserAddRows="False"
+                                             CanUserDeleteRows="False"
+                                             CanUserSortColumns="True"
+                                             SelectionMode="Single"
+                                             SelectionUnit="FullRow"
+                                             GridLinesVisibility="All"
+                                             HeadersVisibility="Column"
+                                             EnableRowVirtualization="True"
+                                             EnableColumnVirtualization="True">
+                                        <DataGrid.Columns>
+                                            <DataGridCheckBoxColumn Header="" 
+                                                                    Binding="{Binding IsSelected, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                                                                    Width="Auto" />
+                                            <DataGridTextColumn Header="Name" 
+                                                                Binding="{Binding DisplayName}" 
+                                                                Width="*"
+                                                                IsReadOnly="True" />
+                                            <DataGridTextColumn Header="EditorID" 
+                                                                Binding="{Binding EditorID}" 
+                                                                Width="200"
+                                                                IsReadOnly="True" />
+                                            <DataGridTextColumn Header="FormKey" 
+                                                                Binding="{Binding FormKeyString}" 
+                                                                Width="150"
+                                                                IsReadOnly="True">
+                                                <DataGridTextColumn.ElementStyle>
+                                                    <Style TargetType="TextBlock">
+                                                        <Setter Property="FontFamily" Value="Consolas" />
+                                                        <Setter Property="FontSize" Value="10" />
+                                                    </Style>
+                                                </DataGridTextColumn.ElementStyle>
+                                            </DataGridTextColumn>
+                                        </DataGrid.Columns>
+                                    </DataGrid>
+
+                                    <StackPanel Grid.Row="2" Margin="0,6,0,0">
+                                        <Button Content="Add Selected Factions to Entry"
+                                                Command="{Binding AddSelectedFactionsToEntryCommand}"
+                                                Padding="8,2" />
+                                    </StackPanel>
+                                </Grid>
+                            </TabItem>
+
+                            <!-- Keywords Tab -->
+                            <TabItem Header="Keywords">
+                                <Grid>
+                                    <Grid.RowDefinitions>
+                                        <RowDefinition Height="Auto" />
+                                        <RowDefinition Height="*" />
+                                        <RowDefinition Height="Auto" />
+                                    </Grid.RowDefinitions>
+
+                                    <StackPanel Grid.Row="0" Orientation="Horizontal" Margin="0,0,0,6">
+                                        <TextBlock Text="Search:" VerticalAlignment="Center" Margin="0,0,6,0" />
+                                        <TextBox Text="{Binding KeywordSearchText, UpdateSourceTrigger=PropertyChanged}"
+                                                 MinWidth="200"
+                                                 ToolTip="Search keywords by EditorID" />
+                                    </StackPanel>
+
+                                    <DataGrid Grid.Row="1"
+                                             ItemsSource="{Binding FilteredKeywords}"
+                                             AutoGenerateColumns="False"
+                                             CanUserAddRows="False"
+                                             CanUserDeleteRows="False"
+                                             CanUserSortColumns="True"
+                                             SelectionMode="Single"
+                                             SelectionUnit="FullRow"
+                                             GridLinesVisibility="All"
+                                             HeadersVisibility="Column"
+                                             EnableRowVirtualization="True"
+                                             EnableColumnVirtualization="True">
+                                        <DataGrid.Columns>
+                                            <DataGridCheckBoxColumn Header="" 
+                                                                    Binding="{Binding IsSelected, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                                                                    Width="Auto" />
+                                            <DataGridTextColumn Header="EditorID" 
+                                                                Binding="{Binding EditorID}" 
+                                                                Width="*"
+                                                                IsReadOnly="True" />
+                                            <DataGridTextColumn Header="FormKey" 
+                                                                Binding="{Binding FormKeyString}" 
+                                                                Width="150"
+                                                                IsReadOnly="True">
+                                                <DataGridTextColumn.ElementStyle>
+                                                    <Style TargetType="TextBlock">
+                                                        <Setter Property="FontFamily" Value="Consolas" />
+                                                        <Setter Property="FontSize" Value="10" />
+                                                    </Style>
+                                                </DataGridTextColumn.ElementStyle>
+                                            </DataGridTextColumn>
+                                        </DataGrid.Columns>
+                                    </DataGrid>
+
+                                    <StackPanel Grid.Row="2" Margin="0,6,0,0">
+                                        <Button Content="Add Selected Keywords to Entry"
+                                                Command="{Binding AddSelectedKeywordsToEntryCommand}"
+                                                Padding="8,2" />
+                                    </StackPanel>
+                                </Grid>
+                            </TabItem>
+
+                            <!-- Races Tab -->
+                            <TabItem Header="Races">
+                                <Grid>
+                                    <Grid.RowDefinitions>
+                                        <RowDefinition Height="Auto" />
+                                        <RowDefinition Height="*" />
+                                        <RowDefinition Height="Auto" />
+                                    </Grid.RowDefinitions>
+
+                                    <StackPanel Grid.Row="0" Orientation="Horizontal" Margin="0,0,0,6">
+                                        <TextBlock Text="Search:" VerticalAlignment="Center" Margin="0,0,6,0" />
+                                        <TextBox Text="{Binding RaceSearchText, UpdateSourceTrigger=PropertyChanged}"
+                                                 MinWidth="200"
+                                                 ToolTip="Search races by name or EditorID" />
+                                    </StackPanel>
+
+                                    <DataGrid Grid.Row="1"
+                                             ItemsSource="{Binding FilteredRaces}"
+                                             AutoGenerateColumns="False"
+                                             CanUserAddRows="False"
+                                             CanUserDeleteRows="False"
+                                             CanUserSortColumns="True"
+                                             SelectionMode="Single"
+                                             SelectionUnit="FullRow"
+                                             GridLinesVisibility="All"
+                                             HeadersVisibility="Column"
+                                             EnableRowVirtualization="True"
+                                             EnableColumnVirtualization="True">
+                                        <DataGrid.Columns>
+                                            <DataGridCheckBoxColumn Header="" 
+                                                                    Binding="{Binding IsSelected, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                                                                    Width="Auto" />
+                                            <DataGridTextColumn Header="Name" 
+                                                                Binding="{Binding DisplayName}" 
+                                                                Width="*"
+                                                                IsReadOnly="True" />
+                                            <DataGridTextColumn Header="EditorID" 
+                                                                Binding="{Binding EditorID}" 
+                                                                Width="200"
+                                                                IsReadOnly="True" />
+                                            <DataGridTextColumn Header="FormKey" 
+                                                                Binding="{Binding FormKeyString}" 
+                                                                Width="150"
+                                                                IsReadOnly="True">
+                                                <DataGridTextColumn.ElementStyle>
+                                                    <Style TargetType="TextBlock">
+                                                        <Setter Property="FontFamily" Value="Consolas" />
+                                                        <Setter Property="FontSize" Value="10" />
+                                                    </Style>
+                                                </DataGridTextColumn.ElementStyle>
+                                            </DataGridTextColumn>
+                                        </DataGrid.Columns>
+                                    </DataGrid>
+
+                                    <StackPanel Grid.Row="2" Margin="0,6,0,0">
+                                        <Button Content="Add Selected Races to Entry"
+                                                Command="{Binding AddSelectedRacesToEntryCommand}"
+                                                Padding="8,2" />
+                                    </StackPanel>
+                                </Grid>
+                            </TabItem>
+                        </TabControl>
                     </GroupBox>
                 </Grid>
             </TabItem>

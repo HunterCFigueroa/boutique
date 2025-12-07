@@ -59,6 +59,9 @@ public class DistributionEditTabViewModel : ReactiveObject
         // Simple canExecute observables for commands
         var hasEntries = this.WhenAnyValue(vm => vm.DistributionEntriesCount, count => count > 0);
         AddSelectedNpcsToEntryCommand = ReactiveCommand.Create(AddSelectedNpcsToEntry, hasEntries);
+        AddSelectedFactionsToEntryCommand = ReactiveCommand.Create(AddSelectedFactionsToEntry, hasEntries);
+        AddSelectedKeywordsToEntryCommand = ReactiveCommand.Create(AddSelectedKeywordsToEntry, hasEntries);
+        AddSelectedRacesToEntryCommand = ReactiveCommand.Create(AddSelectedRacesToEntry, hasEntries);
 
         var notLoading = this.WhenAnyValue(vm => vm.IsLoading, loading => !loading);
         var canSave = this.WhenAnyValue(
@@ -78,6 +81,12 @@ public class DistributionEditTabViewModel : ReactiveObject
 
         this.WhenAnyValue(vm => vm.NpcSearchText)
             .Subscribe(_ => UpdateFilteredNpcs());
+        this.WhenAnyValue(vm => vm.FactionSearchText)
+            .Subscribe(_ => UpdateFilteredFactions());
+        this.WhenAnyValue(vm => vm.KeywordSearchText)
+            .Subscribe(_ => UpdateFilteredKeywords());
+        this.WhenAnyValue(vm => vm.RaceSearchText)
+            .Subscribe(_ => UpdateFilteredRaces());
     }
 
     [Reactive] public bool IsLoading { get; private set; }
@@ -121,6 +130,12 @@ public class DistributionEditTabViewModel : ReactiveObject
     }
 
     [Reactive] public ObservableCollection<NpcRecordViewModel> AvailableNpcs { get; private set; } = new();
+
+    [Reactive] public ObservableCollection<FactionRecordViewModel> AvailableFactions { get; private set; } = new();
+
+    [Reactive] public ObservableCollection<KeywordRecordViewModel> AvailableKeywords { get; private set; } = new();
+
+    [Reactive] public ObservableCollection<RaceRecordViewModel> AvailableRaces { get; private set; } = new();
 
     [Reactive] public ObservableCollection<IOutfitGetter> AvailableOutfits { get; private set; } = new();
 
@@ -206,9 +221,21 @@ public class DistributionEditTabViewModel : ReactiveObject
 
     [Reactive] public string NpcSearchText { get; set; } = string.Empty;
 
+    [Reactive] public string FactionSearchText { get; set; } = string.Empty;
+
+    [Reactive] public string KeywordSearchText { get; set; } = string.Empty;
+
+    [Reactive] public string RaceSearchText { get; set; } = string.Empty;
+
     [Reactive] public string DistributionPreviewText { get; private set; } = string.Empty;
 
     [Reactive] public ObservableCollection<NpcRecordViewModel> FilteredNpcs { get; private set; } = new();
+
+    [Reactive] public ObservableCollection<FactionRecordViewModel> FilteredFactions { get; private set; } = new();
+
+    [Reactive] public ObservableCollection<KeywordRecordViewModel> FilteredKeywords { get; private set; } = new();
+
+    [Reactive] public ObservableCollection<RaceRecordViewModel> FilteredRaces { get; private set; } = new();
 
     /// <summary>
     /// Indicates whether the current distribution entries have conflicts with existing files.
@@ -234,6 +261,9 @@ public class DistributionEditTabViewModel : ReactiveObject
     public ReactiveCommand<DistributionEntryViewModel, Unit> RemoveDistributionEntryCommand { get; }
     public ReactiveCommand<DistributionEntryViewModel, Unit> SelectEntryCommand { get; }
     public ReactiveCommand<Unit, Unit> AddSelectedNpcsToEntryCommand { get; }
+    public ReactiveCommand<Unit, Unit> AddSelectedFactionsToEntryCommand { get; }
+    public ReactiveCommand<Unit, Unit> AddSelectedKeywordsToEntryCommand { get; }
+    public ReactiveCommand<Unit, Unit> AddSelectedRacesToEntryCommand { get; }
     public ReactiveCommand<Unit, Unit> SaveDistributionFileCommand { get; }
     public ReactiveCommand<Unit, Unit> LoadDistributionFileCommand { get; }
     public ReactiveCommand<Unit, Unit> ScanNpcsCommand { get; }
@@ -299,6 +329,12 @@ public class DistributionEditTabViewModel : ReactiveObject
             .Skip(1) // Skip initial value
             .Subscribe(_ => UpdateDistributionPreview());
         entry.SelectedNpcs.CollectionChanged += (s, args) => UpdateDistributionPreview();
+        entry.SelectedFactions.CollectionChanged += (s, args) => UpdateDistributionPreview();
+        entry.SelectedKeywords.CollectionChanged += (s, args) => UpdateDistributionPreview();
+        entry.SelectedRaces.CollectionChanged += (s, args) => UpdateDistributionPreview();
+        entry.WhenAnyValue(evm => evm.Chance)
+            .Skip(1) // Skip initial value
+            .Subscribe(_ => UpdateDistributionPreview());
     }
 
     private void AddDistributionEntry()
@@ -389,6 +425,150 @@ public class DistributionEditTabViewModel : ReactiveObject
         else
         {
             StatusMessage = "All selected NPCs are already in this entry.";
+        }
+    }
+
+    private void AddSelectedFactionsToEntry()
+    {
+        if (SelectedEntry == null)
+        {
+            SelectedEntry = DistributionEntries.FirstOrDefault();
+            if (SelectedEntry == null)
+            {
+                AddDistributionEntry();
+                return;
+            }
+        }
+
+        var selectedFactions = FilteredFactions
+            .Where(faction => faction.IsSelected)
+            .ToList();
+
+        if (selectedFactions.Count == 0)
+        {
+            StatusMessage = "No factions selected. Check the boxes next to factions you want to add.";
+            return;
+        }
+
+        var addedCount = 0;
+        foreach (var faction in selectedFactions)
+        {
+            if (!SelectedEntry.SelectedFactions.Any(existing => existing.FormKey == faction.FormKey))
+            {
+                SelectedEntry.AddFaction(faction);
+                addedCount++;
+            }
+        }
+
+        foreach (var faction in selectedFactions)
+        {
+            faction.IsSelected = false;
+        }
+
+        if (addedCount > 0)
+        {
+            StatusMessage = $"Added {addedCount} faction(s) to entry: {SelectedEntry.SelectedOutfit?.EditorID ?? "(No outfit)"}";
+            _logger.Debug("Added {Count} factions to entry", addedCount);
+        }
+        else
+        {
+            StatusMessage = "All selected factions are already in this entry.";
+        }
+    }
+
+    private void AddSelectedKeywordsToEntry()
+    {
+        if (SelectedEntry == null)
+        {
+            SelectedEntry = DistributionEntries.FirstOrDefault();
+            if (SelectedEntry == null)
+            {
+                AddDistributionEntry();
+                return;
+            }
+        }
+
+        var selectedKeywords = FilteredKeywords
+            .Where(keyword => keyword.IsSelected)
+            .ToList();
+
+        if (selectedKeywords.Count == 0)
+        {
+            StatusMessage = "No keywords selected. Check the boxes next to keywords you want to add.";
+            return;
+        }
+
+        var addedCount = 0;
+        foreach (var keyword in selectedKeywords)
+        {
+            if (!SelectedEntry.SelectedKeywords.Any(existing => existing.FormKey == keyword.FormKey))
+            {
+                SelectedEntry.AddKeyword(keyword);
+                addedCount++;
+            }
+        }
+
+        foreach (var keyword in selectedKeywords)
+        {
+            keyword.IsSelected = false;
+        }
+
+        if (addedCount > 0)
+        {
+            StatusMessage = $"Added {addedCount} keyword(s) to entry: {SelectedEntry.SelectedOutfit?.EditorID ?? "(No outfit)"}";
+            _logger.Debug("Added {Count} keywords to entry", addedCount);
+        }
+        else
+        {
+            StatusMessage = "All selected keywords are already in this entry.";
+        }
+    }
+
+    private void AddSelectedRacesToEntry()
+    {
+        if (SelectedEntry == null)
+        {
+            SelectedEntry = DistributionEntries.FirstOrDefault();
+            if (SelectedEntry == null)
+            {
+                AddDistributionEntry();
+                return;
+            }
+        }
+
+        var selectedRaces = FilteredRaces
+            .Where(race => race.IsSelected)
+            .ToList();
+
+        if (selectedRaces.Count == 0)
+        {
+            StatusMessage = "No races selected. Check the boxes next to races you want to add.";
+            return;
+        }
+
+        var addedCount = 0;
+        foreach (var race in selectedRaces)
+        {
+            if (!SelectedEntry.SelectedRaces.Any(existing => existing.FormKey == race.FormKey))
+            {
+                SelectedEntry.AddRace(race);
+                addedCount++;
+            }
+        }
+
+        foreach (var race in selectedRaces)
+        {
+            race.IsSelected = false;
+        }
+
+        if (addedCount > 0)
+        {
+            StatusMessage = $"Added {addedCount} race(s) to entry: {SelectedEntry.SelectedOutfit?.EditorID ?? "(No outfit)"}";
+            _logger.Debug("Added {Count} races to entry", addedCount);
+        }
+        else
+        {
+            StatusMessage = "All selected races are already in this entry.";
         }
     }
 
@@ -632,6 +812,10 @@ public class DistributionEditTabViewModel : ReactiveObject
 
             StatusMessage = $"Scanned {AvailableNpcs.Count} NPCs.";
             _logger.Information("Scanned {Count} NPCs.", AvailableNpcs.Count);
+
+            // Also load filters and outfits when scanning NPCs (LinkCache is now available)
+            await LoadAvailableFiltersAsync();
+            await LoadAvailableOutfitsAsync();
         }
         catch (Exception ex)
         {
@@ -752,7 +936,7 @@ public class DistributionEditTabViewModel : ReactiveObject
         var lines = new List<string>();
 
         // Add header comment
-        lines.Add("; SkyPatcher Distribution File");
+        lines.Add("; Distribution File");
         lines.Add("; Generated by Boutique");
         lines.Add("");
 
@@ -764,18 +948,81 @@ public class DistributionEditTabViewModel : ReactiveObject
 
         foreach (var entryVm in DistributionEntries)
         {
-            if (entryVm.SelectedOutfit == null || entryVm.SelectedNpcs.Count == 0)
+            if (entryVm.SelectedOutfit == null)
                 continue;
 
-            var npcFormKeys = entryVm.SelectedNpcs
-                .Select(npc => FormKeyHelper.Format(npc.FormKey))
-                .ToList();
+            var hasFilters = entryVm.SelectedFactions.Count > 0 || 
+                            entryVm.SelectedKeywords.Count > 0 || 
+                            entryVm.SelectedRaces.Count > 0 ||
+                            entryVm.Chance.HasValue;
 
-            var npcList = string.Join(",", npcFormKeys);
-            var outfitFormKey = FormKeyHelper.Format(entryVm.SelectedOutfit.FormKey);
+            // Use SPID format if filters are used, otherwise use SkyPatcher format
+            if (hasFilters || entryVm.SelectedNpcs.Count == 0)
+            {
+                // SPID format: Outfit = FormOrEditorID|StringFilters|FormFilters|LevelFilters|TraitFilters|CountOrPackageIdx|Chance
+                var outfitIdentifier = FormatOutfitIdentifier(entryVm.SelectedOutfit);
+                
+                // StringFilters (position 2): Keywords
+                var stringFilters = new List<string>();
+                foreach (var keyword in entryVm.SelectedKeywords)
+                {
+                    var editorId = keyword.EditorID;
+                    if (!string.IsNullOrWhiteSpace(editorId) && editorId != "(No EditorID)")
+                    {
+                        stringFilters.Add(editorId);
+                    }
+                }
+                var stringFiltersPart = stringFilters.Count > 0 ? string.Join("+", stringFilters) : "NONE";
 
-            var line = $"filterByNpcs={npcList}:outfitDefault={outfitFormKey}";
-            lines.Add(line);
+                // FormFilters (position 3): Factions and Races
+                var formFilters = new List<string>();
+                foreach (var faction in entryVm.SelectedFactions)
+                {
+                    var editorId = faction.EditorID;
+                    if (!string.IsNullOrWhiteSpace(editorId) && editorId != "(No EditorID)")
+                    {
+                        formFilters.Add(editorId);
+                    }
+                }
+                foreach (var race in entryVm.SelectedRaces)
+                {
+                    var editorId = race.EditorID;
+                    if (!string.IsNullOrWhiteSpace(editorId) && editorId != "(No EditorID)")
+                    {
+                        formFilters.Add(editorId);
+                    }
+                }
+                var formFiltersPart = formFilters.Count > 0 ? string.Join("+", formFilters) : "NONE";
+
+                // LevelFilters (position 4): Not supported yet
+                var levelFiltersPart = "NONE";
+
+                // TraitFilters (position 5): Not supported yet
+                var traitFiltersPart = "NONE";
+
+                // CountOrPackageIdx (position 6): Not supported yet
+                var countPart = "NONE";
+
+                // Chance (position 7)
+                var chancePart = entryVm.Chance.HasValue ? entryVm.Chance.Value.ToString() : "100";
+
+                // Build SPID line
+                var spidLine = $"Outfit = {outfitIdentifier}|{stringFiltersPart}|{formFiltersPart}|{levelFiltersPart}|{traitFiltersPart}|{countPart}|{chancePart}";
+                lines.Add(spidLine);
+            }
+            else if (entryVm.SelectedNpcs.Count > 0)
+            {
+                // SkyPatcher format: filterByNpcs=ModKey|FormID,ModKey|FormID:outfitDefault=ModKey|FormID
+                var npcFormKeys = entryVm.SelectedNpcs
+                    .Select(npc => FormKeyHelper.Format(npc.FormKey))
+                    .ToList();
+
+                var npcList = string.Join(",", npcFormKeys);
+                var outfitFormKey = FormKeyHelper.Format(entryVm.SelectedOutfit.FormKey);
+
+                var line = $"filterByNpcs={npcList}:outfitDefault={outfitFormKey}";
+                lines.Add(line);
+            }
         }
 
         DistributionPreviewText = string.Join(Environment.NewLine, lines);
@@ -784,15 +1031,26 @@ public class DistributionEditTabViewModel : ReactiveObject
         DetectConflicts();
     }
 
+    private string FormatOutfitIdentifier(IOutfitGetter outfit)
+    {
+        // Format as FormKey: 0x800~Plugin.esp
+        return $"0x{outfit.FormKey.ID:X}~{outfit.FormKey.ModKey.FileName}";
+    }
+
     private async Task LoadAvailableOutfitsAsync()
     {
-        // Only load once, and only if not already loaded
-        if (_outfitsLoaded || AvailableOutfits.Count > 0)
+        // Only load once, and only if not already loaded and collection has items
+        if (_outfitsLoaded && AvailableOutfits.Count > 0)
             return;
 
         if (_mutagenService.LinkCache is not ILinkCache<ISkyrimMod, ISkyrimModGetter> linkCache)
         {
-            AvailableOutfits.Clear();
+            // If LinkCache is not available, clear collection and reset flag so we'll try again later
+            if (AvailableOutfits.Count > 0)
+            {
+                AvailableOutfits.Clear();
+            }
+            _outfitsLoaded = false;
             return;
         }
 
@@ -800,7 +1058,7 @@ public class DistributionEditTabViewModel : ReactiveObject
         {
             // Load outfits from the active load order (enabled plugins)
             var outfits = await Task.Run(() => 
-                linkCache.PriorityOrder.WinningOverrides<IOutfitGetter>().ToList());
+                linkCache.WinningOverrides<IOutfitGetter>().ToList());
 
             // Also load outfits from the patch file if it exists but isn't in the active load order
             // This handles newly created patches that aren't enabled in plugins.txt yet
@@ -1005,6 +1263,30 @@ public class DistributionEditTabViewModel : ReactiveObject
             entryVm.SelectedNpcs = new ObservableCollection<NpcRecordViewModel>(npcVms);
             entryVm.UpdateEntryNpcs();
         }
+
+        // Resolve Factions from FormKeys
+        var factionVms = ResolveFactionFormKeys(entry.FactionFormKeys);
+        if (factionVms.Count > 0)
+        {
+            entryVm.SelectedFactions = new ObservableCollection<FactionRecordViewModel>(factionVms);
+            entryVm.UpdateEntryFactions();
+        }
+
+        // Resolve Keywords from FormKeys
+        var keywordVms = ResolveKeywordFormKeys(entry.KeywordFormKeys);
+        if (keywordVms.Count > 0)
+        {
+            entryVm.SelectedKeywords = new ObservableCollection<KeywordRecordViewModel>(keywordVms);
+            entryVm.UpdateEntryKeywords();
+        }
+
+        // Resolve Races from FormKeys
+        var raceVms = ResolveRaceFormKeys(entry.RaceFormKeys);
+        if (raceVms.Count > 0)
+        {
+            entryVm.SelectedRaces = new ObservableCollection<RaceRecordViewModel>(raceVms);
+            entryVm.UpdateEntryRaces();
+        }
         
         return entryVm;
     }
@@ -1075,6 +1357,119 @@ public class DistributionEditTabViewModel : ReactiveObject
         return null;
     }
 
+    private List<FactionRecordViewModel> ResolveFactionFormKeys(IEnumerable<FormKey> formKeys)
+    {
+        var factionVms = new List<FactionRecordViewModel>();
+        
+        foreach (var formKey in formKeys)
+        {
+            var factionVm = ResolveFactionFormKey(formKey);
+            if (factionVm != null)
+            {
+                factionVms.Add(factionVm);
+            }
+        }
+        
+        return factionVms;
+    }
+
+    private FactionRecordViewModel? ResolveFactionFormKey(FormKey formKey)
+    {
+        var existingFaction = AvailableFactions.FirstOrDefault(f => f.FormKey == formKey);
+        if (existingFaction != null)
+        {
+            return existingFaction;
+        }
+        
+        if (_mutagenService.LinkCache is ILinkCache<ISkyrimMod, ISkyrimModGetter> linkCache &&
+            linkCache.TryResolve<IFactionGetter>(formKey, out var faction))
+        {
+            var factionRecord = new FactionRecord(
+                faction.FormKey,
+                faction.EditorID,
+                faction.Name?.String,
+                faction.FormKey.ModKey);
+            return new FactionRecordViewModel(factionRecord);
+        }
+        
+        return null;
+    }
+
+    private List<KeywordRecordViewModel> ResolveKeywordFormKeys(IEnumerable<FormKey> formKeys)
+    {
+        var keywordVms = new List<KeywordRecordViewModel>();
+        
+        foreach (var formKey in formKeys)
+        {
+            var keywordVm = ResolveKeywordFormKey(formKey);
+            if (keywordVm != null)
+            {
+                keywordVms.Add(keywordVm);
+            }
+        }
+        
+        return keywordVms;
+    }
+
+    private KeywordRecordViewModel? ResolveKeywordFormKey(FormKey formKey)
+    {
+        var existingKeyword = AvailableKeywords.FirstOrDefault(k => k.FormKey == formKey);
+        if (existingKeyword != null)
+        {
+            return existingKeyword;
+        }
+        
+        if (_mutagenService.LinkCache is ILinkCache<ISkyrimMod, ISkyrimModGetter> linkCache &&
+            linkCache.TryResolve<IKeywordGetter>(formKey, out var keyword))
+        {
+            var keywordRecord = new KeywordRecord(
+                keyword.FormKey,
+                keyword.EditorID,
+                keyword.FormKey.ModKey);
+            return new KeywordRecordViewModel(keywordRecord);
+        }
+        
+        return null;
+    }
+
+    private List<RaceRecordViewModel> ResolveRaceFormKeys(IEnumerable<FormKey> formKeys)
+    {
+        var raceVms = new List<RaceRecordViewModel>();
+        
+        foreach (var formKey in formKeys)
+        {
+            var raceVm = ResolveRaceFormKey(formKey);
+            if (raceVm != null)
+            {
+                raceVms.Add(raceVm);
+            }
+        }
+        
+        return raceVms;
+    }
+
+    private RaceRecordViewModel? ResolveRaceFormKey(FormKey formKey)
+    {
+        var existingRace = AvailableRaces.FirstOrDefault(r => r.FormKey == formKey);
+        if (existingRace != null)
+        {
+            return existingRace;
+        }
+        
+        if (_mutagenService.LinkCache is ILinkCache<ISkyrimMod, ISkyrimModGetter> linkCache &&
+            linkCache.TryResolve<IRaceGetter>(formKey, out var race))
+        {
+            var raceRecord = new RaceRecord(
+                race.FormKey,
+                race.EditorID,
+                race.Name?.String,
+                race.FormKey.ModKey);
+            return new RaceRecordViewModel(raceRecord);
+        }
+        
+        return null;
+    }
+
     /// <summary>
     /// Updates the FilteredNpcs collection based on the current search text.
     /// This uses a stable collection to avoid DataGrid binding issues with checkboxes.
@@ -1098,6 +1493,134 @@ public class DistributionEditTabViewModel : ReactiveObject
         foreach (var npc in filtered)
         {
             FilteredNpcs.Add(npc);
+        }
+    }
+
+    private void UpdateFilteredFactions()
+    {
+        IEnumerable<FactionRecordViewModel> filtered;
+        
+        if (string.IsNullOrWhiteSpace(FactionSearchText))
+        {
+            filtered = AvailableFactions;
+        }
+        else
+        {
+            var term = FactionSearchText.Trim().ToLowerInvariant();
+            filtered = AvailableFactions.Where(faction => faction.MatchesSearch(term));
+        }
+        
+        FilteredFactions.Clear();
+        foreach (var faction in filtered)
+        {
+            FilteredFactions.Add(faction);
+        }
+    }
+
+    private void UpdateFilteredKeywords()
+    {
+        IEnumerable<KeywordRecordViewModel> filtered;
+        
+        if (string.IsNullOrWhiteSpace(KeywordSearchText))
+        {
+            filtered = AvailableKeywords;
+        }
+        else
+        {
+            var term = KeywordSearchText.Trim().ToLowerInvariant();
+            filtered = AvailableKeywords.Where(keyword => keyword.MatchesSearch(term));
+        }
+        
+        FilteredKeywords.Clear();
+        foreach (var keyword in filtered)
+        {
+            FilteredKeywords.Add(keyword);
+        }
+    }
+
+    private void UpdateFilteredRaces()
+    {
+        IEnumerable<RaceRecordViewModel> filtered;
+        
+        if (string.IsNullOrWhiteSpace(RaceSearchText))
+        {
+            filtered = AvailableRaces;
+        }
+        else
+        {
+            var term = RaceSearchText.Trim().ToLowerInvariant();
+            filtered = AvailableRaces.Where(race => race.MatchesSearch(term));
+        }
+        
+        FilteredRaces.Clear();
+        foreach (var race in filtered)
+        {
+            FilteredRaces.Add(race);
+        }
+    }
+
+    private async Task LoadAvailableFiltersAsync()
+    {
+        if (_mutagenService.LinkCache is not ILinkCache<ISkyrimMod, ISkyrimModGetter> linkCache)
+        {
+            AvailableFactions.Clear();
+            AvailableKeywords.Clear();
+            AvailableRaces.Clear();
+            return;
+        }
+
+        try
+        {
+            // Load factions, keywords, and races from the active load order
+            var (factions, keywords, races) = await Task.Run(() =>
+            {
+                var f = linkCache.WinningOverrides<IFactionGetter>()
+                    .Select(faction => new FactionRecordViewModel(new FactionRecord(
+                        faction.FormKey,
+                        faction.EditorID,
+                        faction.Name?.String,
+                        faction.FormKey.ModKey)))
+                    .OrderBy(f => f.DisplayName)
+                    .ToList();
+
+                var k = linkCache.WinningOverrides<IKeywordGetter>()
+                    .Select(keyword => new KeywordRecordViewModel(new KeywordRecord(
+                        keyword.FormKey,
+                        keyword.EditorID,
+                        keyword.FormKey.ModKey)))
+                    .OrderBy(k => k.DisplayName)
+                    .ToList();
+
+                var r = linkCache.WinningOverrides<IRaceGetter>()
+                    .Select(race => new RaceRecordViewModel(new RaceRecord(
+                        race.FormKey,
+                        race.EditorID,
+                        race.Name?.String,
+                        race.FormKey.ModKey)))
+                    .OrderBy(r => r.DisplayName)
+                    .ToList();
+
+                return (f, k, r);
+            });
+
+            AvailableFactions = new ObservableCollection<FactionRecordViewModel>(factions);
+            AvailableKeywords = new ObservableCollection<KeywordRecordViewModel>(keywords);
+            AvailableRaces = new ObservableCollection<RaceRecordViewModel>(races);
+
+            // Update filtered collections
+            UpdateFilteredFactions();
+            UpdateFilteredKeywords();
+            UpdateFilteredRaces();
+
+            _logger.Debug("Loaded {FactionCount} factions, {KeywordCount} keywords, {RaceCount} races.",
+                factions.Count, keywords.Count, races.Count);
+        }
+        catch (Exception ex)
+        {
+            _logger.Error(ex, "Failed to load available filters.");
+            AvailableFactions.Clear();
+            AvailableKeywords.Clear();
+            AvailableRaces.Clear();
         }
     }
 }

@@ -127,6 +127,42 @@ public partial class DistributionView
         }
     }
 
+    private void RemoveFaction_Click(object sender, RoutedEventArgs e)
+    {
+        if (sender is Button button && button.Tag is FactionRecordViewModel factionVm)
+        {
+            var itemsControl = FindVisualParent<ItemsControl>(button);
+            if (itemsControl?.DataContext is DistributionEntryViewModel entryVm)
+            {
+                entryVm.RemoveFaction(factionVm);
+            }
+        }
+    }
+
+    private void RemoveKeyword_Click(object sender, RoutedEventArgs e)
+    {
+        if (sender is Button button && button.Tag is KeywordRecordViewModel keywordVm)
+        {
+            var itemsControl = FindVisualParent<ItemsControl>(button);
+            if (itemsControl?.DataContext is DistributionEntryViewModel entryVm)
+            {
+                entryVm.RemoveKeyword(keywordVm);
+            }
+        }
+    }
+
+    private void RemoveRace_Click(object sender, RoutedEventArgs e)
+    {
+        if (sender is Button button && button.Tag is RaceRecordViewModel raceVm)
+        {
+            var itemsControl = FindVisualParent<ItemsControl>(button);
+            if (itemsControl?.DataContext is DistributionEntryViewModel entryVm)
+            {
+                entryVm.RemoveRace(raceVm);
+            }
+        }
+    }
+
     private static T? FindVisualChild<T>(DependencyObject parent, string? name = null) where T : DependencyObject
     {
         for (int i = 0; i < System.Windows.Media.VisualTreeHelper.GetChildrenCount(parent); i++)
