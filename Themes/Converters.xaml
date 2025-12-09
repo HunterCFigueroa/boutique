@@ -5,4 +5,5 @@
     <utilities:InverseBooleanConverter x:Key="InverseBoolConverter" />
     <utilities:InverseBooleanToVisibilityConverter x:Key="InverseBoolToVisConverter" />
     <utilities:BooleanToOpacityConverter x:Key="BooleanToOpacityConverter" TrueOpacity="1" FalseOpacity="0.35" />
+    <utilities:DistributionFileTypeConverter x:Key="DistributionFileTypeConverter" />
 </ResourceDictionary>

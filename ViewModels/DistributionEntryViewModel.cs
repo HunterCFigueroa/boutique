@@ -2,6 +2,7 @@ using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Linq;
 using System.Reactive;
+using System.Reactive.Linq;
 using Boutique.Models;
 using Mutagen.Bethesda.Plugins;
 using Mutagen.Bethesda.Skyrim;
@@ -19,11 +20,13 @@ public class DistributionEntryViewModel : ReactiveObject
 
     public DistributionEntryViewModel(
         DistributionEntry entry,
-        System.Action<DistributionEntryViewModel>? removeAction = null)
+        System.Action<DistributionEntryViewModel>? removeAction = null,
+        System.Action? onUseChanceChanging = null)
     {
         Entry = entry;
         SelectedOutfit = entry.Outfit;
-        Chance = entry.Chance;
+        UseChance = entry.Chance.HasValue;
+        Chance = entry.Chance ?? 100;
         
         // Initialize selected NPCs from entry
         if (entry.NpcFormKeys.Count > 0)
@@ -83,9 +86,52 @@ public class DistributionEntryViewModel : ReactiveObject
         this.WhenAnyValue(x => x.SelectedOutfit)
             .Subscribe(outfit => Entry.Outfit = outfit);
 
-        // Sync Chance changes back to Entry
+        // Sync UseChance and Chance changes back to Entry
+        // Show warning when enabling chance-based distribution
+        var previousUseChance = UseChance;
+        this.WhenAnyValue(x => x.UseChance)
+            .Skip(1) // Skip initial value
+            .Subscribe(useChance =>
+            {
+                var wasEnabled = previousUseChance;
+                previousUseChance = useChance; // Update for next time
+                
+                if (useChance && !wasEnabled && onUseChanceChanging != null)
+                {
+                    // User is enabling chance - show warning
+                    var result = System.Windows.MessageBox.Show(
+                        "Enabling chance-based distribution will change the file format to SPID.\n\n" +
+                        "SkyPatcher does not support chance-based outfit distribution. " +
+                        "The file will be saved in SPID format to support this feature.\n\n" +
+                        "Do you want to continue?",
+                        "Format Change Required",
+                        System.Windows.MessageBoxButton.YesNo,
+                        System.Windows.MessageBoxImage.Warning);
+                    
+                    if (result == System.Windows.MessageBoxResult.No)
+                    {
+                        // Revert the change
+                        previousUseChance = false; // Reset tracking
+                        UseChance = false;
+                        return;
+                    }
+                    
+                    // User confirmed - allow the change
+                    onUseChanceChanging();
+                }
+                
+                Entry.Chance = useChance ? Chance : null;
+            });
+        
         this.WhenAnyValue(x => x.Chance)
-            .Subscribe(chance => Entry.Chance = chance);
+            .Skip(1) // Skip initial value
+            .Subscribe(chance =>
+            {
+                if (UseChance)
+                {
+                    Entry.Chance = chance;
+                }
+            });
 
         RemoveCommand = ReactiveCommand.Create(() => removeAction?.Invoke(this));
     }
@@ -94,7 +140,16 @@ public class DistributionEntryViewModel : ReactiveObject
 
     [Reactive] public IOutfitGetter? SelectedOutfit { get; set; }
 
-    [Reactive] public int? Chance { get; set; }
+    /// <summary>
+    /// Whether chance-based distribution is enabled for this entry.
+    /// </summary>
+    [Reactive] public bool UseChance { get; set; }
+
+    /// <summary>
+    /// Chance percentage (0-100) for distribution. Only used if UseChance is true.
+    /// Defaults to 100.
+    /// </summary>
+    [Reactive] public int Chance { get; set; } = 100;
 
     public ObservableCollection<NpcRecordViewModel> SelectedNpcs
     {

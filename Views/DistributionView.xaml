@@ -4,6 +4,7 @@
              xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
              xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
              xmlns:views="clr-namespace:Boutique.Views"
+             xmlns:utilities="clr-namespace:Boutique.Utilities"
              mc:Ignorable="d"
              x:Name="Root"
              d:DesignHeight="800"
@@ -206,6 +207,18 @@
                                               DisplayMemberPath="DisplayName"
                                               MinWidth="250"
                                               Margin="0,0,6,0" />
+                                    <TextBlock Text="Format:" VerticalAlignment="Center" Margin="12,0,6,0" />
+                                    <ComboBox ItemsSource="{Binding AvailableFormats}"
+                                              SelectedItem="{Binding DistributionFormat, Mode=TwoWay}"
+                                              MinWidth="120"
+                                              Margin="0,0,6,0"
+                                              ToolTip="Distribution file format (SPID or SkyPatcher)">
+                                        <ComboBox.ItemTemplate>
+                                            <DataTemplate>
+                                                <TextBlock Text="{Binding Converter={StaticResource DistributionFileTypeConverter}}" />
+                                            </DataTemplate>
+                                        </ComboBox.ItemTemplate>
+                                    </ComboBox>
                                 </StackPanel>
                                 <StackPanel Orientation="Horizontal" 
                                             Visibility="{Binding ShowNewFileNameInput, Converter={StaticResource BoolToVisConverter}}">
@@ -386,12 +399,18 @@
 
                                                     <!-- Chance Input -->
                                                     <StackPanel Grid.Row="1" Orientation="Horizontal" Margin="0,0,0,4">
+                                                        <CheckBox Content="Use Chance"
+                                                                  IsChecked="{Binding UseChance, Mode=TwoWay}"
+                                                                  VerticalAlignment="Center"
+                                                                  Margin="0,0,8,0"
+                                                                  ToolTip="Enable chance-based distribution (will switch format to SPID)" />
                                                         <TextBlock Text="Chance (%):" VerticalAlignment="Center" Margin="0,0,6,0" />
                                                         <TextBox Text="{Binding Chance, UpdateSourceTrigger=PropertyChanged}"
                                                                  MinWidth="60"
                                                                  MaxWidth="80"
-                                                                 ToolTip="Distribution chance (0-100). Leave empty for 100%." />
-                                                        <TextBlock Text="(0-100, optional)" 
+                                                                 IsEnabled="{Binding UseChance}"
+                                                                 ToolTip="Distribution chance (0-100). Default is 100%." />
+                                                        <TextBlock Text="(0-100)" 
                                                                    VerticalAlignment="Center" 
                                                                    Margin="6,0,0,0"
                                                                    FontStyle="Italic"

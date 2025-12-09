@@ -87,6 +87,16 @@ public class DistributionEditTabViewModel : ReactiveObject
             .Subscribe(_ => UpdateFilteredKeywords());
         this.WhenAnyValue(vm => vm.RaceSearchText)
             .Subscribe(_ => UpdateFilteredRaces());
+        
+        // Watch for format changes to update preview
+        this.WhenAnyValue(vm => vm.DistributionFormat)
+            .Skip(1) // Skip initial value
+            .Subscribe(_ => UpdateDistributionPreview());
+        
+        // When creating a new file, reset format to SkyPatcher
+        this.WhenAnyValue(vm => vm.IsCreatingNewFile)
+            .Where(isNew => isNew)
+            .Subscribe(_ => DistributionFormat = DistributionFileType.SkyPatcher);
     }
 
     [Reactive] public bool IsLoading { get; private set; }
@@ -235,6 +245,33 @@ public class DistributionEditTabViewModel : ReactiveObject
 
     [Reactive] public string DistributionPreviewText { get; private set; } = string.Empty;
 
+    /// <summary>
+    /// The distribution file format (SPID or SkyPatcher).
+    /// Defaults to SkyPatcher for new files, or detected from existing files.
+    /// </summary>
+    public DistributionFileType DistributionFormat
+    {
+        get => _distributionFormat;
+        set
+        {
+            if (_distributionFormat == value)
+                return;
+                
+            _logger.Debug("DistributionFormat changing from {OldFormat} to {NewFormat}, EntryCount={Count}",
+                _distributionFormat, value, DistributionEntries.Count);
+                
+            this.RaiseAndSetIfChanged(ref _distributionFormat, value);
+            UpdateDistributionPreview();
+        }
+    }
+    private DistributionFileType _distributionFormat = DistributionFileType.SkyPatcher;
+
+    /// <summary>
+    /// Available distribution file formats for the dropdown.
+    /// </summary>
+    public IReadOnlyList<DistributionFileType> AvailableFormats { get; } = 
+        new[] { DistributionFileType.Spid, DistributionFileType.SkyPatcher };
+
     [Reactive] public ObservableCollection<NpcRecordViewModel> FilteredNpcs { get; private set; } = new();
 
     [Reactive] public ObservableCollection<FactionRecordViewModel> FilteredFactions { get; private set; } = new();
@@ -345,7 +382,7 @@ public class DistributionEditTabViewModel : ReactiveObject
         entry.SelectedFactions.CollectionChanged += (s, args) => previewUpdateSubject.OnNext(Unit.Default);
         entry.SelectedKeywords.CollectionChanged += (s, args) => previewUpdateSubject.OnNext(Unit.Default);
         entry.SelectedRaces.CollectionChanged += (s, args) => previewUpdateSubject.OnNext(Unit.Default);
-        entry.WhenAnyValue(evm => evm.Chance)
+        entry.WhenAnyValue(evm => evm.UseChance, evm => evm.Chance)
             .Skip(1) // Skip initial value
             .Subscribe(_ => previewUpdateSubject.OnNext(Unit.Default));
     }
@@ -359,7 +396,7 @@ public class DistributionEditTabViewModel : ReactiveObject
             var entry = new DistributionEntry();
             
             _logger.Debug("Creating DistributionEntryViewModel");
-            var entryVm = new DistributionEntryViewModel(entry, RemoveDistributionEntry);
+            var entryVm = new DistributionEntryViewModel(entry, RemoveDistributionEntry, OnUseChanceEnabling);
             
             _logger.Debug("Adding to DistributionEntries collection");
             DistributionEntries.Add(entryVm);
@@ -695,7 +732,11 @@ public class DistributionEditTabViewModel : ReactiveObject
                 .Select(evm => evm.Entry)
                 .ToList();
 
-            await _fileWriterService.WriteDistributionFileAsync(finalFilePath, entries);
+            // Auto-detect format: if any entry uses chance, use SPID format
+            var anyEntryUsesChance = entries.Any(e => e.Chance.HasValue);
+            var effectiveFormat = anyEntryUsesChance ? DistributionFileType.Spid : DistributionFormat;
+
+            await _fileWriterService.WriteDistributionFileAsync(finalFilePath, entries, effectiveFormat);
 
             StatusMessage = $"Successfully saved distribution file: {Path.GetFileName(finalFilePath)}";
             _logger.Information("Saved distribution file: {FilePath}", finalFilePath);
@@ -737,7 +778,12 @@ public class DistributionEditTabViewModel : ReactiveObject
             StatusMessage = "Loading distribution file...";
             _logger.Information("Loading distribution file: {FilePath}", DistributionFilePath);
 
-            var entries = await _fileWriterService.LoadDistributionFileAsync(DistributionFilePath);
+            // Load file and detect format
+            var (entries, detectedFormat) = await ((DistributionFileWriterService)_fileWriterService).LoadDistributionFileWithFormatAsync(
+                DistributionFilePath);
+
+            // Set the detected format
+            DistributionFormat = detectedFormat;
 
             // Ensure outfits are loaded before creating entries so ComboBox bindings work
             await LoadAvailableOutfitsAsync();
@@ -950,89 +996,189 @@ public class DistributionEditTabViewModel : ReactiveObject
 
     private void UpdateDistributionPreview()
     {
-        var lines = new List<string>();
-
-        // Add header comment
-        lines.Add("; Distribution File");
-        lines.Add("; Generated by Boutique");
-        lines.Add("");
-
-        if (_mutagenService.LinkCache is not ILinkCache<ISkyrimMod, ISkyrimModGetter> linkCache)
+        try
         {
-            DistributionPreviewText = string.Join(Environment.NewLine, lines) + Environment.NewLine + "; LinkCache not available";
-            return;
-        }
+            var lines = new List<string>();
 
-        foreach (var entryVm in DistributionEntries)
+            // Add header comment
+            lines.Add("; Distribution File");
+            lines.Add("; Generated by Boutique");
+            lines.Add("");
+
+            if (_mutagenService.LinkCache is not ILinkCache<ISkyrimMod, ISkyrimModGetter> linkCache)
+            {
+                DistributionPreviewText = string.Join(Environment.NewLine, lines) + Environment.NewLine + "; LinkCache not available";
+                return;
+            }
+
+            // Auto-detect format: if any entry uses chance, use SPID format
+            var anyEntryUsesChance = DistributionEntries.Any(e => e.UseChance);
+            var effectiveFormat = anyEntryUsesChance ? DistributionFileType.Spid : DistributionFormat;
+
+            _logger.Debug("UpdateDistributionPreview: {EntryCount} entries, effectiveFormat={Format}, anyEntryUsesChance={UsesChance}",
+                DistributionEntries.Count, effectiveFormat, anyEntryUsesChance);
+
+            foreach (var entryVm in DistributionEntries)
         {
             if (entryVm.SelectedOutfit == null)
                 continue;
 
-            // Always use SkyPatcher format
-            // SkyPatcher format: filterByNpcs=...:filterByFactions=...:filterByKeywords=...:filterByRaces=...:outfitDefault=...
-            var filterParts = new List<string>();
-
-            // Add NPC filter if present
-            if (entryVm.SelectedNpcs.Count > 0)
+            if (effectiveFormat == DistributionFileType.Spid)
             {
-                var npcFormKeys = entryVm.SelectedNpcs
-                    .Select(npc => FormKeyHelper.Format(npc.FormKey))
+                // SPID format: Outfit = FormOrEditorID|StringFilters|FormFilters|LevelFilters|TraitFilters|CountOrPackageIdx|Chance
+                var outfitIdentifier = FormatOutfitIdentifier(entryVm.SelectedOutfit);
+                
+                // StringFilters (position 2): NPC names (comma-separated for OR) and Keywords (with + for AND)
+                var stringFilters = new List<string>();
+                
+                // Add NPC names (comma-separated for OR logic)
+                var npcNames = entryVm.SelectedNpcs
+                    .Where(npc => !string.IsNullOrWhiteSpace(npc.DisplayName))
+                    .Select(npc => npc.DisplayName)
                     .ToList();
-                var npcList = string.Join(",", npcFormKeys);
-                filterParts.Add($"filterByNpcs={npcList}");
-            }
-
-            // Add faction filter if present
-            if (entryVm.SelectedFactions.Count > 0)
-            {
-                var factionFormKeys = entryVm.SelectedFactions
-                    .Select(faction => FormKeyHelper.Format(faction.FormKey))
+                if (npcNames.Count > 0)
+                {
+                    // NPC names use comma-separated (OR logic)
+                    stringFilters.Add(string.Join(",", npcNames));
+                }
+                
+                // Add Keywords (with + for AND logic)
+                var keywordEditorIds = entryVm.SelectedKeywords
+                    .Where(k => !string.IsNullOrWhiteSpace(k.EditorID) && k.EditorID != "(No EditorID)")
+                    .Select(k => k.EditorID)
                     .ToList();
-                var factionList = string.Join(",", factionFormKeys);
-                filterParts.Add($"filterByFactions={factionList}");
-            }
+                if (keywordEditorIds.Count > 0)
+                {
+                    // Keywords use + for AND logic
+                    stringFilters.Add(string.Join("+", keywordEditorIds));
+                }
+                
+                var stringFiltersPart = stringFilters.Count > 0 ? string.Join(",", stringFilters) : null;
 
-            // Add keyword filter if present
-            if (entryVm.SelectedKeywords.Count > 0)
+                // FormFilters (position 3): Factions and Races (with + for AND logic)
+                var formFilters = new List<string>();
+                foreach (var faction in entryVm.SelectedFactions)
+                {
+                    var editorId = faction.EditorID;
+                    if (!string.IsNullOrWhiteSpace(editorId) && editorId != "(No EditorID)")
+                    {
+                        formFilters.Add(editorId);
+                    }
+                }
+                foreach (var race in entryVm.SelectedRaces)
+                {
+                    var editorId = race.EditorID;
+                    if (!string.IsNullOrWhiteSpace(editorId) && editorId != "(No EditorID)")
+                    {
+                        formFilters.Add(editorId);
+                    }
+                }
+                var formFiltersPart = formFilters.Count > 0 ? string.Join("+", formFilters) : null;
+
+                // LevelFilters (position 4): Not supported yet
+                var levelFiltersPart = (string?)null;
+
+                // TraitFilters (position 5): Not supported yet
+                var traitFiltersPart = (string?)null;
+
+                // CountOrPackageIdx (position 6): Not supported yet
+                var countPart = (string?)null;
+
+                // Chance (position 7) - only include if not 100 or if explicitly set
+                var chancePart = entryVm.UseChance && entryVm.Chance != 100
+                    ? entryVm.Chance.ToString()
+                    : null;
+
+                // Build SPID line - only include positions up to the last non-null value
+                var parts = new List<string> { outfitIdentifier };
+                if (stringFiltersPart != null)
+                    parts.Add(stringFiltersPart);
+                if (formFiltersPart != null)
+                    parts.Add(formFiltersPart);
+                if (levelFiltersPart != null)
+                    parts.Add(levelFiltersPart);
+                if (traitFiltersPart != null)
+                    parts.Add(traitFiltersPart);
+                if (countPart != null)
+                    parts.Add(countPart);
+                if (chancePart != null)
+                    parts.Add(chancePart);
+
+                var spidLine = $"Outfit = {string.Join("|", parts)}";
+                lines.Add(spidLine);
+            }
+            else
             {
-                var keywordFormKeys = entryVm.SelectedKeywords
-                    .Select(keyword => FormKeyHelper.Format(keyword.FormKey))
-                    .ToList();
-                var keywordList = string.Join(",", keywordFormKeys);
-                filterParts.Add($"filterByKeywords={keywordList}");
+                // SkyPatcher format: filterByNpcs=...:filterByFactions=...:filterByKeywords=...:filterByRaces=...:outfitDefault=...
+                var filterParts = new List<string>();
+
+                // Add NPC filter if present
+                if (entryVm.SelectedNpcs.Count > 0)
+                {
+                    var npcFormKeys = entryVm.SelectedNpcs
+                        .Select(npc => FormKeyHelper.Format(npc.FormKey))
+                        .ToList();
+                    var npcList = string.Join(",", npcFormKeys);
+                    filterParts.Add($"filterByNpcs={npcList}");
+                }
+
+                // Add faction filter if present
+                if (entryVm.SelectedFactions.Count > 0)
+                {
+                    var factionFormKeys = entryVm.SelectedFactions
+                        .Select(faction => FormKeyHelper.Format(faction.FormKey))
+                        .ToList();
+                    var factionList = string.Join(",", factionFormKeys);
+                    filterParts.Add($"filterByFactions={factionList}");
+                }
+
+                // Add keyword filter if present
+                if (entryVm.SelectedKeywords.Count > 0)
+                {
+                    var keywordFormKeys = entryVm.SelectedKeywords
+                        .Select(keyword => FormKeyHelper.Format(keyword.FormKey))
+                        .ToList();
+                    var keywordList = string.Join(",", keywordFormKeys);
+                    filterParts.Add($"filterByKeywords={keywordList}");
+                }
+
+                // Add race filter if present
+                if (entryVm.SelectedRaces.Count > 0)
+                {
+                    var raceFormKeys = entryVm.SelectedRaces
+                        .Select(race => FormKeyHelper.Format(race.FormKey))
+                        .ToList();
+                    var raceList = string.Join(",", raceFormKeys);
+                    filterParts.Add($"filterByRaces={raceList}");
+                }
+
+                // Add outfit
+                var outfitFormKey = FormKeyHelper.Format(entryVm.SelectedOutfit.FormKey);
+                filterParts.Add($"outfitDefault={outfitFormKey}");
+
+                var line = string.Join(":", filterParts);
+                lines.Add(line);
+            }
             }
 
-            // Add race filter if present
-            if (entryVm.SelectedRaces.Count > 0)
-            {
-                var raceFormKeys = entryVm.SelectedRaces
-                    .Select(race => FormKeyHelper.Format(race.FormKey))
-                    .ToList();
-                var raceList = string.Join(",", raceFormKeys);
-                filterParts.Add($"filterByRaces={raceList}");
-            }
-
-            // Add outfit
-            var outfitFormKey = FormKeyHelper.Format(entryVm.SelectedOutfit.FormKey);
-            filterParts.Add($"outfitDefault={outfitFormKey}");
-
-            // TODO: Chance-based distribution - need to verify SkyPatcher syntax for chance
-            // If SkyPatcher supports chance, add it here (e.g., chance=50 or similar)
-            if (entryVm.Chance.HasValue && entryVm.Chance.Value != 100)
-            {
-                // Note: Need to confirm SkyPatcher syntax for chance-based distribution
-                // For now, adding as comment - user will provide correct syntax if needed
-                filterParts.Add($"chance={entryVm.Chance.Value}");
-            }
-
-            var line = string.Join(":", filterParts);
-            lines.Add(line);
+            DistributionPreviewText = string.Join(Environment.NewLine, lines);
+            
+            _logger.Debug("UpdateDistributionPreview: Generated {LineCount} lines", lines.Count);
+            
+            // Also detect conflicts when preview is updated (runs asynchronously internally)
+            DetectConflicts();
         }
+        catch (Exception ex)
+        {
+            _logger.Error(ex, "Error updating distribution preview");
+            DistributionPreviewText = $"; Error generating preview: {ex.Message}";
+        }
+    }
 
-        DistributionPreviewText = string.Join(Environment.NewLine, lines);
-        
-        // Also detect conflicts when preview is updated (runs asynchronously internally)
-        DetectConflicts();
+    private string FormatOutfitIdentifier(IOutfitGetter outfit)
+    {
+        // Format as FormKey: 0x800~Plugin.esp
+        return $"0x{outfit.FormKey.ID:X}~{outfit.FormKey.ModKey.FileName}";
     }
 
 
@@ -1259,12 +1405,25 @@ public class DistributionEditTabViewModel : ReactiveObject
     }
 
     /// <summary>
+    /// Called when a user enables chance-based distribution. Changes format to SPID if needed.
+    /// </summary>
+    private void OnUseChanceEnabling()
+    {
+        // Change format to SPID if it's currently SkyPatcher
+        if (DistributionFormat == DistributionFileType.SkyPatcher)
+        {
+            DistributionFormat = DistributionFileType.Spid;
+            UpdateDistributionPreview();
+        }
+    }
+
+    /// <summary>
     /// Creates a DistributionEntryViewModel from a DistributionEntry,
     /// resolving outfit and NPC references for proper UI binding.
     /// </summary>
     private DistributionEntryViewModel CreateEntryViewModel(DistributionEntry entry)
     {
-        var entryVm = new DistributionEntryViewModel(entry, RemoveDistributionEntry);
+        var entryVm = new DistributionEntryViewModel(entry, RemoveDistributionEntry, OnUseChanceEnabling);
         
         // Resolve outfit to AvailableOutfits instance for ComboBox binding
         ResolveEntryOutfit(entryVm);
