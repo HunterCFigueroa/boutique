@@ -3,10 +3,10 @@
   "editor.formatOnSave": true,
   "editor.formatOnPaste": false,
 
-  // C# specific settings
+  // C# specific settings - use MS C# extension which respects .editorconfig
   "[csharp]": {
     "editor.formatOnSave": true,
-    "editor.defaultFormatter": "anysphere.csharp"
+    "editor.defaultFormatter": "ms-dotnettools.csharp"
   },
 
   // XAML specific settings
@@ -21,6 +21,9 @@
 
   // Use .editorconfig
   "editor.detectIndentation": false,
+
+  // Enable .editorconfig support for OmniSharp
+  "omnisharp.enableEditorConfigSupport": true,
 
   // Organize imports on save for C#
   "editor.codeActionsOnSave": {
