@@ -608,7 +608,7 @@ public class MainViewModel : ReactiveObject
                 }
                 else
                 {
-                    var match = new ArmorMatch(source.Armor, target.Armor, 1.0, true);
+                    var match = new ArmorMatch(source.Armor, target.Armor, true);
                     var mapping = new ArmorMatchViewModel(match, source, target);
                     Matches.Add(mapping);
                 }
@@ -649,7 +649,7 @@ public class MainViewModel : ReactiveObject
                 }
                 else
                 {
-                    var match = new ArmorMatch(source.Armor, null, 1.0, true, true);
+                    var match = new ArmorMatch(source.Armor, null, true);
                     var mapping = new ArmorMatchViewModel(match, source, null);
                     Matches.Add(mapping);
                 }
@@ -1415,8 +1415,6 @@ public class ArmorMatchViewModel : ReactiveObject
 
     public bool HasTarget => Match.IsGlamOnly || Target != null;
     public bool IsGlamOnly => Match.IsGlamOnly;
-    public double Confidence => Match.MatchConfidence;
-    public string ConfidenceText => Confidence > 0 ? $"{Confidence:P0}" : string.Empty;
     public string SourceSummary => Source.SummaryLine;
 
     public string TargetSummary => Match.IsGlamOnly
@@ -1429,15 +1427,12 @@ public class ArmorMatchViewModel : ReactiveObject
 
     public void ApplyManualTarget(ArmorRecordViewModel target)
     {
-        Match.IsManualMatch = true;
-        Match.MatchConfidence = 1.0;
         Match.IsGlamOnly = false;
         ApplyTargetInternal(target);
     }
 
     public void ApplyAutoTarget(ArmorRecordViewModel target)
     {
-        Match.IsManualMatch = false;
         Match.IsGlamOnly = false;
         ApplyTargetInternal(target);
     }
@@ -1446,15 +1441,12 @@ public class ArmorMatchViewModel : ReactiveObject
     {
         Match.TargetArmor = null;
         Match.IsGlamOnly = false;
-        Match.MatchConfidence = 0.0;
         Target = null;
     }
 
     public void ApplyGlamOnly()
     {
-        Match.IsManualMatch = true;
         Match.IsGlamOnly = true;
-        Match.MatchConfidence = 1.0;
         Match.TargetArmor = null;
         Target = null;
         RefreshState();
