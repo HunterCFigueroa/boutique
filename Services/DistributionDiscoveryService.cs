@@ -1,3 +1,4 @@
+using System.Buffers;
 using System.Collections.Concurrent;
 using System.IO;
 using System.Text;
@@ -8,6 +9,7 @@ namespace Boutique.Services;
 
 public class DistributionDiscoveryService(ILogger logger)
 {
+    private static readonly SearchValues<char> CommentChars = SearchValues.Create([';', '#']);
     private readonly ILogger _logger = logger.ForContext<DistributionDiscoveryService>();
 
     public async Task<IReadOnlyList<DistributionFile>> DiscoverAsync(string dataFolderPath,
@@ -22,7 +24,7 @@ public class DistributionDiscoveryService(ILogger logger)
         return await Task.Run(() => DiscoverInternal(dataFolderPath, cancellationToken), cancellationToken);
     }
 
-    private IReadOnlyList<DistributionFile> DiscoverInternal(string dataFolderPath, CancellationToken cancellationToken)
+    private List<DistributionFile> DiscoverInternal(string dataFolderPath, CancellationToken cancellationToken)
     {
         var files = new ConcurrentBag<DistributionFile>();
         var seenPaths = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
@@ -253,8 +255,8 @@ public class DistributionDiscoveryService(ILogger logger)
 
     private static bool IsSkyPatcherOutfitLine(string trimmed)
     {
-        return trimmed.IndexOf("filterByOutfits=", StringComparison.OrdinalIgnoreCase) >= 0 ||
-               trimmed.IndexOf("outfitDefault=", StringComparison.OrdinalIgnoreCase) >= 0;
+        return trimmed.Contains("filterByOutfits=", StringComparison.OrdinalIgnoreCase) ||
+               trimmed.Contains("outfitDefault=", StringComparison.OrdinalIgnoreCase);
     }
 
     private static IReadOnlyList<string> ExtractOutfitFormKeys(DistributionFileType type, string trimmed)
@@ -459,7 +461,7 @@ public class DistributionDiscoveryService(ILogger logger)
         }
     }
 
-    private static IReadOnlyList<string> NormalizeFormKeyTokens(IEnumerable<string> tokens)
+    private static List<string> NormalizeFormKeyTokens(IEnumerable<string> tokens)
     {
         var results = new List<string>();
 
@@ -536,7 +538,7 @@ public class DistributionDiscoveryService(ILogger logger)
 
     private static string RemoveInlineComment(string text)
     {
-        var commentIndex = text.IndexOfAny(new[] { ';', '#' });
+        var commentIndex = text.AsSpan().IndexOfAny(CommentChars);
         if (commentIndex >= 0)
             text = text[..commentIndex];
 

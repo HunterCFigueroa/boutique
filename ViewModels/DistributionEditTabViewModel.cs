@@ -1,4 +1,5 @@
 using System.Collections.ObjectModel;
+using System.Globalization;
 using System.IO;
 using System.Reactive;
 using System.Reactive.Linq;
@@ -19,7 +20,6 @@ public class DistributionEditTabViewModel : ReactiveObject
 {
     private readonly DistributionFileWriterService _fileWriterService;
     private readonly NpcScanningService _npcScanningService;
-    private readonly DistributionConflictDetectionService _conflictDetectionService;
     private readonly ArmorPreviewService _armorPreviewService;
     private readonly MutagenService _mutagenService;
     private readonly SettingsViewModel _settings;
@@ -32,7 +32,6 @@ public class DistributionEditTabViewModel : ReactiveObject
     public DistributionEditTabViewModel(
         DistributionFileWriterService fileWriterService,
         NpcScanningService npcScanningService,
-        DistributionConflictDetectionService conflictDetectionService,
         ArmorPreviewService armorPreviewService,
         MutagenService mutagenService,
         SettingsViewModel settings,
@@ -40,7 +39,6 @@ public class DistributionEditTabViewModel : ReactiveObject
     {
         _fileWriterService = fileWriterService;
         _npcScanningService = npcScanningService;
-        _conflictDetectionService = conflictDetectionService;
         _armorPreviewService = armorPreviewService;
         _mutagenService = mutagenService;
         _settings = settings;
@@ -676,7 +674,7 @@ public class DistributionEditTabViewModel : ReactiveObject
             sb.AppendLine();
             sb.AppendLine("To ensure your new distributions take priority (load last), the filename will be changed to:");
             sb.AppendLine();
-            sb.AppendLine($"    {SuggestedFileName}");
+            sb.Append(CultureInfo.InvariantCulture, $"    {SuggestedFileName}").AppendLine();
             sb.AppendLine();
             sb.AppendLine("This 'Z' prefix ensures alphabetical sorting places your file after the conflicting files.");
             sb.AppendLine();
@@ -1098,7 +1096,7 @@ public class DistributionEditTabViewModel : ReactiveObject
 
                     // Chance (position 7) - only include if not 100 or if explicitly set
                     var chancePart = entryVm.UseChance && entryVm.Chance != 100
-                        ? entryVm.Chance.ToString()
+                        ? entryVm.Chance.ToString(CultureInfo.InvariantCulture)
                         : null;
 
                     // Build SPID line - only include positions up to the last non-null value

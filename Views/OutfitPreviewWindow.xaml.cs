@@ -18,8 +18,9 @@ using Vector3 = System.Numerics.Vector3;
 
 namespace Boutique.Views;
 
-public partial class OutfitPreviewWindow
+public partial class OutfitPreviewWindow : IDisposable
 {
+    private bool _disposed;
     private const float AmbientSrgb = 0.2f;
     private const float KeyFillSrgb = 0.6f;
     private const float RimSrgb = 0.85f;
@@ -473,9 +474,35 @@ public partial class OutfitPreviewWindow
     protected override void OnClosed(EventArgs e)
     {
         base.OnClosed(e);
-        _meshGroup.Children.Clear();
-        PreviewViewport.Items.Clear();
-        _effectsManager.Dispose();
+        Dispose();
+    }
+
+    public void Dispose()
+    {
+        Dispose(true);
+        GC.SuppressFinalize(this);
+    }
+
+    protected virtual void Dispose(bool disposing)
+    {
+        if (_disposed)
+            return;
+
+        if (disposing)
+        {
+            _meshGroup.Children.Clear();
+            PreviewViewport.Items.Clear();
+
+            _ambientLight.Dispose();
+            _backLight.Dispose();
+            _frontalLight.Dispose();
+            _frontLeftLight.Dispose();
+            _frontRightLight.Dispose();
+            _meshGroup.Dispose();
+            _effectsManager.Dispose();
+        }
+
+        _disposed = true;
     }
 
     private record EvaluatedMesh(

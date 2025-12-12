@@ -4,6 +4,8 @@ namespace Boutique.Services;
 
 public class MatchingService
 {
+    private static readonly string[] ArmorTypes = { "boots", "gauntlets", "gloves", "helmet", "hood", "cuirass", "armor", "shield", "bracers" };
+
     public static IEnumerable<IGrouping<string, IArmorGetter>> GroupByOutfit(IEnumerable<IArmorGetter> armors)
     {
         return armors.GroupBy(armor =>
@@ -15,8 +17,7 @@ public class MatchingService
             var tokens = normalized.Split(' ', StringSplitOptions.RemoveEmptyEntries).ToList();
 
             // Remove common armor type words
-            var armorTypes = new[] { "boots", "gauntlets", "gloves", "helmet", "hood", "cuirass", "armor", "shield", "bracers" };
-            var baseTokens = tokens.Where(t => !armorTypes.Contains(t)).ToList();
+            var baseTokens = tokens.Where(t => !ArmorTypes.Contains(t)).ToList();
 
             return string.Join(" ", baseTokens);
         });

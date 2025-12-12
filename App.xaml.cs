@@ -1,3 +1,4 @@
+using System.Globalization;
 using System.IO;
 using System.Text.Json;
 using System.Text.RegularExpressions;
@@ -12,10 +13,13 @@ using Serilog;
 
 namespace Boutique;
 
+// WPF Application disposes resources in OnExit, which is the proper pattern for WPF apps
+#pragma warning disable CA1001 // Types that own disposable fields should be disposable
 public partial class App
+#pragma warning restore CA1001
 {
     private IContainer? _container;
-    private ILoggingService? _loggingService;
+    private LoggingService? _loggingService;
 
     protected override void OnStartup(StartupEventArgs e)
     {
@@ -180,9 +184,9 @@ public partial class App
         if (!match.Success)
             return null;
 
-        var major = int.Parse(match.Groups[1].Value);
-        var minor = int.Parse(match.Groups[2].Value);
-        var patch = int.Parse(match.Groups[3].Value);
+        var major = int.Parse(match.Groups[1].Value, CultureInfo.InvariantCulture);
+        var minor = int.Parse(match.Groups[2].Value, CultureInfo.InvariantCulture);
+        var patch = int.Parse(match.Groups[3].Value, CultureInfo.InvariantCulture);
 
         return new Version(major, minor, patch);
     }

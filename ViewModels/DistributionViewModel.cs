@@ -28,7 +28,6 @@ public class DistributionViewModel : ReactiveObject
         DistributionFileWriterService fileWriterService,
         NpcScanningService npcScanningService,
         NpcOutfitResolutionService npcOutfitResolutionService,
-        DistributionConflictDetectionService conflictDetectionService,
         SettingsViewModel settings,
         ArmorPreviewService armorPreviewService,
         MutagenService mutagenService,
@@ -48,7 +47,6 @@ public class DistributionViewModel : ReactiveObject
         EditTab = new DistributionEditTabViewModel(
             fileWriterService,
             npcScanningService,
-            conflictDetectionService,
             armorPreviewService,
             mutagenService,
             settings,
@@ -66,7 +64,6 @@ public class DistributionViewModel : ReactiveObject
         OutfitsTab = new DistributionOutfitsTabViewModel(
             npcScanningService,
             npcOutfitResolutionService,
-            discoveryService,
             armorPreviewService,
             mutagenService,
             settings,
@@ -177,7 +174,7 @@ public class DistributionViewModel : ReactiveObject
             .Subscribe(_ => this.RaisePropertyChanged(nameof(SelectedNpcOutfitContents)));
 
         // Wire up Edit tab file save to refresh Files tab
-        EditTab.FileSaved += async filePath =>
+        EditTab.FileSaved += async _ =>
         {
             await FilesTab.RefreshCommand.Execute();
             // Update Edit tab with refreshed files
@@ -244,12 +241,7 @@ public class DistributionViewModel : ReactiveObject
             vm => vm.EditTab.StatusMessage,
             vm => vm.NpcsTab.StatusMessage,
             vm => vm.OutfitsTab.StatusMessage,
-            (files, edit, npcs, outfits) =>
-                !string.IsNullOrWhiteSpace(edit) ? edit :
-                !string.IsNullOrWhiteSpace(npcs) ? npcs :
-                !string.IsNullOrWhiteSpace(outfits) ? outfits :
-                !string.IsNullOrWhiteSpace(files) ? files :
-                "Ready")
+            (files, edit, npcs, outfits) => GetFirstNonEmptyStatus(edit, npcs, outfits, files))
             .Subscribe(msg => StatusMessage = msg);
 
         // Handle tab changes
@@ -316,6 +308,16 @@ public class DistributionViewModel : ReactiveObject
     /// This ensures consistent settings state across all tabs.
     /// </summary>
     public SettingsViewModel Settings => _settings;
+
+    private static string GetFirstNonEmptyStatus(params string[] statuses)
+    {
+        foreach (var status in statuses)
+        {
+            if (!string.IsNullOrWhiteSpace(status))
+                return status;
+        }
+        return "Ready";
+    }
 
     /// <summary>UI: TabControl SelectedIndex binding - controls which tab (Files/Edit/NPCs) is visible.</summary>
     [Reactive] public int SelectedTabIndex { get; set; }

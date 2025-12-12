@@ -19,7 +19,6 @@ public class DistributionOutfitsTabViewModel : ReactiveObject
 {
     private readonly NpcScanningService _npcScanningService;
     private readonly NpcOutfitResolutionService _npcOutfitResolutionService;
-    private readonly DistributionDiscoveryService _discoveryService;
     private readonly ArmorPreviewService _armorPreviewService;
     private readonly MutagenService _mutagenService;
     private readonly SettingsViewModel _settings;
@@ -28,7 +27,6 @@ public class DistributionOutfitsTabViewModel : ReactiveObject
     public DistributionOutfitsTabViewModel(
         NpcScanningService npcScanningService,
         NpcOutfitResolutionService npcOutfitResolutionService,
-        DistributionDiscoveryService discoveryService,
         ArmorPreviewService armorPreviewService,
         MutagenService mutagenService,
         SettingsViewModel settings,
@@ -36,7 +34,6 @@ public class DistributionOutfitsTabViewModel : ReactiveObject
     {
         _npcScanningService = npcScanningService;
         _npcOutfitResolutionService = npcOutfitResolutionService;
-        _discoveryService = discoveryService;
         _armorPreviewService = armorPreviewService;
         _mutagenService = mutagenService;
         _settings = settings;

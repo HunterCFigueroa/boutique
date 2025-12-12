@@ -1,4 +1,5 @@
 using System.Collections.ObjectModel;
+using System.Globalization;
 using System.IO;
 using System.Reactive;
 using System.Reactive.Linq;
@@ -278,13 +279,13 @@ public class DistributionNpcsTabViewModel : ReactiveObject
         }
         else
         {
-            var term = NpcOutfitSearchText.Trim().ToLowerInvariant();
+            var term = NpcOutfitSearchText.Trim();
             filtered = NpcOutfitAssignments.Where(a =>
-                (a.DisplayName?.ToLowerInvariant().Contains(term) ?? false) ||
-                (a.EditorId?.ToLowerInvariant().Contains(term) ?? false) ||
-                (a.FinalOutfitEditorId?.ToLowerInvariant().Contains(term) ?? false) ||
-                a.FormKeyString.ToLowerInvariant().Contains(term) ||
-                a.ModDisplayName.ToLowerInvariant().Contains(term));
+                (a.DisplayName?.Contains(term, StringComparison.OrdinalIgnoreCase) ?? false) ||
+                (a.EditorId?.Contains(term, StringComparison.OrdinalIgnoreCase) ?? false) ||
+                (a.FinalOutfitEditorId?.Contains(term, StringComparison.OrdinalIgnoreCase) ?? false) ||
+                a.FormKeyString.Contains(term, StringComparison.OrdinalIgnoreCase) ||
+                a.ModDisplayName.Contains(term, StringComparison.OrdinalIgnoreCase));
         }
 
         FilteredNpcOutfitAssignments.Clear();
@@ -316,7 +317,7 @@ public class DistributionNpcsTabViewModel : ReactiveObject
         }
 
         var sb = new System.Text.StringBuilder();
-        sb.AppendLine($"Outfit: {outfit.EditorID ?? outfit.FormKey.ToString()}");
+        sb.Append(CultureInfo.InvariantCulture, $"Outfit: {outfit.EditorID ?? outfit.FormKey.ToString()}").AppendLine();
         sb.AppendLine();
 
         var armorPieces = OutfitResolver.GatherArmorPieces(outfit, linkCache);
@@ -330,7 +331,7 @@ public class DistributionNpcsTabViewModel : ReactiveObject
             foreach (var armor in armorPieces)
             {
                 var armorName = armor.EditorID ?? armor.FormKeyString;
-                sb.AppendLine($"  - {armorName}");
+                sb.Append(CultureInfo.InvariantCulture, $"  - {armorName}").AppendLine();
             }
         }
 

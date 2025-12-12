@@ -1,3 +1,4 @@
+using System.Globalization;
 using System.IO;
 using System.Text;
 using Boutique.Models;
@@ -109,7 +110,7 @@ public class DistributionFileWriterService
                         var countPart = "NONE";
 
                         // Chance (position 7)
-                        var chancePart = entry.Chance.HasValue ? entry.Chance.Value.ToString() : "100";
+                        var chancePart = entry.Chance.HasValue ? entry.Chance.Value.ToString(CultureInfo.InvariantCulture) : "100";
 
                         // Build SPID line
                         var spidLine = $"Outfit = {outfitIdentifier}|{stringFiltersPart}|{formFiltersPart}|{levelFiltersPart}|{traitFiltersPart}|{countPart}|{chancePart}";

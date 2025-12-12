@@ -271,7 +271,7 @@ public class GameAssetLocator
     private static string NormalizeAssetPath(string path)
     {
         var normalized = path.Replace('\\', '/').Trim();
-        while (normalized.StartsWith("/"))
+        while (normalized.StartsWith('/'))
             normalized = normalized[1..];
         return normalized;
     }
@@ -283,9 +283,8 @@ public class GameAssetLocator
 
     private static string ComputePathHash(string dataPath)
     {
-        using var sha = SHA256.Create();
         var bytes = Encoding.UTF8.GetBytes(dataPath.ToLowerInvariant());
-        var hash = sha.ComputeHash(bytes);
+        var hash = SHA256.HashData(bytes);
         return Convert.ToHexString(hash.AsSpan(0, 8));
     }
 

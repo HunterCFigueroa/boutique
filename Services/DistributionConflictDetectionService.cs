@@ -1,3 +1,4 @@
+using System.Globalization;
 using System.Text;
 using Boutique.Models;
 using Boutique.Utilities;
@@ -81,16 +82,16 @@ public class DistributionConflictDetectionService
             {
                 // Build conflict summary
                 var sb = new StringBuilder();
-                sb.AppendLine($"⚠ {conflicts.Count} NPC(s) already have outfit distributions in existing files:");
+                sb.Append(CultureInfo.InvariantCulture, $"⚠ {conflicts.Count} NPC(s) already have outfit distributions in existing files:").AppendLine();
 
                 foreach (var conflict in conflicts.Take(5)) // Show first 5
                 {
-                    sb.AppendLine($"  • {conflict.DisplayName ?? conflict.NpcFormKey.ToString()} ({conflict.ExistingFileName})");
+                    sb.Append(CultureInfo.InvariantCulture, $"  • {conflict.DisplayName ?? conflict.NpcFormKey.ToString()} ({conflict.ExistingFileName})").AppendLine();
                 }
 
                 if (conflicts.Count > 5)
                 {
-                    sb.AppendLine($"  ... and {conflicts.Count - 5} more");
+                    sb.Append(CultureInfo.InvariantCulture, $"  ... and {conflicts.Count - 5} more").AppendLine();
                 }
 
                 conflictSummary = sb.ToString().TrimEnd();

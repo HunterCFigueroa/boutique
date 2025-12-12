@@ -24,11 +24,13 @@ public sealed class LoggingService : ILoggingService
             .MinimumLevel.Debug()
             .Enrich.FromLogContext()
             .WriteTo.Async(configuration =>
+#pragma warning disable CA1305 // File sink configuration doesn't involve locale-sensitive formatting
                 configuration.File(
                     LogFilePattern,
                     rollingInterval: RollingInterval.Day,
                     retainedFileCountLimit: 14,
                     shared: true))
+#pragma warning restore CA1305
             .CreateLogger();
 
         Log.Logger = _logger;

@@ -34,7 +34,6 @@ public class MainViewModel : ReactiveObject
     private int _activeLoadingOperations;
 
     private string? _lastLoadedOutfitPlugin;
-    private string? _lastLoadedSourcePlugin;
     private string? _lastLoadedTargetPlugin;
     private ObservableCollection<ArmorRecordViewModel> _outfitArmors = new();
     private ICollectionView? _outfitArmorsView;
@@ -293,7 +292,6 @@ public class MainViewModel : ReactiveObject
             this.RaiseAndSetIfChanged(ref field, value);
             _logger.Information("Selected source plugin set to {Plugin}", value ?? "<none>");
 
-            _lastLoadedSourcePlugin = null;
             ClearMappingsInternal();
             SourceArmors = new ObservableCollection<ArmorRecordViewModel>();
             SelectedSourceArmors = Array.Empty<ArmorRecordViewModel>();
@@ -827,7 +825,6 @@ public class MainViewModel : ReactiveObject
 
             SourceArmors = new ObservableCollection<ArmorRecordViewModel>(
                 armors.Select(a => new ArmorRecordViewModel(a, _mutagenService.LinkCache)));
-            _lastLoadedSourcePlugin = plugin;
             SourceSearchText = string.Empty;
             SourceArmorsView?.Refresh();
 
@@ -1424,11 +1421,17 @@ public class ArmorMatchViewModel : ReactiveObject
     public bool IsGlamOnly => Match.IsGlamOnly;
     public string SourceSummary => Source.SummaryLine;
 
-    public string TargetSummary => Match.IsGlamOnly
-        ? "✨ Glam-only (armor rating set to 0)"
-        : Target != null
-            ? Target.SummaryLine
-            : "Not mapped";
+    public string TargetSummary
+    {
+        get
+        {
+            if (Match.IsGlamOnly)
+                return "✨ Glam-only (armor rating set to 0)";
+            if (Target != null)
+                return Target.SummaryLine;
+            return "Not mapped";
+        }
+    }
 
     public string CombinedSummary => $"{SourceSummary} <> {TargetSummary}";
 

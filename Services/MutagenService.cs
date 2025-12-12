@@ -1,3 +1,4 @@
+using System.Globalization;
 using System.IO;
 using Mutagen.Bethesda;
 using Mutagen.Bethesda.Environments;
@@ -147,7 +148,7 @@ public class MutagenService(ILoggingService loggingService)
 
         var newCount = _environment?.LoadOrder.Count ?? 0;
         var diff = newCount - previousCount;
-        var diffText = diff > 0 ? $"+{diff}" : diff.ToString();
+        var diffText = diff > 0 ? $"+{diff}" : diff.ToString(CultureInfo.InvariantCulture);
 
         _logger.Information("LinkCache refreshed. Load order: {PreviousCount} → {NewCount} mod(s) ({Diff}).",
             previousCount, newCount, diffText);

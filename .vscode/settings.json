@@ -19,11 +19,15 @@
   "files.insertFinalNewline": true,
   "files.trimFinalNewlines": true,
 
-  // Use .editorconfig
+  // Use .editorconfig (don't auto-detect indentation)
   "editor.detectIndentation": false,
 
-  // Enable .editorconfig support for OmniSharp
+  // OmniSharp settings - enable .editorconfig support
   "omnisharp.enableEditorConfigSupport": true,
+  "omnisharp.enableRoslynAnalyzers": true,
+
+  // C# Dev Kit / Roslyn settings
+  "dotnet.format.enable": true,
 
   // Organize imports on save for C#
   "editor.codeActionsOnSave": {

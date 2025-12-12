@@ -39,6 +39,6 @@ public class OutfitRecordViewModel : ReactiveObject
         if (string.IsNullOrWhiteSpace(searchTerm))
             return true;
 
-        return _searchCache.Contains(searchTerm.Trim().ToLowerInvariant());
+        return _searchCache.Contains(searchTerm.Trim(), StringComparison.OrdinalIgnoreCase);
     }
 }
