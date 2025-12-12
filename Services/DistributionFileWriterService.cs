@@ -66,55 +66,7 @@ public class DistributionFileWriterService
 
                     if (effectiveFormat == DistributionFileType.Spid)
                     {
-                        // SPID format: Outfit = FormOrEditorID|StringFilters|FormFilters|LevelFilters|TraitFilters|CountOrPackageIdx|Chance
-                        var outfitIdentifier = FormatOutfitIdentifier(entry.Outfit);
-
-                        // StringFilters (position 2): Keywords
-                        var stringFilters = new List<string>();
-                        foreach (var keywordFormKey in entry.KeywordFormKeys)
-                        {
-                            if (linkCache.TryResolve<IKeywordGetter>(keywordFormKey, out var keyword) &&
-                                !string.IsNullOrWhiteSpace(keyword.EditorID))
-                            {
-                                stringFilters.Add(keyword.EditorID);
-                            }
-                        }
-                        var stringFiltersPart = stringFilters.Count > 0 ? string.Join("+", stringFilters) : "NONE";
-
-                        // FormFilters (position 3): Factions and Races
-                        var formFilters = new List<string>();
-                        foreach (var factionFormKey in entry.FactionFormKeys)
-                        {
-                            if (linkCache.TryResolve<IFactionGetter>(factionFormKey, out var faction) &&
-                                !string.IsNullOrWhiteSpace(faction.EditorID))
-                            {
-                                formFilters.Add(faction.EditorID);
-                            }
-                        }
-                        foreach (var raceFormKey in entry.RaceFormKeys)
-                        {
-                            if (linkCache.TryResolve<IRaceGetter>(raceFormKey, out var race) &&
-                                !string.IsNullOrWhiteSpace(race.EditorID))
-                            {
-                                formFilters.Add(race.EditorID);
-                            }
-                        }
-                        var formFiltersPart = formFilters.Count > 0 ? string.Join("+", formFilters) : "NONE";
-
-                        // LevelFilters (position 4): Not supported yet
-                        var levelFiltersPart = "NONE";
-
-                        // TraitFilters (position 5): Not supported yet
-                        var traitFiltersPart = "NONE";
-
-                        // CountOrPackageIdx (position 6): Not supported yet
-                        var countPart = "NONE";
-
-                        // Chance (position 7)
-                        var chancePart = entry.Chance.HasValue ? entry.Chance.Value.ToString(CultureInfo.InvariantCulture) : "100";
-
-                        // Build SPID line
-                        var spidLine = $"Outfit = {outfitIdentifier}|{stringFiltersPart}|{formFiltersPart}|{levelFiltersPart}|{traitFiltersPart}|{countPart}|{chancePart}";
+                        var spidLine = FormatSpidLine(entry, linkCache);
                         lines.Add(spidLine);
                     }
                     else
@@ -393,5 +345,139 @@ public class DistributionFileWriterService
             return null;
 
         return new FormKey(modKey, formId);
+    }
+
+    /// <summary>
+    /// Formats a DistributionEntry as a SPID line.
+    /// SPID syntax: Outfit = FormOrEditorID|StringFilters|FormFilters|LevelFilters|TraitFilters|CountOrPackageIdx|Chance
+    /// Trailing NONE/100 values can be omitted, but intermediate NONEs must be preserved.
+    /// </summary>
+    private static string FormatSpidLine(DistributionEntry entry, ILinkCache<ISkyrimMod, ISkyrimModGetter> linkCache)
+    {
+        // Position 1: Outfit identifier
+        var outfitIdentifier = FormatOutfitIdentifier(entry.Outfit!);
+
+        // Position 2: StringFilters - Keywords (AND with +)
+        var stringFilters = new List<string>();
+        foreach (var keywordFormKey in entry.KeywordFormKeys)
+        {
+            if (linkCache.TryResolve<IKeywordGetter>(keywordFormKey, out var keyword) &&
+                !string.IsNullOrWhiteSpace(keyword.EditorID))
+            {
+                stringFilters.Add(keyword.EditorID);
+            }
+        }
+        var stringFiltersPart = stringFilters.Count > 0 ? string.Join("+", stringFilters) : null;
+
+        // Position 3: FormFilters - Factions and Races (AND with +)
+        var formFilters = new List<string>();
+        foreach (var factionFormKey in entry.FactionFormKeys)
+        {
+            if (linkCache.TryResolve<IFactionGetter>(factionFormKey, out var faction) &&
+                !string.IsNullOrWhiteSpace(faction.EditorID))
+            {
+                formFilters.Add(faction.EditorID);
+            }
+        }
+        foreach (var raceFormKey in entry.RaceFormKeys)
+        {
+            if (linkCache.TryResolve<IRaceGetter>(raceFormKey, out var race) &&
+                !string.IsNullOrWhiteSpace(race.EditorID))
+            {
+                formFilters.Add(race.EditorID);
+            }
+        }
+        var formFiltersPart = formFilters.Count > 0 ? string.Join("+", formFilters) : null;
+
+        // Position 4: LevelFilters - Not supported yet
+        string? levelFiltersPart = null;
+
+        // Position 5: TraitFilters
+        var traitFiltersPart = FormatTraitFilters(entry.TraitFilters);
+
+        // Position 6: CountOrPackageIdx - Not supported yet
+        string? countPart = null;
+
+        // Position 7: Chance
+        var chancePart = entry.Chance.HasValue && entry.Chance.Value != 100
+            ? entry.Chance.Value.ToString(CultureInfo.InvariantCulture)
+            : null;
+
+        // Build the line, preserving intermediate NONEs but trimming trailing ones
+        // We need to include all positions up to the last non-null value
+        var parts = new[] { stringFiltersPart, formFiltersPart, levelFiltersPart, traitFiltersPart, countPart, chancePart };
+
+        // Find the last non-null position
+        var lastNonNullIndex = -1;
+        for (var i = parts.Length - 1; i >= 0; i--)
+        {
+            if (parts[i] != null)
+            {
+                lastNonNullIndex = i;
+                break;
+            }
+        }
+
+        // Build the SPID line
+        var sb = new System.Text.StringBuilder();
+        sb.Append("Outfit = ");
+        sb.Append(outfitIdentifier);
+
+        // Add all parts up to and including the last non-null one
+        for (var i = 0; i <= lastNonNullIndex; i++)
+        {
+            sb.Append('|');
+            sb.Append(parts[i] ?? "NONE");
+        }
+
+        return sb.ToString();
+    }
+
+    /// <summary>
+    /// Formats trait filters for SPID output.
+    /// </summary>
+    private static string? FormatTraitFilters(Models.SpidTraitFilters traits)
+    {
+        if (traits.IsEmpty)
+            return null;
+
+        var parts = new List<string>();
+
+        if (traits.IsFemale == true)
+            parts.Add("F");
+        else if (traits.IsFemale == false)
+            parts.Add("M");
+
+        if (traits.IsUnique == true)
+            parts.Add("U");
+        else if (traits.IsUnique == false)
+            parts.Add("-U");
+
+        if (traits.IsSummonable == true)
+            parts.Add("S");
+        else if (traits.IsSummonable == false)
+            parts.Add("-S");
+
+        if (traits.IsChild == true)
+            parts.Add("C");
+        else if (traits.IsChild == false)
+            parts.Add("-C");
+
+        if (traits.IsLeveled == true)
+            parts.Add("L");
+        else if (traits.IsLeveled == false)
+            parts.Add("-L");
+
+        if (traits.IsTeammate == true)
+            parts.Add("T");
+        else if (traits.IsTeammate == false)
+            parts.Add("-T");
+
+        if (traits.IsDead == true)
+            parts.Add("D");
+        else if (traits.IsDead == false)
+            parts.Add("-D");
+
+        return parts.Count > 0 ? string.Join("/", parts) : null;
     }
 }

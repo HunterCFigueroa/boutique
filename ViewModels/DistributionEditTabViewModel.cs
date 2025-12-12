@@ -1087,36 +1087,45 @@ public class DistributionEditTabViewModel : ReactiveObject
                     var formFiltersPart = formFilters.Count > 0 ? string.Join("+", formFilters) : null;
 
                     // LevelFilters (position 4): Not supported yet
-                    var levelFiltersPart = (string?)null;
+                    string? levelFiltersPart = null;
 
-                    // TraitFilters (position 5): Not supported yet
-                    var traitFiltersPart = (string?)null;
+                    // TraitFilters (position 5): from entry
+                    var traitFiltersPart = FormatTraitFilters(entryVm.Entry.TraitFilters);
 
                     // CountOrPackageIdx (position 6): Not supported yet
-                    var countPart = (string?)null;
+                    string? countPart = null;
 
                     // Chance (position 7) - only include if not 100 or if explicitly set
                     var chancePart = entryVm.UseChance && entryVm.Chance != 100
                         ? entryVm.Chance.ToString(CultureInfo.InvariantCulture)
                         : null;
 
-                    // Build SPID line - only include positions up to the last non-null value
-                    var parts = new List<string> { outfitIdentifier };
-                    if (stringFiltersPart != null)
-                        parts.Add(stringFiltersPart);
-                    if (formFiltersPart != null)
-                        parts.Add(formFiltersPart);
-                    if (levelFiltersPart != null)
-                        parts.Add(levelFiltersPart);
-                    if (traitFiltersPart != null)
-                        parts.Add(traitFiltersPart);
-                    if (countPart != null)
-                        parts.Add(countPart);
-                    if (chancePart != null)
-                        parts.Add(chancePart);
+                    // Build SPID line - preserve intermediate NONEs, trim trailing ones
+                    var filterParts = new[] { stringFiltersPart, formFiltersPart, levelFiltersPart, traitFiltersPart, countPart, chancePart };
 
-                    var spidLine = $"Outfit = {string.Join("|", parts)}";
-                    lines.Add(spidLine);
+                    // Find the last non-null position
+                    var lastNonNullIndex = -1;
+                    for (var i = filterParts.Length - 1; i >= 0; i--)
+                    {
+                        if (filterParts[i] != null)
+                        {
+                            lastNonNullIndex = i;
+                            break;
+                        }
+                    }
+
+                    // Build the line
+                    var sb = new System.Text.StringBuilder();
+                    sb.Append("Outfit = ");
+                    sb.Append(outfitIdentifier);
+
+                    for (var i = 0; i <= lastNonNullIndex; i++)
+                    {
+                        sb.Append('|');
+                        sb.Append(filterParts[i] ?? "NONE");
+                    }
+
+                    lines.Add(sb.ToString());
                 }
                 else
                 {
@@ -1830,5 +1839,53 @@ public class DistributionEditTabViewModel : ReactiveObject
             AvailableKeywords.Clear();
             AvailableRaces.Clear();
         }
+    }
+
+    /// <summary>
+    /// Formats trait filters for SPID output.
+    /// </summary>
+    private static string? FormatTraitFilters(Models.SpidTraitFilters traits)
+    {
+        if (traits.IsEmpty)
+            return null;
+
+        var parts = new List<string>();
+
+        if (traits.IsFemale == true)
+            parts.Add("F");
+        else if (traits.IsFemale == false)
+            parts.Add("M");
+
+        if (traits.IsUnique == true)
+            parts.Add("U");
+        else if (traits.IsUnique == false)
+            parts.Add("-U");
+
+        if (traits.IsSummonable == true)
+            parts.Add("S");
+        else if (traits.IsSummonable == false)
+            parts.Add("-S");
+
+        if (traits.IsChild == true)
+            parts.Add("C");
+        else if (traits.IsChild == false)
+            parts.Add("-C");
+
+        if (traits.IsLeveled == true)
+            parts.Add("L");
+        else if (traits.IsLeveled == false)
+            parts.Add("-L");
+
+        if (traits.IsTeammate == true)
+            parts.Add("T");
+        else if (traits.IsTeammate == false)
+            parts.Add("-T");
+
+        if (traits.IsDead == true)
+            parts.Add("D");
+        else if (traits.IsDead == false)
+            parts.Add("-D");
+
+        return parts.Count > 0 ? string.Join("/", parts) : null;
     }
 }

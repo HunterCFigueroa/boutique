@@ -63,7 +63,8 @@ public static class SpidFilterResolver
                 NpcFormKeys = npcFormKeys,
                 FactionFormKeys = factionFormKeys,
                 KeywordFormKeys = keywordFormKeys,
-                RaceFormKeys = raceFormKeys
+                RaceFormKeys = raceFormKeys,
+                TraitFilters = filter.TraitFilters
             };
 
             // Set chance if not 100%
