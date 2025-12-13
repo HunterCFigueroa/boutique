@@ -47,6 +47,18 @@ public class DistributionEditTabViewModel : ReactiveObject
         // Subscribe to plugin changes so we refresh the available outfits list
         _mutagenService.PluginsChanged += OnPluginsChanged;
 
+        // Subscribe to cache loaded event to populate filtered lists automatically
+        _cache.CacheLoaded += OnCacheLoaded;
+
+        // If cache is already loaded, populate filtered lists immediately
+        if (_cache.IsLoaded)
+        {
+            UpdateFilteredNpcs();
+            UpdateFilteredFactions();
+            UpdateFilteredKeywords();
+            UpdateFilteredRaces();
+        }
+
         // Subscribe to collection changes to update computed count property
         _distributionEntries.CollectionChanged += OnDistributionEntriesChanged;
 
@@ -888,10 +900,13 @@ public class DistributionEditTabViewModel : ReactiveObject
             }
 
             // NPCs, factions, races, keywords are already available from cache
-            // Just update the filtered list
+            // Update all filtered lists
             UpdateFilteredNpcs();
+            UpdateFilteredFactions();
+            UpdateFilteredKeywords();
+            UpdateFilteredRaces();
 
-            StatusMessage = $"Data loaded: {AvailableNpcs.Count} NPCs, {AvailableFactions.Count} factions, {AvailableRaces.Count} races.";
+            StatusMessage = $"Data loaded: {AvailableNpcs.Count} NPCs, {AvailableFactions.Count} factions, {AvailableRaces.Count} races, {AvailableKeywords.Count} keywords.";
             _logger.Information("Using cached data: {NpcCount} NPCs, {FactionCount} factions.",
                 AvailableNpcs.Count, AvailableFactions.Count);
 
@@ -1283,6 +1298,21 @@ public class DistributionEditTabViewModel : ReactiveObject
         // Reload outfits immediately so the dropdown has the latest
         _logger.Information("Reloading available outfits...");
         await LoadAvailableOutfitsAsync();
+    }
+
+    private void OnCacheLoaded(object? sender, EventArgs e)
+    {
+        _logger.Debug("CacheLoaded event received, populating filtered lists...");
+
+        // Update all filtered lists when cache is loaded
+        UpdateFilteredNpcs();
+        UpdateFilteredFactions();
+        UpdateFilteredKeywords();
+        UpdateFilteredRaces();
+
+        this.RaisePropertyChanged(nameof(IsInitialized));
+        _logger.Information("Filtered lists populated: {NpcCount} NPCs, {FactionCount} factions, {KeywordCount} keywords, {RaceCount} races.",
+            FilteredNpcs.Count, FilteredFactions.Count, FilteredKeywords.Count, FilteredRaces.Count);
     }
 
     private async Task PreviewEntryAsync(DistributionEntryViewModel? entry)
