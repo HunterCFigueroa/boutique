@@ -98,12 +98,13 @@
                     </ListBox.ItemContainerStyle>
                     <ListBox.ItemTemplate>
                             <DataTemplate>
-                                <Border BorderThickness="1" Margin="0,0,0,6" Padding="6" Cursor="Hand" Background="{StaticResource Brush.CardBackground}">
+                                <Border BorderThickness="1" Margin="0,0,0,6" Padding="6" Cursor="Hand" Background="{StaticResource Brush.PanelBackground}">
                                     <Border.Style>
                                         <Style TargetType="Border">
-                                            <Setter Property="BorderBrush" Value="{StaticResource Brush.Border}" />
+                                            <Setter Property="BorderBrush" Value="{StaticResource Brush.BorderLight}" />
                                             <Style.Triggers>
                                                 <DataTrigger Binding="{Binding IsSelected}" Value="True">
+                                                    <Setter Property="Background" Value="{StaticResource Brush.CardBackground}" />
                                                     <Setter Property="BorderBrush" Value="{StaticResource Brush.Accent}" />
                                                     <Setter Property="BorderThickness" Value="2" />
                                                 </DataTrigger>
@@ -125,11 +126,13 @@
                                             <CheckBox Content="%" IsChecked="{Binding UseChance, Mode=TwoWay}" VerticalAlignment="Center" Margin="0,0,2,0" ToolTip="Use Chance" />
                                             <TextBox Text="{Binding Chance, UpdateSourceTrigger=PropertyChanged}" Width="36" VerticalAlignment="Center"
                                                      IsEnabled="{Binding UseChance}" Margin="0,0,6,0" ToolTip="Chance (0-100)" />
-                                            <Button Padding="3,1" ToolTip="Preview Outfit" Background="Transparent" BorderThickness="0" VerticalAlignment="Center"
-                                                    Command="{Binding DataContext.PreviewEntryCommand, ElementName=Root}" CommandParameter="{Binding}">
+                                            <Button Padding="2,1" ToolTip="Preview Outfit" Background="Transparent" BorderThickness="0" VerticalAlignment="Center"
+                                                    Command="{Binding DataContext.PreviewEntryCommand, ElementName=Root}" CommandParameter="{Binding}"
+                                                    MinWidth="0" Width="20">
                                                 <Image Source="pack://application:,,,/Assets/eye.png" Width="14" Height="14" />
                                             </Button>
-                                            <Button Content="×" Command="{Binding RemoveCommand}" Padding="5,1" ToolTip="Remove Entry" VerticalAlignment="Center" />
+                                            <Button Content="×" Command="{Binding RemoveCommand}" Padding="2,1" ToolTip="Remove Entry" VerticalAlignment="Center"
+                                                    MinWidth="0" Width="20" />
                                         </WrapPanel>
 
                                         <!-- NPCs (hidden when empty) -->
