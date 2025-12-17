@@ -113,27 +113,28 @@
                                     </Border.Style>
                                     <StackPanel>
                                         <!-- Header: Assign + Outfit + Chance + Preview + Remove -->
-                                        <WrapPanel Margin="0,0,0,2">
+                                        <StackPanel Orientation="Horizontal" Margin="0,0,0,2">
                                             <RadioButton Content="Assign" IsChecked="{Binding IsSelected}"
                                                          Command="{Binding DataContext.SelectEntryCommand, ElementName=Root}"
-                                                         CommandParameter="{Binding}" Margin="0,0,10,0" FontWeight="Bold" VerticalAlignment="Center" />
+                                                         CommandParameter="{Binding}" Margin="0,0,8,0" FontWeight="Bold" VerticalAlignment="Center" />
                                             <TextBlock Text="Outfit:" VerticalAlignment="Center" Margin="0,0,4,0" />
                                             <ComboBox ItemsSource="{Binding DataContext.AvailableOutfits, ElementName=Root}"
                                                       SelectedItem="{Binding SelectedOutfit, Mode=TwoWay}"
-                                                      DisplayMemberPath="EditorID" MinWidth="180" Margin="0,0,6,0"
+                                                      DisplayMemberPath="EditorID" MinWidth="140" Margin="0,0,4,0" Height="22"
                                                       MaxDropDownHeight="300" IsEditable="True" IsTextSearchEnabled="True"
-                                                      TextSearch.TextPath="EditorID" DropDownOpened="ComboBox_DropDownOpened" />
+                                                      TextSearch.TextPath="EditorID" DropDownOpened="ComboBox_DropDownOpened"
+                                                      VerticalContentAlignment="Center" />
                                             <CheckBox Content="%" IsChecked="{Binding UseChance, Mode=TwoWay}" VerticalAlignment="Center" Margin="0,0,2,0" ToolTip="Use Chance" />
-                                            <TextBox Text="{Binding Chance, UpdateSourceTrigger=PropertyChanged}" Width="36" VerticalAlignment="Center"
-                                                     IsEnabled="{Binding UseChance}" Margin="0,0,6,0" ToolTip="Chance (0-100)" />
-                                            <Button Padding="2,1" ToolTip="Preview Outfit" Background="Transparent" BorderThickness="0" VerticalAlignment="Center"
-                                                    Command="{Binding DataContext.PreviewEntryCommand, ElementName=Root}" CommandParameter="{Binding}"
-                                                    MinWidth="0" Width="20">
-                                                <Image Source="pack://application:,,,/Assets/eye.png" Width="14" Height="14" />
+                                            <TextBox Text="{Binding Chance, UpdateSourceTrigger=PropertyChanged}" Width="32" Height="22"
+                                                     IsEnabled="{Binding UseChance}" Margin="0,0,4,0" ToolTip="Chance (0-100)"
+                                                     VerticalAlignment="Center" VerticalContentAlignment="Center" Padding="2,0" />
+                                            <Button ToolTip="Preview Outfit" VerticalAlignment="Center" Height="22" Width="22" MinWidth="0" Padding="0" Margin="0"
+                                                    Command="{Binding DataContext.PreviewEntryCommand, ElementName=Root}" CommandParameter="{Binding}">
+                                                <Image Source="pack://application:,,,/Assets/eye.png" Width="12" Height="12" />
                                             </Button>
-                                            <Button Content="×" Command="{Binding RemoveCommand}" Padding="2,1" ToolTip="Remove Entry" VerticalAlignment="Center"
-                                                    MinWidth="0" Width="20" />
-                                        </WrapPanel>
+                                            <Button Content="×" Command="{Binding RemoveCommand}" ToolTip="Remove Entry"
+                                                    VerticalAlignment="Center" Height="22" Width="22" MinWidth="0" Padding="0" Margin="2,0,0,0" />
+                                        </StackPanel>
 
                                         <!-- NPCs (hidden when empty) -->
                                         <StackPanel Orientation="Horizontal" Margin="0,2,0,0">

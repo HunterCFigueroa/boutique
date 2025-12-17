@@ -405,6 +405,13 @@
         <Setter Property="EnableColumnVirtualization" Value="True" />
         <Setter Property="VirtualizingPanel.IsVirtualizing" Value="True" />
         <Setter Property="VirtualizingPanel.VirtualizationMode" Value="Recycling" />
+        <!-- Override system selection colors -->
+        <Style.Resources>
+            <SolidColorBrush x:Key="{x:Static SystemColors.HighlightBrushKey}" Color="{StaticResource Color.AccentMuted}" />
+            <SolidColorBrush x:Key="{x:Static SystemColors.InactiveSelectionHighlightBrushKey}" Color="{StaticResource Color.AccentMuted}" />
+            <SolidColorBrush x:Key="{x:Static SystemColors.HighlightTextBrushKey}" Color="White" />
+            <SolidColorBrush x:Key="{x:Static SystemColors.InactiveSelectionHighlightTextBrushKey}" Color="White" />
+        </Style.Resources>
     </Style>
 
     <Style TargetType="DataGridColumnHeader">
@@ -412,8 +419,48 @@
         <Setter Property="Foreground" Value="{StaticResource Brush.TextPrimary}" />
         <Setter Property="FontWeight" Value="SemiBold" />
         <Setter Property="BorderBrush" Value="{StaticResource Brush.Border}" />
-        <Setter Property="BorderThickness" Value="0,0,0,1" />
-        <Setter Property="Padding" Value="4,2" />
+        <Setter Property="BorderThickness" Value="0,0,1,1" />
+        <Setter Property="Padding" Value="6,4" />
+        <Setter Property="Template">
+            <Setter.Value>
+                <ControlTemplate TargetType="DataGridColumnHeader">
+                    <Grid Background="{TemplateBinding Background}">
+                        <Border BorderBrush="{TemplateBinding BorderBrush}"
+                                BorderThickness="{TemplateBinding BorderThickness}"
+                                Padding="{TemplateBinding Padding}">
+                            <Grid>
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="*" />
+                                    <ColumnDefinition Width="Auto" />
+                                </Grid.ColumnDefinitions>
+                                <ContentPresenter Grid.Column="0"
+                                                  HorizontalAlignment="{TemplateBinding HorizontalContentAlignment}"
+                                                  VerticalAlignment="Center" />
+                                <Path x:Name="SortArrow" Grid.Column="1"
+                                      Margin="4,0,0,0"
+                                      VerticalAlignment="Center"
+                                      Fill="{StaticResource Brush.TextSecondary}"
+                                      Visibility="Collapsed" />
+                            </Grid>
+                        </Border>
+                        <Thumb x:Name="PART_LeftHeaderGripper" HorizontalAlignment="Left" Width="2" Cursor="SizeWE"
+                               Background="Transparent" />
+                        <Thumb x:Name="PART_RightHeaderGripper" HorizontalAlignment="Right" Width="2" Cursor="SizeWE"
+                               Background="Transparent" />
+                    </Grid>
+                    <ControlTemplate.Triggers>
+                        <Trigger Property="SortDirection" Value="Ascending">
+                            <Setter TargetName="SortArrow" Property="Visibility" Value="Visible" />
+                            <Setter TargetName="SortArrow" Property="Data" Value="M 0 4 L 4 0 L 8 4 Z" />
+                        </Trigger>
+                        <Trigger Property="SortDirection" Value="Descending">
+                            <Setter TargetName="SortArrow" Property="Visibility" Value="Visible" />
+                            <Setter TargetName="SortArrow" Property="Data" Value="M 0 0 L 4 4 L 8 0 Z" />
+                        </Trigger>
+                    </ControlTemplate.Triggers>
+                </ControlTemplate>
+            </Setter.Value>
+        </Setter>
     </Style>
 
     <Style TargetType="DataGridRow">
@@ -426,7 +473,7 @@
                 <Setter Property="Background" Value="{StaticResource Brush.CardBackground}" />
             </Trigger>
             <Trigger Property="IsSelected" Value="True">
-                <Setter Property="Background" Value="{StaticResource Brush.CardBackground}" />
+                <Setter Property="Background" Value="{StaticResource Brush.AccentMuted}" />
                 <Setter Property="Foreground" Value="White" />
             </Trigger>
             <Trigger Property="AlternationIndex" Value="1">
@@ -444,19 +491,24 @@
         <Setter Property="Template">
             <Setter.Value>
                 <ControlTemplate TargetType="DataGridCell">
-                    <Border Background="{TemplateBinding Background}"
+                    <Border x:Name="CellBorder"
+                            Background="{TemplateBinding Background}"
                             BorderBrush="{TemplateBinding BorderBrush}"
                             BorderThickness="{TemplateBinding BorderThickness}"
                             Padding="{TemplateBinding Padding}"
                             SnapsToDevicePixels="True">
                         <ContentPresenter SnapsToDevicePixels="{TemplateBinding SnapsToDevicePixels}" />
                     </Border>
+                    <ControlTemplate.Triggers>
+                        <Trigger Property="IsSelected" Value="True">
+                            <Setter TargetName="CellBorder" Property="Background" Value="{StaticResource Brush.AccentMuted}" />
+                        </Trigger>
+                    </ControlTemplate.Triggers>
                 </ControlTemplate>
             </Setter.Value>
         </Setter>
         <Style.Triggers>
             <Trigger Property="IsSelected" Value="True">
-                <Setter Property="Background" Value="Transparent" />
                 <Setter Property="Foreground" Value="White" />
             </Trigger>
         </Style.Triggers>

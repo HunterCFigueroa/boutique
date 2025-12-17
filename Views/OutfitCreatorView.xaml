@@ -257,11 +257,8 @@
                                                                  DataObject.Pasting="OutfitNameTextBox_OnPasting"
                                                                  MaxLength="40"
                                                                  HorizontalAlignment="Left" />
-                                                        <TextBlock Margin="0,2,0,0" FontSize="11" Foreground="Gray">
-                                                            <Run Text="{Binding EditorId, Mode=OneWay}" />
-                                                            <Run Text=" • " />
-                                                            <Run Text="{Binding FormIdDisplay, Mode=OneWay}" />
-                                                        </TextBlock>
+                                                        <TextBlock Text="{Binding EditorId, Mode=OneWay}"
+                                                                   Margin="0,2,0,0" FontSize="11" Foreground="Gray" />
                                                     </StackPanel>
                                                     <StackPanel Grid.Column="1" Orientation="Horizontal"
                                                                 VerticalAlignment="Top">
