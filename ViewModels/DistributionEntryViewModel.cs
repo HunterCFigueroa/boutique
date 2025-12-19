@@ -8,6 +8,26 @@ using ReactiveUI.Fody.Helpers;
 
 namespace Boutique.ViewModels;
 
+/// <summary>
+/// Options for gender filter in SPID trait filters.
+/// </summary>
+public enum GenderFilter
+{
+    Any,
+    Female,
+    Male
+}
+
+/// <summary>
+/// Options for unique NPC filter in SPID trait filters.
+/// </summary>
+public enum UniqueFilter
+{
+    Any,
+    UniqueOnly,
+    NonUniqueOnly
+}
+
 public class DistributionEntryViewModel : ReactiveObject
 {
     private ObservableCollection<NpcRecordViewModel> _selectedNpcs = [];
@@ -24,6 +44,21 @@ public class DistributionEntryViewModel : ReactiveObject
         SelectedOutfit = entry.Outfit;
         UseChance = entry.Chance.HasValue;
         Chance = entry.Chance ?? 100;
+
+        // Initialize trait filters from entry
+        Gender = entry.TraitFilters.IsFemale switch
+        {
+            true => GenderFilter.Female,
+            false => GenderFilter.Male,
+            null => GenderFilter.Any
+        };
+        Unique = entry.TraitFilters.IsUnique switch
+        {
+            true => UniqueFilter.UniqueOnly,
+            false => UniqueFilter.NonUniqueOnly,
+            null => UniqueFilter.Any
+        };
+        IsChild = entry.TraitFilters.IsChild;
 
         // Initialize selected NPCs from entry
         if (entry.NpcFormKeys.Count > 0)
@@ -82,6 +117,41 @@ public class DistributionEntryViewModel : ReactiveObject
         // Sync SelectedOutfit changes back to Entry
         this.WhenAnyValue(x => x.SelectedOutfit)
             .Subscribe(outfit => Entry.Outfit = outfit);
+
+        // Sync trait filters back to Entry
+        this.WhenAnyValue(x => x.Gender)
+            .Skip(1)
+            .Subscribe(gender =>
+            {
+                Entry.TraitFilters = Entry.TraitFilters with
+                {
+                    IsFemale = gender switch
+                    {
+                        GenderFilter.Female => true,
+                        GenderFilter.Male => false,
+                        _ => null
+                    }
+                };
+            });
+
+        this.WhenAnyValue(x => x.Unique)
+            .Skip(1)
+            .Subscribe(unique =>
+            {
+                Entry.TraitFilters = Entry.TraitFilters with
+                {
+                    IsUnique = unique switch
+                    {
+                        UniqueFilter.UniqueOnly => true,
+                        UniqueFilter.NonUniqueOnly => false,
+                        _ => null
+                    }
+                };
+            });
+
+        this.WhenAnyValue(x => x.IsChild)
+            .Skip(1)
+            .Subscribe(isChild => Entry.TraitFilters = Entry.TraitFilters with { IsChild = isChild });
 
         // Sync UseChance and Chance changes back to Entry
         // Show warning when enabling chance-based distribution
@@ -147,6 +217,36 @@ public class DistributionEntryViewModel : ReactiveObject
     /// Defaults to 100.
     /// </summary>
     [Reactive] public int Chance { get; set; } = 100;
+
+    /// <summary>
+    /// Gender filter for this distribution entry.
+    /// </summary>
+    [Reactive] public GenderFilter Gender { get; set; } = GenderFilter.Any;
+
+    /// <summary>
+    /// Unique NPC filter for this distribution entry.
+    /// </summary>
+    [Reactive] public UniqueFilter Unique { get; set; } = UniqueFilter.Any;
+
+    /// <summary>
+    /// Child filter for this distribution entry. Null = any, true = children only, false = adults only.
+    /// </summary>
+    [Reactive] public bool? IsChild { get; set; }
+
+    /// <summary>
+    /// Available gender filter options for UI binding.
+    /// </summary>
+    public static GenderFilter[] GenderOptions { get; } = [GenderFilter.Any, GenderFilter.Female, GenderFilter.Male];
+
+    /// <summary>
+    /// Available unique filter options for UI binding.
+    /// </summary>
+    public static UniqueFilter[] UniqueOptions { get; } = [UniqueFilter.Any, UniqueFilter.UniqueOnly, UniqueFilter.NonUniqueOnly];
+
+    /// <summary>
+    /// Returns true if any trait filters are set (non-default values).
+    /// </summary>
+    public bool HasTraitFilters => Gender != GenderFilter.Any || Unique != UniqueFilter.Any || IsChild.HasValue;
 
     public ObservableCollection<NpcRecordViewModel> SelectedNpcs
     {

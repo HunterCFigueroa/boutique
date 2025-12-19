@@ -261,6 +261,19 @@
                                                 </ItemsControl.ItemTemplate>
                                             </ItemsControl>
                                         </StackPanel>
+
+                                        <!-- Traits: Gender, Unique -->
+                                        <StackPanel Orientation="Horizontal" Margin="0,4,0,0">
+                                            <TextBlock Text="Traits:" VerticalAlignment="Center" Margin="0,0,6,0" FontSize="11" Foreground="Gray" />
+                                            <TextBlock Text="Gender:" VerticalAlignment="Center" Margin="0,0,4,0" FontSize="11" />
+                                            <ComboBox ItemsSource="{x:Static vm:DistributionEntryViewModel.GenderOptions}"
+                                                      SelectedItem="{Binding Gender, Mode=TwoWay}"
+                                                      MinWidth="70" Height="22" FontSize="11" VerticalContentAlignment="Center" Margin="0,0,12,0" />
+                                            <TextBlock Text="Unique:" VerticalAlignment="Center" Margin="0,0,4,0" FontSize="11" />
+                                            <ComboBox ItemsSource="{x:Static vm:DistributionEntryViewModel.UniqueOptions}"
+                                                      SelectedItem="{Binding Unique, Mode=TwoWay}"
+                                                      MinWidth="100" Height="22" FontSize="11" VerticalContentAlignment="Center" />
+                                        </StackPanel>
                                     </StackPanel>
                                 </Border>
                             </DataTemplate>

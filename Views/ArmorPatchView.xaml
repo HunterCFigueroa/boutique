@@ -25,7 +25,7 @@
                 </Grid.ColumnDefinitions>
 
                 <StackPanel Grid.Column="0" Margin="0">
-                    <TextBlock Text="Source Plugin (Glam Mod)" FontWeight="SemiBold" Margin="0,0,0,2" />
+                    <TextBlock Text="Source Plugin" FontWeight="SemiBold" Margin="0,0,0,2" />
                     <ComboBox ItemsSource="{Binding AvailablePlugins}"
                               SelectedItem="{Binding SelectedSourcePlugin}"
                               IsEditable="True"
@@ -36,7 +36,7 @@
                 </StackPanel>
 
                 <StackPanel Grid.Column="2" Margin="0">
-                    <TextBlock Text="Target Plugin (Stats Source)" FontWeight="SemiBold" Margin="0,0,0,2" />
+                    <TextBlock Text="Target Plugin" FontWeight="SemiBold" Margin="0,0,0,2" />
                     <ComboBox ItemsSource="{Binding AvailablePlugins}"
                               SelectedItem="{Binding SelectedTargetPlugin}"
                               IsEditable="True"
@@ -55,7 +55,7 @@
                 <ColumnDefinition Width="3*" />
             </Grid.ColumnDefinitions>
 
-            <GroupBox Grid.Column="0" Header="Source Armors (Glam Mod)" Padding="6">
+            <GroupBox Grid.Column="0" Header="Source Armors" Padding="6">
                 <Grid>
                     <Grid.RowDefinitions>
                         <RowDefinition Height="Auto" />
@@ -123,7 +123,7 @@
 
             <GridSplitter Grid.Column="1" Width="4" HorizontalAlignment="Stretch" Background="LightGray" />
 
-            <GroupBox Grid.Column="2" Header="Target Armors (Stats Source)" Padding="6">
+            <GroupBox Grid.Column="2" Header="Target Armors" Padding="6">
                 <Grid>
                     <Grid.RowDefinitions>
                         <RowDefinition Height="Auto" />

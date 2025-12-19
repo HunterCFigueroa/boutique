@@ -114,6 +114,12 @@ public class DistributionFileWriterService
                             filterParts.Add($"filterByRaces={raceList}");
                         }
 
+                        // Add gender filter if present (SkyPatcher supports filterByGender=female/male)
+                        if (entry.TraitFilters.IsFemale.HasValue)
+                        {
+                            filterParts.Add($"filterByGender={( entry.TraitFilters.IsFemale.Value ? "female" : "male" )}");
+                        }
+
                         // Add outfit
                         var outfitFormKey = FormatFormKey(entry.Outfit.FormKey);
                         filterParts.Add($"outfitDefault={outfitFormKey}");

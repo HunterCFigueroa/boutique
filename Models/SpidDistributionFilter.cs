@@ -175,7 +175,7 @@ public sealed class SpidFilterPart
 /// <summary>
 /// Parsed trait filters from SPID position 5.
 /// </summary>
-public sealed class SpidTraitFilters
+public sealed record SpidTraitFilters
 {
     /// <summary>
     /// Gender filter: null = any, true = female, false = male
