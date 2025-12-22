@@ -38,7 +38,7 @@ public class DistributionEntryViewModel : ReactiveObject
     public DistributionEntryViewModel(
         DistributionEntry entry,
         System.Action<DistributionEntryViewModel>? removeAction = null,
-        System.Action? onUseChanceChanging = null)
+        Func<bool>? isFormatChangingToSpid = null)
     {
         Entry = entry;
         SelectedOutfit = entry.Outfit;
@@ -154,7 +154,7 @@ public class DistributionEntryViewModel : ReactiveObject
             .Subscribe(isChild => Entry.TraitFilters = Entry.TraitFilters with { IsChild = isChild });
 
         // Sync UseChance and Chance changes back to Entry
-        // Show warning when enabling chance-based distribution
+        // Show warning when enabling chance-based distribution (only if format change is needed)
         var previousUseChance = UseChance;
         this.WhenAnyValue(x => x.UseChance)
             .Skip(1) // Skip initial value
@@ -163,28 +163,30 @@ public class DistributionEntryViewModel : ReactiveObject
                 var wasEnabled = previousUseChance;
                 previousUseChance = useChance; // Update for next time
 
-                if (useChance && !wasEnabled && onUseChanceChanging != null)
+                if (useChance && !wasEnabled && isFormatChangingToSpid != null)
                 {
-                    // User is enabling chance - show warning
-                    var result = System.Windows.MessageBox.Show(
-                        "Enabling chance-based distribution will change the file format to SPID.\n\n" +
-                        "SkyPatcher does not support chance-based outfit distribution. " +
-                        "The file will be saved in SPID format to support this feature.\n\n" +
-                        "Do you want to continue?",
-                        "Format Change Required",
-                        System.Windows.MessageBoxButton.YesNo,
-                        System.Windows.MessageBoxImage.Warning);
-
-                    if (result == System.Windows.MessageBoxResult.No)
+                    // Check if format change is actually needed (i.e., currently SkyPatcher)
+                    if (isFormatChangingToSpid())
                     {
-                        // Revert the change
-                        previousUseChance = false; // Reset tracking
-                        UseChance = false;
-                        return;
-                    }
+                        // User is enabling chance and format will change - show warning
+                        var result = System.Windows.MessageBox.Show(
+                            "Enabling chance-based distribution will change the file format to SPID.\n\n" +
+                            "SkyPatcher does not support chance-based outfit distribution. " +
+                            "The file will be saved in SPID format to support this feature.\n\n" +
+                            "Do you want to continue?",
+                            "Format Change Required",
+                            System.Windows.MessageBoxButton.YesNo,
+                            System.Windows.MessageBoxImage.Warning);
 
-                    // User confirmed - allow the change
-                    onUseChanceChanging();
+                        if (result == System.Windows.MessageBoxResult.No)
+                        {
+                            // Revert the change
+                            previousUseChance = false; // Reset tracking
+                            UseChance = false;
+                            return;
+                        }
+                    }
+                    // Format change confirmed or not needed - proceed
                 }
 
                 Entry.Chance = useChance ? Chance : null;

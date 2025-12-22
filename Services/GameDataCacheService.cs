@@ -124,7 +124,7 @@ public class GameDataCacheService
             return;
         }
 
-        if (_mutagenService.LinkCache is not ILinkCache<ISkyrimMod, ISkyrimModGetter> linkCache)
+        if (_mutagenService.LinkCache is not { } linkCache)
         {
             _logger.Warning("Cannot load cache - LinkCache not available.");
             return;
@@ -526,7 +526,7 @@ public class GameDataCacheService
         _logger.Information("[PERF] LoadNpcs processing: {ElapsedMs}ms ({ValidCount} valid NPCs)",
             processSw.ElapsedMilliseconds, validNpcs.Count);
 
-        return (filterDataBag.ToList(), recordsBag.ToList());
+        return ([.. filterDataBag], [.. recordsBag]);
     }
 
     private NpcFilterData? BuildNpcFilterData(INpcGetter npc, ILinkCache<ISkyrimMod, ISkyrimModGetter> linkCache, ModKey originalModKey)

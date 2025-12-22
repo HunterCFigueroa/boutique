@@ -431,7 +431,7 @@ public class DistributionEditTabViewModel : ReactiveObject
             var entry = new DistributionEntry();
 
             _logger.Debug("Creating DistributionEntryViewModel");
-            var entryVm = new DistributionEntryViewModel(entry, RemoveDistributionEntry, OnUseChanceEnabling);
+            var entryVm = new DistributionEntryViewModel(entry, RemoveDistributionEntry, IsFormatChangingToSpid);
 
             _logger.Debug("Adding to DistributionEntries collection");
             DistributionEntries.Add(entryVm);
@@ -1601,16 +1601,18 @@ public class DistributionEditTabViewModel : ReactiveObject
     }
 
     /// <summary>
-    /// Called when a user enables chance-based distribution. Changes format to SPID if needed.
+    /// Called when a user enables chance-based distribution.
+    /// Returns true if format is currently SkyPatcher (will be changed to SPID), false if already SPID.
     /// </summary>
-    private void OnUseChanceEnabling()
+    private bool IsFormatChangingToSpid()
     {
-        // Change format to SPID if it's currently SkyPatcher
         if (DistributionFormat == DistributionFileType.SkyPatcher)
         {
             DistributionFormat = DistributionFileType.Spid;
             UpdateDistributionPreview();
+            return true;
         }
+        return false;
     }
 
     /// <summary>
@@ -1619,7 +1621,7 @@ public class DistributionEditTabViewModel : ReactiveObject
     /// </summary>
     private DistributionEntryViewModel CreateEntryViewModel(DistributionEntry entry)
     {
-        var entryVm = new DistributionEntryViewModel(entry, RemoveDistributionEntry, OnUseChanceEnabling);
+        var entryVm = new DistributionEntryViewModel(entry, RemoveDistributionEntry, IsFormatChangingToSpid);
 
         // Resolve outfit to AvailableOutfits instance for ComboBox binding
         ResolveEntryOutfit(entryVm);
