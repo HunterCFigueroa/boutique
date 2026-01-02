@@ -47,6 +47,7 @@ public partial class App
         builder.RegisterType<CrossSessionCacheService>().SingleInstance();
         builder.RegisterType<GameDataCacheService>().SingleInstance();
         builder.RegisterType<ThemeService>().SingleInstance();
+        builder.RegisterType<TutorialService>().SingleInstance();
 
         builder.RegisterType<MainViewModel>().AsSelf().SingleInstance();
         builder.RegisterType<SettingsViewModel>().AsSelf().SingleInstance();

@@ -263,6 +263,7 @@ public class GameDataCacheService
     {
         _isLoaded = false;
         _crossSessionCache.InvalidateCache();
+        await _mutagenService.RefreshLinkCacheAsync(_settings.PatchFileName);
         await LoadAsync();
     }
 

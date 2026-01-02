@@ -35,12 +35,18 @@ public class SettingsViewModel : ReactiveObject
     private readonly PatcherSettings _settings;
     private readonly CrossSessionCacheService _cacheService;
     private readonly ThemeService _themeService;
+    private readonly TutorialService _tutorialService;
 
-    public SettingsViewModel(PatcherSettings settings, CrossSessionCacheService cacheService, ThemeService themeService)
+    public SettingsViewModel(
+        PatcherSettings settings,
+        CrossSessionCacheService cacheService,
+        ThemeService themeService,
+        TutorialService tutorialService)
     {
         _settings = settings;
         _cacheService = cacheService;
         _themeService = themeService;
+        _tutorialService = tutorialService;
 
         SkyrimDataPath = settings.SkyrimDataPath;
         OutputPatchPath = settings.OutputPatchPath;
@@ -71,6 +77,7 @@ public class SettingsViewModel : ReactiveObject
         BrowseOutputPathCommand = new RelayCommand(BrowseOutputPath);
         AutoDetectPathCommand = new RelayCommand(AutoDetectPath);
         ClearCacheCommand = new RelayCommand(ClearCache);
+        RestartTutorialCommand = new RelayCommand(RestartTutorial);
 
         if (string.IsNullOrEmpty(SkyrimDataPath))
             AutoDetectPath();
@@ -95,6 +102,7 @@ public class SettingsViewModel : ReactiveObject
     public ICommand BrowseOutputPathCommand { get; }
     public ICommand AutoDetectPathCommand { get; }
     public ICommand ClearCacheCommand { get; }
+    public ICommand RestartTutorialCommand { get; }
 
     private void BrowseDataPath()
     {
@@ -211,6 +219,12 @@ public class SettingsViewModel : ReactiveObject
     {
         _cacheService.InvalidateCache();
         RefreshCacheStatus();
+    }
+
+    private void RestartTutorial()
+    {
+        _tutorialService.ResetTutorial();
+        _tutorialService.StartTutorial();
     }
 
     public void RefreshCacheStatus()

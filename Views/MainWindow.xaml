@@ -5,6 +5,7 @@
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:views="clr-namespace:Boutique.Views"
         xmlns:vm="clr-namespace:Boutique.ViewModels"
+        xmlns:guideline="clr-namespace:GuideLine.WPF.View;assembly=GuideLine"
         mc:Ignorable="d"
         d:DataContext="{d:DesignInstance vm:MainViewModel, IsDesignTimeCreatable=False}"
         Title="Boutique" Height="800" Width="1400"
@@ -16,17 +17,17 @@
             <RowDefinition Height="*" />
             <RowDefinition Height="Auto" />
         </Grid.RowDefinitions>
-        <TabControl Grid.Row="0" Margin="8" SelectionChanged="TabControl_OnSelectionChanged">
-            <TabItem Header="Distribution">
+        <TabControl x:Name="MainTabControl" Grid.Row="0" Margin="8" SelectionChanged="TabControl_OnSelectionChanged">
+            <TabItem x:Name="DistributionTab" Header="Distribution">
                 <views:DistributionView DataContext="{Binding Distribution}" />
             </TabItem>
-            <TabItem Header="Outfit Creator">
+            <TabItem x:Name="OutfitCreatorTab" Header="Outfit Creator">
                 <views:OutfitCreatorView DataContext="{Binding}" />
             </TabItem>
-            <TabItem Header="Armor Patch">
+            <TabItem x:Name="ArmorPatchTab" Header="Armor Patch">
                 <views:ArmorPatchView DataContext="{Binding}" />
             </TabItem>
-            <TabItem Header="Settings">
+            <TabItem x:Name="SettingsTab" Header="Settings">
                 <views:SettingsPanelView DataContext="{Binding}" />
             </TabItem>
         </TabControl>
@@ -37,13 +38,8 @@
                 <ColumnDefinition Width="Auto" />
             </Grid.ColumnDefinitions>
 
-            <!-- Left: Refresh + Progress/Status -->
+            <!-- Left: Progress/Status -->
             <StackPanel Grid.Column="0" Orientation="Horizontal" VerticalAlignment="Center">
-                <Button Command="{Binding Distribution.RefreshCommand}" ToolTip="Refresh game data"
-                        MinWidth="0" Width="24" Height="24" Padding="0" Margin="0,0,8,0"
-                        VerticalAlignment="Center">
-                    <TextBlock Text="↻" FontSize="14" />
-                </Button>
                 <ProgressBar Width="200"
                              Height="18"
                              Minimum="0"
@@ -53,13 +49,30 @@
                 <TextBlock Text="{Binding StatusMessage}" Margin="6,0,0,0" VerticalAlignment="Center" />
             </StackPanel>
 
-            <!-- Right: Output Patch Name -->
-            <StackPanel Grid.Column="1" Orientation="Horizontal" VerticalAlignment="Center">
+            <!-- Right: Output Patch Name + Refresh -->
+            <StackPanel x:Name="PatchFileNamePanel" Grid.Column="1" Orientation="Horizontal" VerticalAlignment="Center">
                 <TextBlock Text="Patch:" Margin="0,0,6,0" VerticalAlignment="Center"
                            Foreground="{StaticResource Brush.TextSecondary}" />
                 <TextBox Text="{Binding Settings.PatchFileName, UpdateSourceTrigger=PropertyChanged}"
                          MinWidth="160" FontFamily="Consolas" FontSize="11" VerticalAlignment="Center" />
+                <Button x:Name="RefreshButton" Command="{Binding Distribution.RefreshCommand}"
+                        ToolTip="Refresh All Data (including output patch)"
+                        MinWidth="0" Width="24" Height="24" Padding="0" Margin="8,0,0,0"
+                        VerticalAlignment="Center">
+                    <TextBlock Text="↻" FontSize="14" />
+                </Button>
             </StackPanel>
         </Grid>
+
+        <!-- Tutorial overlay - must be last to render on top -->
+        <guideline:GuideLine_View x:Name="MainGuideline"
+                                  Grid.RowSpan="2"
+                                  PreviewKeyDown="MainGuideline_PreviewKeyDown"
+                                  HighlightCornerRadius="8"
+                                  HighlightMargin="8"
+                                  AnimateDialog="True"
+                                  AnimationDuration="0:0:0.25"
+                                  Background="{DynamicResource Brush.Tutorial.Overlay}"
+                                  Foreground="{DynamicResource Brush.Tutorial.DialogForeground}" />
     </Grid>
 </Window>

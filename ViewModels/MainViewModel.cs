@@ -549,6 +549,19 @@ public class MainViewModel : ReactiveObject
             return;
         }
 
+        var targetModKey = ModKey.FromFileName(outputPlugin);
+
+        var draftsFromOtherPlugins = _outfitDrafts
+            .Where(d => d.FormKey.HasValue && d.FormKey.Value.ModKey != targetModKey)
+            .ToList();
+
+        if (draftsFromOtherPlugins.Count > 0)
+        {
+            _logger.Information("Clearing {Count} draft(s) from previous output plugin(s).", draftsFromOtherPlugins.Count);
+            foreach (var draft in draftsFromOtherPlugins)
+                _outfitDrafts.Remove(draft);
+        }
+
         // Check if the output plugin exists in the load order
         if (!AvailablePlugins.Contains(outputPlugin, StringComparer.OrdinalIgnoreCase))
         {
@@ -565,13 +578,12 @@ public class MainViewModel : ReactiveObject
         _logger.Information("Output plugin {Plugin} exists in load order, loading existing outfits for editing...", outputPlugin);
 
         var outfits = (await _mutagenService.LoadOutfitsFromPluginAsync(outputPlugin)).ToList();
-        var pluginModKey = ModKey.FromFileName(outputPlugin);
         var linkCache = _mutagenService.LinkCache;
         var loadedCount = 0;
 
         foreach (var outfit in outfits)
         {
-            if (outfit.FormKey.ModKey != pluginModKey)
+            if (outfit.FormKey.ModKey != targetModKey)
                 continue;
 
             if (_outfitDrafts.Any(d => d.FormKey.HasValue && d.FormKey.Value == outfit.FormKey))
@@ -937,6 +949,8 @@ public class MainViewModel : ReactiveObject
 
             _logger.Information("Available plugins refreshed: {PreviousCount} → {NewCount} plugins.",
                 previousCount, AvailablePlugins.Count);
+
+            await LoadOutfitsFromOutputPluginAsync();
         }
         catch (Exception ex)
         {

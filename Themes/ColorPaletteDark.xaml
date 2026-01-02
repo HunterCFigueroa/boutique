@@ -30,4 +30,12 @@
     <!-- Opacity variants -->
     <SolidColorBrush x:Key="Brush.BorderLight" Color="#FF3A3D48" Opacity="0.5" />
     <SolidColorBrush x:Key="Brush.HighlightOverlay" Color="#FF83A598" Opacity="0.12" />
+
+    <!-- Tutorial/GuideLine colors -->
+    <SolidColorBrush x:Key="Brush.Tutorial.Overlay" Color="#FF000000" Opacity="0.75" />
+    <SolidColorBrush x:Key="Brush.Tutorial.DialogBackground" Color="#FF1A1B1F" />
+    <SolidColorBrush x:Key="Brush.Tutorial.DialogBorder" Color="#FF83A598" />
+    <SolidColorBrush x:Key="Brush.Tutorial.DialogForeground" Color="#FFECE0C8" />
+    <SolidColorBrush x:Key="Brush.Tutorial.ButtonBackground" Color="#FF83A598" />
+    <SolidColorBrush x:Key="Brush.Tutorial.ButtonForeground" Color="#FF121214" />
 </ResourceDictionary>

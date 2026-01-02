@@ -25,23 +25,18 @@
             </Grid.ColumnDefinitions>
 
             <StackPanel Grid.Column="0" Orientation="Horizontal">
-                <Button Content="↻ Refresh"
-                        Command="{Binding ScanNpcOutfitsCommand}"
-                        Padding="12,4"
-                        Margin="0,0,6,0"
+                <Button Content="↻ Refresh" Command="{Binding ScanNpcOutfitsCommand}"
+                        Padding="12,4" Margin="0,0,6,0"
                         ToolTip="Rescan distribution files for NPC outfit assignments" />
             </StackPanel>
 
             <StackPanel Grid.Column="2" Orientation="Horizontal">
-                <CheckBox Content="Hide vanilla distributions"
-                          IsChecked="{Binding HideVanillaDistributions}"
-                          VerticalAlignment="Center"
-                          Margin="0,0,16,0"
+                <CheckBox Content="Hide vanilla distributions" IsChecked="{Binding HideVanillaDistributions}"
+                          VerticalAlignment="Center" Margin="0,0,16,0"
                           ToolTip="Hides NPCs with their default outfit as the winning assignment" />
-                <TextBlock Text="Search:" VerticalAlignment="Center" Margin="0,0,6,0" />
+                <TextBlock Text="Search:" Style="{StaticResource LabelTextStyle}" />
                 <TextBox Text="{Binding NpcOutfitSearchText, UpdateSourceTrigger=PropertyChanged}"
-                         MinWidth="250"
-                         ToolTip="Search NPCs by name, EditorID, outfit, or mod" />
+                         MinWidth="250" ToolTip="Search NPCs by name, EditorID, outfit, or mod" />
             </StackPanel>
         </Grid>
 
@@ -57,101 +52,74 @@
                 <WrapPanel Grid.Row="0" Orientation="Horizontal">
                     <!-- Gender Filter -->
                     <StackPanel Orientation="Horizontal" Margin="0,2,16,2">
-                        <TextBlock Text="Gender:" VerticalAlignment="Center" Margin="0,0,6,0" />
-                        <ComboBox ItemsSource="{Binding GenderFilterOptions}"
-                                  SelectedItem="{Binding SelectedGenderFilter}"
-                                  MinWidth="90"
-                                  ToolTip="Filter by NPC gender (SPID trait: F/M)" />
+                        <TextBlock Text="Gender:" Style="{StaticResource LabelTextStyle}" />
+                        <ComboBox ItemsSource="{Binding GenderFilterOptions}" SelectedItem="{Binding SelectedGenderFilter}"
+                                  MinWidth="90" ToolTip="Filter by NPC gender (SPID trait: F/M)" />
                     </StackPanel>
 
                     <!-- Unique Filter -->
                     <StackPanel Orientation="Horizontal" Margin="0,2,16,2">
-                        <TextBlock Text="Unique:" VerticalAlignment="Center" Margin="0,0,6,0" />
-                        <ComboBox ItemsSource="{Binding UniqueFilterOptions}"
-                                  SelectedItem="{Binding SelectedUniqueFilter}"
-                                  MinWidth="100"
-                                  ToolTip="Filter by unique NPC flag (SPID trait: U/-U)" />
+                        <TextBlock Text="Unique:" Style="{StaticResource LabelTextStyle}" />
+                        <ComboBox ItemsSource="{Binding UniqueFilterOptions}" SelectedItem="{Binding SelectedUniqueFilter}"
+                                  MinWidth="100" ToolTip="Filter by unique NPC flag (SPID trait: U/-U)" />
                     </StackPanel>
 
                     <!-- Templated Filter -->
                     <StackPanel Orientation="Horizontal" Margin="0,2,16,2">
-                        <TextBlock Text="Templated:" VerticalAlignment="Center" Margin="0,0,6,0" />
-                        <ComboBox ItemsSource="{Binding TemplatedFilterOptions}"
-                                  SelectedItem="{Binding SelectedTemplatedFilter}"
-                                  MinWidth="110"
-                                  ToolTip="Filter by whether NPC uses a template" />
+                        <TextBlock Text="Templated:" Style="{StaticResource LabelTextStyle}" />
+                        <ComboBox ItemsSource="{Binding TemplatedFilterOptions}" SelectedItem="{Binding SelectedTemplatedFilter}"
+                                  MinWidth="110" ToolTip="Filter by whether NPC uses a template" />
                     </StackPanel>
 
                     <!-- Child Filter -->
                     <StackPanel Orientation="Horizontal" Margin="0,2,16,2">
-                        <TextBlock Text="Age:" VerticalAlignment="Center" Margin="0,0,6,0" />
-                        <ComboBox ItemsSource="{Binding ChildFilterOptions}"
-                                  SelectedItem="{Binding SelectedChildFilter}"
-                                  MinWidth="80"
-                                  ToolTip="Filter by child/adult status (SPID trait: C/-C)" />
+                        <TextBlock Text="Age:" Style="{StaticResource LabelTextStyle}" />
+                        <ComboBox ItemsSource="{Binding ChildFilterOptions}" SelectedItem="{Binding SelectedChildFilter}"
+                                  MinWidth="80" ToolTip="Filter by child/adult status (SPID trait: C/-C)" />
                     </StackPanel>
 
                     <!-- Faction Filter -->
                     <StackPanel Orientation="Horizontal" Margin="0,2,16,2">
-                        <TextBlock Text="Faction:" VerticalAlignment="Center" Margin="0,0,6,0" />
-                        <ComboBox ItemsSource="{Binding AvailableFactions}"
-                                  SelectedItem="{Binding SelectedFaction}"
-                                  DisplayMemberPath="DisplayName"
-                                  MinWidth="150"
-                                  IsEditable="True"
-                                  IsTextSearchEnabled="True"
+                        <TextBlock Text="Faction:" Style="{StaticResource LabelTextStyle}" />
+                        <ComboBox ItemsSource="{Binding AvailableFactions}" SelectedItem="{Binding SelectedFaction}"
+                                  DisplayMemberPath="DisplayName" MinWidth="150"
+                                  IsEditable="True" IsTextSearchEnabled="True"
                                   ToolTip="Filter by faction membership (SPID FormFilter)" />
                     </StackPanel>
 
                     <!-- Race Filter -->
                     <StackPanel Orientation="Horizontal" Margin="0,2,16,2">
-                        <TextBlock Text="Race:" VerticalAlignment="Center" Margin="0,0,6,0" />
-                        <ComboBox ItemsSource="{Binding AvailableRaces}"
-                                  SelectedItem="{Binding SelectedRace}"
-                                  DisplayMemberPath="DisplayName"
-                                  MinWidth="120"
-                                  IsEditable="True"
-                                  IsTextSearchEnabled="True"
+                        <TextBlock Text="Race:" Style="{StaticResource LabelTextStyle}" />
+                        <ComboBox ItemsSource="{Binding AvailableRaces}" SelectedItem="{Binding SelectedRace}"
+                                  DisplayMemberPath="DisplayName" MinWidth="120"
+                                  IsEditable="True" IsTextSearchEnabled="True"
                                   ToolTip="Filter by race (SPID FormFilter)" />
                     </StackPanel>
 
                     <!-- Keyword Filter -->
                     <StackPanel Orientation="Horizontal" Margin="0,2,16,2">
-                        <TextBlock Text="Keyword:" VerticalAlignment="Center" Margin="0,0,6,0" />
-                        <ComboBox ItemsSource="{Binding AvailableKeywords}"
-                                  SelectedItem="{Binding SelectedKeyword}"
-                                  DisplayMemberPath="DisplayName"
-                                  MinWidth="140"
-                                  IsEditable="True"
-                                  IsTextSearchEnabled="True"
+                        <TextBlock Text="Keyword:" Style="{StaticResource LabelTextStyle}" />
+                        <ComboBox ItemsSource="{Binding AvailableKeywords}" SelectedItem="{Binding SelectedKeyword}"
+                                  DisplayMemberPath="DisplayName" MinWidth="140"
+                                  IsEditable="True" IsTextSearchEnabled="True"
                                   ToolTip="Filter by keyword (SPID StringFilter)" />
                     </StackPanel>
 
                     <!-- Clear Filters Button -->
-                    <Button Content="Clear Filters"
-                            Command="{Binding ClearFiltersCommand}"
-                            Padding="8,2"
-                            VerticalAlignment="Center"
-                            Margin="0,2,6,2"
+                    <Button Content="Clear Filters" Command="{Binding ClearFiltersCommand}"
+                            Padding="8,2" VerticalAlignment="Center" Margin="0,2,6,2"
                             ToolTip="Reset all filters to default" />
 
                     <!-- Copy Filter Button -->
-                    <Button Content="📋 Copy Filter"
-                            Command="{Binding CopyFilterCommand}"
-                            Padding="8,2"
-                            VerticalAlignment="Center"
-                            Margin="0,2,0,2"
+                    <Button Content="📋 Copy Filter" Command="{Binding CopyFilterCommand}"
+                            Padding="8,2" VerticalAlignment="Center" Margin="0,2,0,2"
                             ToolTip="Copy current filter to paste in Create tab" />
                 </WrapPanel>
 
                 <!-- Filter Status Row -->
                 <StackPanel Grid.Row="1" Orientation="Horizontal" Margin="0,6,0,0">
-                    <TextBlock Text="{Binding FilterDescription}"
-                               FontStyle="Italic"
-                               Foreground="#8EC07C"
-                               VerticalAlignment="Center" />
-                    <TextBlock Margin="12,0,0,0"
-                               VerticalAlignment="Center">
+                    <TextBlock Text="{Binding FilterDescription}" FontStyle="Italic" Foreground="#8EC07C" VerticalAlignment="Center" />
+                    <TextBlock Margin="12,0,0,0" VerticalAlignment="Center">
                         <Run Text="Showing " />
                         <Run Text="{Binding FilteredCount, Mode=OneWay}" FontWeight="Bold" />
                         <Run Text=" of " />
@@ -174,21 +142,13 @@
             <DataGrid Grid.Row="0"
                       ItemsSource="{Binding FilteredNpcOutfitAssignments}"
                       SelectedItem="{Binding SelectedNpcAssignment, Mode=TwoWay}"
-                      AutoGenerateColumns="False"
-                      CanUserAddRows="False"
-                      CanUserDeleteRows="False"
-                      IsReadOnly="True"
-                      CanUserSortColumns="True"
-                      SelectionMode="Single"
-                      SelectionUnit="FullRow"
-                      GridLinesVisibility="All"
-                      HeadersVisibility="Column"
-                      EnableRowVirtualization="True"
-                      EnableColumnVirtualization="True">
+                      AutoGenerateColumns="False" CanUserAddRows="False" CanUserDeleteRows="False"
+                      IsReadOnly="True" CanUserSortColumns="True" SelectionMode="Single" SelectionUnit="FullRow"
+                      GridLinesVisibility="All" HeadersVisibility="Column"
+                      EnableRowVirtualization="True" EnableColumnVirtualization="True">
                 <DataGrid.RowStyle>
                     <Style TargetType="DataGridRow">
                         <Style.Triggers>
-                            <!-- Highlight conflicting rows -->
                             <DataTrigger Binding="{Binding HasConflict}" Value="True">
                                 <Setter Property="Background" Value="#18FFD090" />
                             </DataTrigger>
@@ -199,33 +159,12 @@
                     </Style>
                 </DataGrid.RowStyle>
                 <DataGrid.Columns>
-                    <DataGridTextColumn Header="Name"
-                                        Binding="{Binding DisplayName}"
-                                        Width="*"
-                                        CanUserSort="True" />
-                    <DataGridTextColumn Header="EditorID"
-                                        Binding="{Binding EditorId}"
-                                        Width="180"
-                                        CanUserSort="True" />
-                    <DataGridTextColumn Header="Final Outfit"
-                                        Binding="{Binding FinalOutfitDisplay}"
-                                        Width="200"
-                                        CanUserSort="True" />
-                    <DataGridTextColumn Header="Mod"
-                                        Binding="{Binding ModDisplayName}"
-                                        Width="150"
-                                        CanUserSort="True">
-                        <DataGridTextColumn.ElementStyle>
-                            <Style TargetType="TextBlock">
-                                <Setter Property="FontSize" Value="10" />
-                                <Setter Property="Foreground" Value="Gray" />
-                            </Style>
-                        </DataGridTextColumn.ElementStyle>
-                    </DataGridTextColumn>
-                    <DataGridTextColumn Header="Distributor"
-                                        Binding="{Binding WinningFileName}"
-                                        Width="150"
-                                        CanUserSort="True"
+                    <DataGridTextColumn Header="Name" Binding="{Binding DisplayName}" Width="*" CanUserSort="True" />
+                    <DataGridTextColumn Header="EditorID" Binding="{Binding EditorId}" Width="180" CanUserSort="True" />
+                    <DataGridTextColumn Header="Final Outfit" Binding="{Binding FinalOutfitDisplay}" Width="200" CanUserSort="True" />
+                    <DataGridTextColumn Header="Mod" Binding="{Binding ModDisplayName}" Width="150" CanUserSort="True"
+                                        ElementStyle="{StaticResource DataGridSecondaryColumnStyle}" />
+                    <DataGridTextColumn Header="Distributor" Binding="{Binding WinningFileName}" Width="150" CanUserSort="True"
                                         ToolTipService.ToolTip="The distribution file determining this NPC's outfit">
                         <DataGridTextColumn.ElementStyle>
                             <Style TargetType="TextBlock">
@@ -234,10 +173,7 @@
                             </Style>
                         </DataGridTextColumn.ElementStyle>
                     </DataGridTextColumn>
-                    <DataGridTextColumn Header="Targeting"
-                                        Binding="{Binding TargetingType}"
-                                        Width="100"
-                                        CanUserSort="True">
+                    <DataGridTextColumn Header="Targeting" Binding="{Binding TargetingType}" Width="100" CanUserSort="True">
                         <DataGridTextColumn.ElementStyle>
                             <Style TargetType="TextBlock">
                                 <Setter Property="FontSize" Value="10" />
@@ -248,31 +184,23 @@
                     <DataGridTemplateColumn Header="Chance" Width="60" CanUserSort="True" SortMemberPath="Chance">
                         <DataGridTemplateColumn.CellTemplate>
                             <DataTemplate>
-                                <TextBlock Text="{Binding ChanceDisplay}"
-                                           Foreground="#CC6600"
-                                           FontWeight="SemiBold"
-                                           FontSize="10"
-                                           HorizontalAlignment="Center"
-                                           VerticalAlignment="Center" />
+                                <TextBlock Text="{Binding ChanceDisplay}" Foreground="#CC6600" FontWeight="SemiBold"
+                                           FontSize="10" HorizontalAlignment="Center" VerticalAlignment="Center" />
                             </DataTemplate>
                         </DataGridTemplateColumn.CellTemplate>
                     </DataGridTemplateColumn>
                     <DataGridTemplateColumn Header="Conflict" Width="70" CanUserSort="True" SortMemberPath="HasConflict">
                         <DataGridTemplateColumn.CellTemplate>
                             <DataTemplate>
-                                <TextBlock Text="{Binding ConflictSummary}"
-                                           Foreground="#FF8C00"
-                                           FontWeight="Bold"
-                                           HorizontalAlignment="Center"
-                                           VerticalAlignment="Center" />
+                                <TextBlock Text="{Binding ConflictSummary}" Foreground="#FF8C00" FontWeight="Bold"
+                                           HorizontalAlignment="Center" VerticalAlignment="Center" />
                             </DataTemplate>
                         </DataGridTemplateColumn.CellTemplate>
                     </DataGridTemplateColumn>
                 </DataGrid.Columns>
             </DataGrid>
 
-            <GridSplitter Grid.Row="1" Height="5" HorizontalAlignment="Stretch"
-                          Background="LightGray" Margin="0,2" />
+            <GridSplitter Grid.Row="1" Height="5" HorizontalAlignment="Stretch" Background="LightGray" Margin="0,2" />
 
             <!-- Detail Panel -->
             <Grid Grid.Row="2">
@@ -292,12 +220,10 @@
                         <ItemsControl ItemsSource="{Binding SelectedNpcAssignment.Distributions}">
                             <ItemsControl.ItemTemplate>
                                 <DataTemplate>
-                                    <Border Margin="0,0,0,4" Padding="6" CornerRadius="2">
+                                    <Border Margin="0,0,0,4" Padding="6" CornerRadius="2"
+                                            Background="#10000000" BorderBrush="LightGray" BorderThickness="1">
                                         <Border.Style>
                                             <Style TargetType="Border">
-                                                <Setter Property="Background" Value="#10000000" />
-                                                <Setter Property="BorderBrush" Value="LightGray" />
-                                                <Setter Property="BorderThickness" Value="1" />
                                                 <Style.Triggers>
                                                     <DataTrigger Binding="{Binding IsWinner}" Value="True">
                                                         <Setter Property="Background" Value="#2000FF00" />
@@ -312,59 +238,22 @@
                                                 <RowDefinition Height="Auto" />
                                                 <RowDefinition Height="Auto" />
                                                 <RowDefinition Height="Auto" />
-                                                <RowDefinition Height="Auto" />
                                             </Grid.RowDefinitions>
                                             <StackPanel Grid.Row="0" Orientation="Horizontal">
                                                 <TextBlock Text="{Binding FileName}" FontWeight="Bold" />
                                                 <TextBlock Text="{Binding FileType, StringFormat=' ({0})'}"
-                                                           Foreground="Gray" FontSize="10" VerticalAlignment="Center" Margin="4,0,0,0" />
-                                                <TextBlock Text=" [WINNER]" Foreground="Green" FontWeight="Bold">
-                                                    <TextBlock.Style>
-                                                        <Style TargetType="TextBlock">
-                                                            <Setter Property="Visibility" Value="Collapsed" />
-                                                            <Style.Triggers>
-                                                                <DataTrigger Binding="{Binding IsWinner}" Value="True">
-                                                                    <Setter Property="Visibility" Value="Visible" />
-                                                                </DataTrigger>
-                                                            </Style.Triggers>
-                                                        </Style>
-                                                    </TextBlock.Style>
-                                                </TextBlock>
+                                                           Style="{StaticResource SecondaryTextStyle}" Margin="4,0,0,0" />
+                                                <TextBlock Text=" [WINNER]" Foreground="Green" FontWeight="Bold"
+                                                           Visibility="{Binding IsWinner, Converter={StaticResource BoolToVisConverter}}" />
                                                 <TextBlock Text="{Binding Chance, StringFormat=' ({0}% chance)'}"
-                                                           Foreground="#CC6600" FontSize="10" VerticalAlignment="Center" Margin="4,0,0,0">
-                                                    <TextBlock.Style>
-                                                        <Style TargetType="TextBlock">
-                                                            <Setter Property="Visibility" Value="Visible" />
-                                                            <Style.Triggers>
-                                                                <DataTrigger Binding="{Binding Chance}" Value="100">
-                                                                    <Setter Property="Visibility" Value="Collapsed" />
-                                                                </DataTrigger>
-                                                            </Style.Triggers>
-                                                        </Style>
-                                                    </TextBlock.Style>
-                                                </TextBlock>
+                                                           Foreground="#CC6600" FontSize="10" VerticalAlignment="Center" Margin="4,0,0,0"
+                                                           Visibility="{Binding Chance, Converter={StaticResource InequalityToVisConverter}, ConverterParameter=100}" />
                                             </StackPanel>
-                                            <TextBlock Grid.Row="1"
-                                                       Text="{Binding OutfitEditorId, StringFormat='Outfit: {0}'}"
-                                                       FontFamily="Consolas"
-                                                       FontSize="11"
-                                                       Margin="0,2,0,0" />
-                                            <TextBlock Grid.Row="2"
-                                                       Text="{Binding TargetingDescription}"
-                                                       Foreground="#8EC07C"
-                                                       FontSize="10"
-                                                       TextWrapping="Wrap"
-                                                       Margin="0,2,0,0">
-                                                <TextBlock.Style>
-                                                    <Style TargetType="TextBlock">
-                                                        <Style.Triggers>
-                                                            <DataTrigger Binding="{Binding TargetingDescription}" Value="">
-                                                                <Setter Property="Visibility" Value="Collapsed" />
-                                                            </DataTrigger>
-                                                        </Style.Triggers>
-                                                    </Style>
-                                                </TextBlock.Style>
-                                            </TextBlock>
+                                            <TextBlock Grid.Row="1" Text="{Binding OutfitEditorId, StringFormat='Outfit: {0}'}"
+                                                       FontFamily="Consolas" FontSize="11" Margin="0,2,0,0" />
+                                            <TextBlock Grid.Row="2" Text="{Binding TargetingDescription}"
+                                                       Foreground="#8EC07C" FontSize="10" TextWrapping="Wrap" Margin="0,2,0,0"
+                                                       Visibility="{Binding TargetingDescription, Converter={StaticResource StringEmptyToVisConverter}}" />
                                         </Grid>
                                     </Border>
                                 </DataTemplate>
@@ -380,23 +269,13 @@
                             <RowDefinition Height="*" />
                             <RowDefinition Height="Auto" />
                         </Grid.RowDefinitions>
-
-                        <TextBox Grid.Row="0"
-                                 Text="{Binding SelectedNpcOutfitContents, Mode=OneWay}"
-                                 IsReadOnly="True"
-                                 TextWrapping="Wrap"
-                                 AcceptsReturn="True"
-                                 VerticalScrollBarVisibility="Auto"
-                                 FontFamily="Consolas"
-                                 FontSize="11" />
-
-                        <Button Grid.Row="1"
-                                Content="Preview Outfit"
+                        <TextBox Grid.Row="0" Text="{Binding SelectedNpcOutfitContents, Mode=OneWay}"
+                                 IsReadOnly="True" TextWrapping="Wrap" AcceptsReturn="True"
+                                 VerticalScrollBarVisibility="Auto" FontFamily="Consolas" FontSize="11" />
+                        <Button Grid.Row="1" Content="Preview Outfit"
                                 Command="{Binding PreviewNpcOutfitCommand}"
                                 CommandParameter="{Binding SelectedNpcAssignment}"
-                                Padding="12,4"
-                                Margin="0,6,0,0"
-                                HorizontalAlignment="Left" />
+                                Padding="12,4" Margin="0,6,0,0" HorizontalAlignment="Left" />
                     </Grid>
                 </GroupBox>
 
@@ -407,42 +286,26 @@
                             <RowDefinition Height="*" />
                             <RowDefinition Height="Auto" />
                         </Grid.RowDefinitions>
-
                         <ScrollViewer Grid.Row="0" VerticalScrollBarVisibility="Auto">
                             <StackPanel>
-                                <!-- SPID Syntax -->
                                 <TextBlock Text="SPID Format:" FontWeight="SemiBold" Margin="0,0,0,4" />
                                 <TextBox Text="{Binding GeneratedSpidSyntax, Mode=OneWay}"
-                                         IsReadOnly="True"
-                                         TextWrapping="Wrap"
-                                         AcceptsReturn="True"
-                                         FontFamily="Consolas"
-                                         FontSize="10"
+                                         IsReadOnly="True" TextWrapping="Wrap" AcceptsReturn="True"
+                                         FontFamily="Consolas" FontSize="10"
                                          Background="{StaticResource Brush.PanelBackground}"
                                          Foreground="{StaticResource Brush.TextPrimary}"
-                                         Padding="4"
-                                         Margin="0,0,0,8" />
-
-                                <!-- SkyPatcher Syntax -->
+                                         Padding="4" Margin="0,0,0,8" />
                                 <TextBlock Text="SkyPatcher Format:" FontWeight="SemiBold" Margin="0,0,0,4" />
                                 <TextBox Text="{Binding GeneratedSkyPatcherSyntax, Mode=OneWay}"
-                                         IsReadOnly="True"
-                                         TextWrapping="Wrap"
-                                         AcceptsReturn="True"
-                                         FontFamily="Consolas"
-                                         FontSize="10"
+                                         IsReadOnly="True" TextWrapping="Wrap" AcceptsReturn="True"
+                                         FontFamily="Consolas" FontSize="10"
                                          Background="{StaticResource Brush.PanelBackground}"
                                          Foreground="{StaticResource Brush.TextPrimary}"
                                          Padding="4" />
                             </StackPanel>
                         </ScrollViewer>
-
-                        <TextBlock Grid.Row="1"
-                                   Text="Copy syntax to use in your distribution INI files"
-                                   FontStyle="Italic"
-                                   Foreground="Gray"
-                                   FontSize="10"
-                                   Margin="0,6,0,0" />
+                        <TextBlock Grid.Row="1" Text="Copy syntax to use in your distribution INI files"
+                                   FontStyle="Italic" Foreground="Gray" FontSize="10" Margin="0,6,0,0" />
                     </Grid>
                 </GroupBox>
 
@@ -454,14 +317,14 @@
                             <StackPanel Orientation="Horizontal" Margin="0,0,0,2">
                                 <TextBlock Text="FormKey:" FontWeight="SemiBold" Width="70" FontSize="11" />
                                 <TextBlock Text="{Binding SelectedNpcFilterData.FormKeyString}"
-                                           FontFamily="Consolas" FontSize="10" VerticalAlignment="Center" />
+                                           Style="{StaticResource FormKeyTextStyle}" />
                             </StackPanel>
 
                             <!-- Source Mod -->
                             <StackPanel Orientation="Horizontal" Margin="0,0,0,2">
                                 <TextBlock Text="Mod:" FontWeight="SemiBold" Width="70" FontSize="11" />
                                 <TextBlock Text="{Binding SelectedNpcFilterData.ModDisplayName}"
-                                           FontSize="10" Foreground="Gray" VerticalAlignment="Center" />
+                                           Style="{StaticResource SecondaryTextStyle}" />
                             </StackPanel>
 
                             <!-- Gender -->
@@ -485,54 +348,14 @@
                             <StackPanel Orientation="Horizontal" Margin="0,0,0,2">
                                 <TextBlock Text="Traits:" FontWeight="SemiBold" Width="70" FontSize="11" />
                                 <StackPanel Orientation="Horizontal">
-                                    <TextBlock Text="Unique" FontSize="10" Foreground="#8EC07C" Margin="0,0,6,0">
-                                        <TextBlock.Style>
-                                            <Style TargetType="TextBlock">
-                                                <Setter Property="Visibility" Value="Collapsed" />
-                                                <Style.Triggers>
-                                                    <DataTrigger Binding="{Binding SelectedNpcFilterData.IsUnique}" Value="True">
-                                                        <Setter Property="Visibility" Value="Visible" />
-                                                    </DataTrigger>
-                                                </Style.Triggers>
-                                            </Style>
-                                        </TextBlock.Style>
-                                    </TextBlock>
-                                    <TextBlock Text="Summonable" FontSize="10" Foreground="#8EC07C" Margin="0,0,6,0">
-                                        <TextBlock.Style>
-                                            <Style TargetType="TextBlock">
-                                                <Setter Property="Visibility" Value="Collapsed" />
-                                                <Style.Triggers>
-                                                    <DataTrigger Binding="{Binding SelectedNpcFilterData.IsSummonable}" Value="True">
-                                                        <Setter Property="Visibility" Value="Visible" />
-                                                    </DataTrigger>
-                                                </Style.Triggers>
-                                            </Style>
-                                        </TextBlock.Style>
-                                    </TextBlock>
-                                    <TextBlock Text="Child" FontSize="10" Foreground="#8EC07C" Margin="0,0,6,0">
-                                        <TextBlock.Style>
-                                            <Style TargetType="TextBlock">
-                                                <Setter Property="Visibility" Value="Collapsed" />
-                                                <Style.Triggers>
-                                                    <DataTrigger Binding="{Binding SelectedNpcFilterData.IsChild}" Value="True">
-                                                        <Setter Property="Visibility" Value="Visible" />
-                                                    </DataTrigger>
-                                                </Style.Triggers>
-                                            </Style>
-                                        </TextBlock.Style>
-                                    </TextBlock>
-                                    <TextBlock Text="Leveled" FontSize="10" Foreground="#8EC07C" Margin="0,0,6,0">
-                                        <TextBlock.Style>
-                                            <Style TargetType="TextBlock">
-                                                <Setter Property="Visibility" Value="Collapsed" />
-                                                <Style.Triggers>
-                                                    <DataTrigger Binding="{Binding SelectedNpcFilterData.IsLeveled}" Value="True">
-                                                        <Setter Property="Visibility" Value="Visible" />
-                                                    </DataTrigger>
-                                                </Style.Triggers>
-                                            </Style>
-                                        </TextBlock.Style>
-                                    </TextBlock>
+                                    <TextBlock Text="Unique" FontSize="10" Foreground="#8EC07C" Margin="0,0,6,0"
+                                               Visibility="{Binding SelectedNpcFilterData.IsUnique, Converter={StaticResource BoolToVisConverter}}" />
+                                    <TextBlock Text="Summonable" FontSize="10" Foreground="#8EC07C" Margin="0,0,6,0"
+                                               Visibility="{Binding SelectedNpcFilterData.IsSummonable, Converter={StaticResource BoolToVisConverter}}" />
+                                    <TextBlock Text="Child" FontSize="10" Foreground="#8EC07C" Margin="0,0,6,0"
+                                               Visibility="{Binding SelectedNpcFilterData.IsChild, Converter={StaticResource BoolToVisConverter}}" />
+                                    <TextBlock Text="Leveled" FontSize="10" Foreground="#8EC07C" Margin="0,0,6,0"
+                                               Visibility="{Binding SelectedNpcFilterData.IsLeveled, Converter={StaticResource BoolToVisConverter}}" />
                                 </StackPanel>
                             </StackPanel>
 
@@ -569,20 +392,9 @@
                             <!-- Template -->
                             <StackPanel Orientation="Horizontal" Margin="0,0,0,2">
                                 <TextBlock Text="Template:" FontWeight="SemiBold" Width="70" FontSize="11" />
-                                <TextBlock FontSize="11" VerticalAlignment="Center">
-                                    <TextBlock.Style>
-                                        <Style TargetType="TextBlock">
-                                            <Setter Property="Text" Value="{Binding SelectedNpcFilterData.TemplateEditorId}" />
-                                            <Style.Triggers>
-                                                <DataTrigger Binding="{Binding SelectedNpcFilterData.TemplateEditorId}" Value="{x:Null}">
-                                                    <Setter Property="Text" Value="(None)" />
-                                                    <Setter Property="Foreground" Value="Gray" />
-                                                    <Setter Property="FontStyle" Value="Italic" />
-                                                </DataTrigger>
-                                            </Style.Triggers>
-                                        </Style>
-                                    </TextBlock.Style>
-                                </TextBlock>
+                                <TextBlock FontSize="11" VerticalAlignment="Center"
+                                           Text="{Binding SelectedNpcFilterData.TemplateEditorId, TargetNullValue='(None)'}"
+                                           Foreground="{Binding SelectedNpcFilterData.TemplateEditorId, Converter={StaticResource NullToVisConverter}, ConverterParameter=Inverse, FallbackValue=Gray}" />
                             </StackPanel>
 
                             <!-- Factions -->
@@ -592,8 +404,7 @@
                                     <DataTemplate>
                                         <StackPanel Orientation="Horizontal">
                                             <TextBlock Text="{Binding FactionEditorId}" FontSize="10" />
-                                            <TextBlock Text="{Binding Rank, StringFormat=' (Rank {0})'}"
-                                                       FontSize="10" Foreground="Gray" />
+                                            <TextBlock Text="{Binding Rank, StringFormat=' (Rank {0})'}" FontSize="10" Foreground="Gray" />
                                         </StackPanel>
                                     </DataTemplate>
                                 </ItemsControl.ItemTemplate>
@@ -603,16 +414,11 @@
                             <TextBlock Text="Keywords:" FontWeight="SemiBold" Margin="0,6,0,2" FontSize="11" />
                             <ItemsControl ItemsSource="{Binding SelectedNpcFilterData.Keywords}">
                                 <ItemsControl.ItemsPanel>
-                                    <ItemsPanelTemplate>
-                                        <WrapPanel />
-                                    </ItemsPanelTemplate>
+                                    <ItemsPanelTemplate><WrapPanel /></ItemsPanelTemplate>
                                 </ItemsControl.ItemsPanel>
                                 <ItemsControl.ItemTemplate>
                                     <DataTemplate>
-                                        <Border Background="{StaticResource Brush.PanelBackground}"
-                                                BorderBrush="{StaticResource Brush.Border}"
-                                                BorderThickness="1"
-                                                CornerRadius="3" Padding="4,1" Margin="0,0,4,4">
+                                        <Border Style="{StaticResource TagBadgeStyle}">
                                             <TextBlock Text="{Binding}" FontSize="9"
                                                        Foreground="{StaticResource Brush.TextSecondary}" />
                                         </Border>

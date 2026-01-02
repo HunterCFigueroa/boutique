@@ -1,0 +1,130 @@
+using System.IO;
+using GuideLine.Core;
+using GuideLine.Core.Elements;
+using GuideLine.WPF.View;
+using Serilog;
+
+namespace Boutique.Services;
+
+public class TutorialService
+{
+    private static readonly string SettingsDirectory =
+        Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "Boutique");
+    private static readonly string TutorialCompletedFile = Path.Combine(SettingsDirectory, ".tutorial_completed");
+
+    private readonly ILogger _logger;
+    private GuideLine_View? _guidelineView;
+
+    public TutorialService(ILogger logger)
+    {
+        _logger = logger.ForContext<TutorialService>();
+    }
+
+    public bool HasCompletedTutorial
+    {
+        get => File.Exists(TutorialCompletedFile);
+        private set
+        {
+            try
+            {
+                Directory.CreateDirectory(SettingsDirectory);
+                if (value)
+                    File.WriteAllText(TutorialCompletedFile, DateTime.UtcNow.ToString("O"));
+                else if (File.Exists(TutorialCompletedFile))
+                    File.Delete(TutorialCompletedFile);
+            }
+            catch (Exception ex)
+            {
+                _logger.Warning(ex, "Failed to persist tutorial completion state");
+            }
+        }
+    }
+
+    public void Initialize(GuideLine_View guidelineView) => _guidelineView = guidelineView;
+
+    public void StartTutorial()
+    {
+        if (_guidelineView == null)
+        {
+            _logger.Warning("Cannot start tutorial: GuideLine_View not initialized");
+            return;
+        }
+
+        _logger.Information("Starting application tutorial");
+
+        var manager = new GuideLineManager();
+        manager.OnGuideLineListCompleted += OnTutorialCompleted;
+        manager.AddGuideLine(CreateMainTutorial());
+        _guidelineView.DataContext = manager;
+        _currentManager = manager;
+        manager.StartGuideLine(_guidelineView.Name);
+    }
+
+    private GuideLineManager? _currentManager;
+
+    private void OnTutorialCompleted()
+    {
+        CompleteTutorial();
+        if (_currentManager != null)
+        {
+            _currentManager.OnGuideLineListCompleted -= OnTutorialCompleted;
+            _currentManager = null;
+        }
+    }
+
+    public void CompleteTutorial()
+    {
+        HasCompletedTutorial = true;
+        _logger.Information("Tutorial marked as completed");
+    }
+
+    public void ResetTutorial()
+    {
+        HasCompletedTutorial = false;
+        _logger.Information("Tutorial progress reset");
+    }
+
+    private static GuideLineItem CreateMainTutorial() =>
+        new(
+        [
+            new GuideLineStep(
+                title: "Welcome to Boutique!",
+                message: "This quick tour will show you the main features. Use the arrow buttons or keyboard arrows to navigate.",
+                uiElementName: "MainTabControl"),
+
+            new GuideLineStep(
+                title: "Distribution Tab",
+                message: "Create and manage outfit distributions for NPCs using SPID or SkyPatcher. This is the main workflow for assigning outfits to NPCs.",
+                uiElementName: "DistributionTab"),
+
+            new GuideLineStep(
+                title: "Outfit Creator Tab",
+                message: "Create new outfit records (OTFT) from armor pieces. Useful when you need custom outfit combinations.",
+                uiElementName: "OutfitCreatorTab"),
+
+            new GuideLineStep(
+                title: "Armor Patch Tab",
+                message: "Sync armor stats, keywords, and enchantments from master mods (like Requiem) to cosmetic armor mods.",
+                uiElementName: "ArmorPatchTab"),
+
+            new GuideLineStep(
+                title: "Settings Tab",
+                message: "Configure your Skyrim Data path, output location, and application preferences.",
+                uiElementName: "SettingsTab"),
+
+            new GuideLineStep(
+                title: "Refresh Button",
+                message: "Click here to reload game data after making changes to your load order or mod files.",
+                uiElementName: "RefreshButton"),
+
+            new GuideLineStep(
+                title: "Patch File Name",
+                message: "Set the name of the ESP file that Boutique will create. All changes are written to this file.",
+                uiElementName: "PatchFileNamePanel"),
+
+            new GuideLineStep(
+                title: "You're Ready!",
+                message: "That's it! Start by configuring your Skyrim Data path in Settings, then explore the Distribution tab to assign outfits to NPCs.\n\nYou can restart this tutorial anytime from the Help menu.",
+                uiElementName: "MainTabControl"),
+        ]);
+}

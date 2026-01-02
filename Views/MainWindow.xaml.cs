@@ -2,9 +2,12 @@ using System.Reactive;
 using System.Reactive.Disposables;
 using System.Windows;
 using System.Windows.Controls;
+using System.Windows.Input;
 using System.Windows.Interop;
 using Boutique.Services;
 using Boutique.ViewModels;
+using GuideLine.Core;
+using GuideLine.WPF.View;
 using Microsoft.VisualBasic;
 
 namespace Boutique.Views;
@@ -13,13 +16,16 @@ public partial class MainWindow : Window
 {
     private readonly CompositeDisposable _bindings = [];
     private readonly ThemeService _themeService;
+    private readonly TutorialService _tutorialService;
     private bool _initialized;
 
-    public MainWindow(MainViewModel viewModel, ThemeService themeService)
+    public MainWindow(MainViewModel viewModel, ThemeService themeService, TutorialService tutorialService)
     {
         InitializeComponent();
         DataContext = viewModel;
         _themeService = themeService;
+        _tutorialService = tutorialService;
+        _tutorialService.Initialize(MainGuideline);
 
         // Apply title bar theme on initialization and when theme changes
         SourceInitialized += (_, _) => _themeService.ApplyTitleBarTheme(this);
@@ -126,5 +132,35 @@ public partial class MainWindow : Window
             viewModel.InitializeCommand.Execute(null);
             _initialized = true;
         }
+
+        if (!_tutorialService.HasCompletedTutorial)
+        {
+            Dispatcher.BeginInvoke(() => _tutorialService.StartTutorial(), System.Windows.Threading.DispatcherPriority.ApplicationIdle);
+        }
     }
+
+    private void MainGuideline_PreviewKeyDown(object sender, KeyEventArgs e)
+    {
+        if (sender is not GuideLine_View { DataContext: GuideLineManager manager })
+            return;
+
+        switch (e.Key)
+        {
+            case Key.Left:
+                manager.CurrentGuideLine?.ShowPreviousStep();
+                e.Handled = true;
+                break;
+            case Key.Right:
+                manager.CurrentGuideLine?.ShowNextStep();
+                e.Handled = true;
+                break;
+            case Key.Escape:
+                manager.StopGuideLine();
+                _tutorialService.CompleteTutorial();
+                e.Handled = true;
+                break;
+        }
+    }
+
+    public void StartTutorial() => _tutorialService.StartTutorial();
 }
