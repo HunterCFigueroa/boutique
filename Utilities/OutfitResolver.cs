@@ -70,13 +70,16 @@ public static class OutfitResolver
     }
 
     /// <summary>
-    /// Gathers all armor pieces from an outfit.
+    /// Gathers armor pieces from an outfit for preview, including those nested within leveled lists.
+    /// For leveled lists, respects the "Use All" flag - if set, all entries are used;
+    /// otherwise only the first entry is taken to represent the random selection.
     /// </summary>
     public static List<ArmorRecordViewModel> GatherArmorPieces(
         IOutfitGetter outfit,
         ILinkCache<ISkyrimMod, ISkyrimModGetter> linkCache)
     {
         var pieces = new List<ArmorRecordViewModel>();
+        var visited = new HashSet<FormKey>();
 
         var items = outfit.Items ?? [];
 
@@ -89,18 +92,85 @@ public static class OutfitResolver
             if (!targetKeyNullable.HasValue || targetKeyNullable.Value == FormKey.Null)
                 continue;
 
-            var targetKey = targetKeyNullable.Value;
-
-            if (!linkCache.TryResolve<IItemGetter>(targetKey, out var itemRecord))
-                continue;
-
-            if (itemRecord is not IArmorGetter armor)
-                continue;
-
-            var vm = new ArmorRecordViewModel(armor, linkCache);
-            pieces.Add(vm);
+            GatherArmorsFromItem(targetKeyNullable.Value, linkCache, pieces, visited);
         }
 
         return pieces;
+    }
+
+    /// <summary>
+    /// Recursively gathers armor pieces from an item, traversing leveled lists as needed.
+    /// </summary>
+    private static void GatherArmorsFromItem(
+        FormKey itemFormKey,
+        ILinkCache<ISkyrimMod, ISkyrimModGetter> linkCache,
+        List<ArmorRecordViewModel> pieces,
+        HashSet<FormKey> visited)
+    {
+        if (!visited.Add(itemFormKey))
+            return;
+
+        if (!linkCache.TryResolve<IItemGetter>(itemFormKey, out var itemRecord))
+            return;
+
+        switch (itemRecord)
+        {
+            case IArmorGetter armor:
+                pieces.Add(new ArmorRecordViewModel(armor, linkCache));
+                break;
+
+            case ILeveledItemGetter leveledItem:
+                GatherArmorsFromLeveledItem(leveledItem, linkCache, pieces, visited);
+                break;
+        }
+    }
+
+    /// <summary>
+    /// Gathers armor pieces from a leveled item list.
+    /// If the leveled list has "Use All" flag, all entries are traversed.
+    /// Otherwise, only the first entry is taken to represent what would be randomly selected.
+    /// </summary>
+    private static void GatherArmorsFromLeveledItem(
+        ILeveledItemGetter leveledItem,
+        ILinkCache<ISkyrimMod, ISkyrimModGetter> linkCache,
+        List<ArmorRecordViewModel> pieces,
+        HashSet<FormKey> visited)
+    {
+        var entries = leveledItem.Entries;
+        if (entries == null || entries.Count == 0)
+            return;
+
+        var useAll = leveledItem.Flags.HasFlag(LeveledItem.Flag.UseAll);
+
+        if (useAll)
+        {
+            foreach (var entry in entries)
+            {
+                if (TryGetEntryFormKey(entry, out var formKey))
+                    GatherArmorsFromItem(formKey, linkCache, pieces, visited);
+            }
+        }
+        else
+        {
+            var firstEntry = entries.FirstOrDefault();
+            if (TryGetEntryFormKey(firstEntry, out var formKey))
+                GatherArmorsFromItem(formKey, linkCache, pieces, visited);
+        }
+    }
+
+    private static bool TryGetEntryFormKey(ILeveledItemEntryGetter? entry, out FormKey formKey)
+    {
+        formKey = FormKey.Null;
+
+        var data = entry?.Data;
+        if (data == null)
+            return false;
+
+        var refFormKey = data.Reference.FormKeyNullable;
+        if (!refFormKey.HasValue || refFormKey.Value == FormKey.Null)
+            return false;
+
+        formKey = refFormKey.Value;
+        return true;
     }
 }

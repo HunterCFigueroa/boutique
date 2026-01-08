@@ -106,7 +106,11 @@ public class DistributionEditTabViewModel : ReactiveObject
 
         this.WhenAnyValue(vm => vm.DistributionFormat)
             .Skip(1)
-            .Subscribe(_ => UpdateDistributionPreview());
+            .Subscribe(_ =>
+            {
+                UpdateDistributionFilePathForFormat();
+                UpdateDistributionPreview();
+            });
 
         this.WhenAnyValue(vm => vm.IsCreatingNewFile)
             .Where(isNew => isNew)
@@ -906,6 +910,39 @@ public class DistributionEditTabViewModel : ReactiveObject
         }
     }
 
+    private void UpdateDistributionFilePathForFormat()
+    {
+        if (IsCreatingNewFile)
+        {
+            UpdateDistributionFilePathFromNewFileName();
+        }
+        else if (!string.IsNullOrWhiteSpace(DistributionFilePath))
+        {
+            UpdateDistributionFilePathFromExistingFile();
+        }
+    }
+
+    private void UpdateDistributionFilePathFromExistingFile()
+    {
+        var dataPath = _settings.SkyrimDataPath;
+        if (string.IsNullOrWhiteSpace(dataPath) || !Directory.Exists(dataPath))
+            return;
+
+        var currentFileName = Path.GetFileNameWithoutExtension(DistributionFilePath);
+        if (string.IsNullOrWhiteSpace(currentFileName))
+            return;
+
+        // Strip any existing format-specific suffixes
+        var baseName = currentFileName;
+        if (baseName.EndsWith("_DISTR", StringComparison.OrdinalIgnoreCase))
+        {
+            baseName = baseName[..^6];
+        }
+
+        DistributionFilePath = GetDistributionFilePath(dataPath, baseName, DistributionFormat);
+        _logger.Debug("Updated distribution file path for format {Format}: {Path}", DistributionFormat, DistributionFilePath);
+    }
+
     private void UpdateDistributionFilePathFromNewFileName()
     {
         var dataPath = _settings.SkyrimDataPath;
@@ -917,13 +954,33 @@ public class DistributionEditTabViewModel : ReactiveObject
             DistributionFilePath = string.Empty;
             return;
         }
+
         var fileName = NewFileName.Trim();
-        if (!fileName.EndsWith(".ini", StringComparison.OrdinalIgnoreCase))
+        var baseName = fileName;
+        if (baseName.EndsWith(".ini", StringComparison.OrdinalIgnoreCase))
         {
-            fileName += ".ini";
+            baseName = baseName[..^4];
         }
-        var defaultPath = Path.Combine(dataPath, "skse", "plugins", "SkyPatcher", "npc", fileName);
-        DistributionFilePath = defaultPath;
+        if (baseName.EndsWith("_DISTR", StringComparison.OrdinalIgnoreCase))
+        {
+            baseName = baseName[..^6];
+        }
+
+        DistributionFilePath = GetDistributionFilePath(dataPath, baseName, DistributionFormat);
+    }
+
+    private static string GetDistributionFilePath(string dataPath, string baseName, DistributionFileType format)
+    {
+        if (format == DistributionFileType.Spid)
+        {
+            // SPID files go in Data/ folder with *_DISTR.ini naming convention
+            return Path.Combine(dataPath, $"{baseName}_DISTR.ini");
+        }
+        else
+        {
+            // SkyPatcher files go in skse/plugins/SkyPatcher/npc/
+            return Path.Combine(dataPath, "skse", "plugins", "SkyPatcher", "npc", $"{baseName}.ini");
+        }
     }
 
     private void UpdateDistributionPreview()
@@ -1063,6 +1120,14 @@ public class DistributionEditTabViewModel : ReactiveObject
                             .ToList();
                         var raceList = string.Join(",", raceFormKeys);
                         filterParts.Add($"filterByRaces={raceList}");
+                    }
+                    if (entryVm.SelectedClasses.Count > 0)
+                    {
+                        var classFormKeys = entryVm.SelectedClasses
+                            .Select(c => FormKeyHelper.Format(c.FormKey))
+                            .ToList();
+                        var classList = string.Join(",", classFormKeys);
+                        filterParts.Add($"filterByClass={classList}");
                     }
                     if (entryVm.Gender != GenderFilter.Any)
                     {

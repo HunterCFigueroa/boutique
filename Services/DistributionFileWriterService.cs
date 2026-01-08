@@ -106,6 +106,15 @@ public class DistributionFileWriterService
                             filterParts.Add($"filterByRaces={raceList}");
                         }
 
+                        if (entry.ClassFormKeys.Count > 0)
+                        {
+                            var classFormKeys = entry.ClassFormKeys
+                                .Select(fk => FormatFormKey(fk))
+                                .ToList();
+                            var classList = string.Join(",", classFormKeys);
+                            filterParts.Add($"filterByClass={classList}");
+                        }
+
                         if (entry.TraitFilters.IsFemale.HasValue)
                         {
                             filterParts.Add($"filterByGender={( entry.TraitFilters.IsFemale.Value ? "female" : "male" )}");
@@ -230,6 +239,7 @@ public class DistributionFileWriterService
             var factionFormKeys = ExtractFilterFormKeys(line, "filterByFactions=", outfitPartIndex);
             var keywordFormKeys = ExtractFilterFormKeys(line, "filterByKeywords=", outfitPartIndex);
             var raceFormKeys = ExtractFilterFormKeys(line, "filterByRaces=", outfitPartIndex);
+            var classFormKeys = ExtractFilterFormKeys(line, "filterByClass=", outfitPartIndex);
 
             // Extract outfit - handle potential trailing colon or other content
             var outfitStart = outfitPartIndex + "outfitDefault=".Length;
@@ -254,7 +264,8 @@ public class DistributionFileWriterService
                 NpcFormKeys = npcFormKeys,
                 FactionFormKeys = factionFormKeys,
                 KeywordFormKeys = keywordFormKeys,
-                RaceFormKeys = raceFormKeys
+                RaceFormKeys = raceFormKeys,
+                ClassFormKeys = classFormKeys
             };
         }
         catch (Exception ex)

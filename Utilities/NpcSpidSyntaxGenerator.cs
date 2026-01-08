@@ -186,13 +186,22 @@ public static class NpcSpidSyntaxGenerator
             filterParts.Add($"filterByRaces={string.Join(",", raceFormKeys)}");
         }
 
+        // Class filter
+        if (filter.Classes.Count > 0)
+        {
+            var classFormKeys = filter.Classes
+                .Select(FormKeyHelper.Format)
+                .ToList();
+            filterParts.Add($"filterByClass={string.Join(",", classFormKeys)}");
+        }
+
         // Gender filter
         if (filter.IsFemale.HasValue)
         {
             filterParts.Add($"filterByGender={( filter.IsFemale.Value ? "female" : "male" )}");
         }
 
-        // Note: SkyPatcher doesn't have direct filters for unique, templated, child, summonable, leveled, or class
+        // Note: SkyPatcher doesn't have direct filters for unique, templated, child, summonable, leveled
         // These are SPID-specific traits. We'll add a comment about this.
 
         var unsupportedFilters = new List<string>();
@@ -206,13 +215,6 @@ public static class NpcSpidSyntaxGenerator
             unsupportedFilters.Add($"Summonable={(filter.IsSummonable.Value ? "Yes" : "No")}");
         if (filter.IsLeveled.HasValue)
             unsupportedFilters.Add($"Leveled={(filter.IsLeveled.Value ? "Yes" : "No")}");
-        if (filter.Classes.Count > 0 && linkCache != null)
-        {
-            var classNames = filter.Classes
-                .Select(fk => linkCache.TryResolve<IClassGetter>(fk, out var c) ? c.EditorID : fk.ToString())
-                .Where(s => !string.IsNullOrEmpty(s));
-            unsupportedFilters.Add($"Class={string.Join(",", classNames)}");
-        }
 
         // Add outfit
         filterParts.Add($"outfitDefault={outfitPlaceholder}");
