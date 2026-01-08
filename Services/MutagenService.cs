@@ -4,6 +4,7 @@ using Mutagen.Bethesda;
 using Mutagen.Bethesda.Environments;
 using Mutagen.Bethesda.Plugins.Cache;
 using Mutagen.Bethesda.Skyrim;
+using Noggog;
 using Serilog;
 
 namespace Boutique.Services;
@@ -34,18 +35,42 @@ public class MutagenService(ILoggingService loggingService)
             try
             {
                 var envSw = System.Diagnostics.Stopwatch.StartNew();
+
+                // Try auto-detection first (works for most users with standard Steam/GOG installs)
                 _environment = GameEnvironment.Typical.Skyrim(SkyrimRelease.SkyrimSE);
-                _logger.Information("[PERF] GameEnvironment.Typical.Skyrim: {ElapsedMs}ms", envSw.ElapsedMilliseconds);
+                _logger.Information("[PERF] GameEnvironment.Typical.Skyrim (auto-detect): {ElapsedMs}ms", envSw.ElapsedMilliseconds);
 
                 var cacheSw = System.Diagnostics.Stopwatch.StartNew();
                 LinkCache = _environment.LoadOrder.ToImmutableLinkCache();
                 _logger.Information("[PERF] ToImmutableLinkCache: {ElapsedMs}ms", cacheSw.ElapsedMilliseconds);
             }
-            catch (Exception)
+            catch (Exception autoDetectEx)
             {
-                // If automatic detection fails, path might not be set correctly
-                throw new InvalidOperationException(
-                    $"Could not initialize Skyrim environment. Ensure Skyrim SE is installed and the data path is correct: {dataFolderPath}");
+                _logger.Warning(autoDetectEx, "Auto-detection failed, trying explicit path: {DataPath}", dataFolderPath);
+
+                // Fall back to explicit path (for non-standard installs)
+                try
+                {
+                    var envSw = System.Diagnostics.Stopwatch.StartNew();
+                    _environment = GameEnvironment.Typical.Builder<ISkyrimMod, ISkyrimModGetter>(GameRelease.SkyrimSE)
+                        .WithTargetDataFolder(new DirectoryPath(dataFolderPath))
+                        .Build();
+                    _logger.Information("[PERF] GameEnvironment built with explicit path: {ElapsedMs}ms", envSw.ElapsedMilliseconds);
+
+                    var cacheSw = System.Diagnostics.Stopwatch.StartNew();
+                    LinkCache = _environment.LoadOrder.ToImmutableLinkCache();
+                    _logger.Information("[PERF] ToImmutableLinkCache: {ElapsedMs}ms", cacheSw.ElapsedMilliseconds);
+                }
+                catch (Exception explicitPathEx)
+                {
+                    _logger.Error(explicitPathEx, "Failed to initialize Skyrim environment with explicit path {DataPath}", dataFolderPath);
+                    throw new InvalidOperationException(
+                        $"Could not initialize Skyrim environment. Ensure Skyrim SE is installed and the data path is correct: {dataFolderPath}\n\n" +
+                        $"Auto-detect error: {autoDetectEx.Message}\n" +
+                        $"Explicit path error: {explicitPathEx.Message}\n\n" +
+                        "Try running SkyrimSELauncher.exe once to register the game path, then restart this application.",
+                        explicitPathEx);
+                }
             }
         });
 
@@ -163,7 +188,16 @@ public class MutagenService(ILoggingService loggingService)
         await Task.Run(() =>
         {
             _environment?.Dispose();
-            _environment = GameEnvironment.Typical.Skyrim(SkyrimRelease.SkyrimSE);
+            try
+            {
+                _environment = GameEnvironment.Typical.Skyrim(SkyrimRelease.SkyrimSE);
+            }
+            catch
+            {
+                _environment = GameEnvironment.Typical.Builder<ISkyrimMod, ISkyrimModGetter>(GameRelease.SkyrimSE)
+                    .WithTargetDataFolder(new DirectoryPath(DataFolderPath!))
+                    .Build();
+            }
             LinkCache = _environment.LoadOrder.ToImmutableLinkCache();
         });
 
