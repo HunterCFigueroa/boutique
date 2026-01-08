@@ -30,37 +30,52 @@ public class RelayCommand(Action execute) : ICommand
 public class SettingsViewModel : ReactiveObject
 {
     private readonly PatcherSettings _settings;
+    private readonly GuiSettingsService _guiSettings;
     private readonly CrossSessionCacheService _cacheService;
     private readonly ThemeService _themeService;
     private readonly TutorialService _tutorialService;
 
     public SettingsViewModel(
         PatcherSettings settings,
+        GuiSettingsService guiSettings,
         CrossSessionCacheService cacheService,
         ThemeService themeService,
         TutorialService tutorialService)
     {
         _settings = settings;
+        _guiSettings = guiSettings;
         _cacheService = cacheService;
         _themeService = themeService;
         _tutorialService = tutorialService;
 
-        SkyrimDataPath = settings.SkyrimDataPath;
-        OutputPatchPath = settings.OutputPatchPath;
-        PatchFileName = settings.PatchFileName;
+        SkyrimDataPath = !string.IsNullOrEmpty(guiSettings.SkyrimDataPath) ? guiSettings.SkyrimDataPath : settings.SkyrimDataPath;
+        OutputPatchPath = !string.IsNullOrEmpty(guiSettings.OutputPatchPath) ? guiSettings.OutputPatchPath : settings.OutputPatchPath;
+        PatchFileName = !string.IsNullOrEmpty(guiSettings.PatchFileName) ? guiSettings.PatchFileName : settings.PatchFileName;
         SelectedTheme = (ThemeOption)_themeService.CurrentThemeSetting;
 
         this.WhenAnyValue(x => x.SkyrimDataPath)
             .Skip(1)
-            .Subscribe(v => _settings.SkyrimDataPath = v);
+            .Subscribe(v =>
+            {
+                _settings.SkyrimDataPath = v;
+                _guiSettings.SkyrimDataPath = v;
+            });
 
         this.WhenAnyValue(x => x.OutputPatchPath)
             .Skip(1)
-            .Subscribe(v => _settings.OutputPatchPath = v);
+            .Subscribe(v =>
+            {
+                _settings.OutputPatchPath = v;
+                _guiSettings.OutputPatchPath = v;
+            });
 
         this.WhenAnyValue(x => x.PatchFileName)
             .Skip(1)
-            .Subscribe(v => _settings.PatchFileName = v);
+            .Subscribe(v =>
+            {
+                _settings.PatchFileName = v;
+                _guiSettings.PatchFileName = v;
+            });
 
         this.WhenAnyValue(x => x.SelectedTheme)
             .Skip(1)
