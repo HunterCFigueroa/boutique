@@ -13,7 +13,7 @@ public class DistributionLineParserTests
     public void SpidLine_NoFilters_TargetsAllNpcs()
     {
         var file = CreateSpidFileViewModel("test.ini");
-        var line = new DistributionLine("Outfit = MyOutfit", true, []);
+        var line = CreateLine("Outfit = MyOutfit", true);
 
         var result = DistributionLineParser.LineTargetsAllNpcs(file, line);
 
@@ -24,7 +24,7 @@ public class DistributionLineParserTests
     public void SpidLine_WithStringFilter_DoesNotTargetAllNpcs()
     {
         var file = CreateSpidFileViewModel("test.ini");
-        var line = new DistributionLine("Outfit = MyOutfit|Serana", true, []);
+        var line = CreateLine("Outfit = MyOutfit|Serana", true);
 
         var result = DistributionLineParser.LineTargetsAllNpcs(file, line);
 
@@ -35,7 +35,7 @@ public class DistributionLineParserTests
     public void SpidLine_WithFormFilter_DoesNotTargetAllNpcs()
     {
         var file = CreateSpidFileViewModel("test.ini");
-        var line = new DistributionLine("Outfit = MyOutfit|NONE|NordRace", true, []);
+        var line = CreateLine("Outfit = MyOutfit|NONE|NordRace", true);
 
         var result = DistributionLineParser.LineTargetsAllNpcs(file, line);
 
@@ -46,7 +46,7 @@ public class DistributionLineParserTests
     public void SpidLine_WithKeywordFilter_DoesNotTargetAllNpcs()
     {
         var file = CreateSpidFileViewModel("test.ini");
-        var line = new DistributionLine("Outfit = MyOutfit|ActorTypeNPC", true, []);
+        var line = CreateLine("Outfit = MyOutfit|ActorTypeNPC", true);
 
         var result = DistributionLineParser.LineTargetsAllNpcs(file, line);
 
@@ -59,7 +59,7 @@ public class DistributionLineParserTests
         // Trait filters (F/M/U etc) are evaluated but don't prevent "targets all"
         // because they're modifiers, not exclusions of all NPCs
         var file = CreateSpidFileViewModel("test.ini");
-        var line = new DistributionLine("Outfit = MyOutfit|NONE|NONE|NONE|F", true, []);
+        var line = CreateLine("Outfit = MyOutfit|NONE|NONE|NONE|F", true);
 
         var result = DistributionLineParser.LineTargetsAllNpcs(file, line);
 
@@ -76,7 +76,7 @@ public class DistributionLineParserTests
     public void SkyPatcherLine_NoFilters_TargetsAllNpcs()
     {
         var file = CreateSkyPatcherFileViewModel("test.ini");
-        var line = new DistributionLine("outfitDefault=Skyrim.esm|000ABC12", true, []);
+        var line = CreateLine("outfitDefault=Skyrim.esm|000ABC12", true);
 
         var result = DistributionLineParser.LineTargetsAllNpcs(file, line);
 
@@ -87,7 +87,7 @@ public class DistributionLineParserTests
     public void SkyPatcherLine_WithNpcFilter_DoesNotTargetAllNpcs()
     {
         var file = CreateSkyPatcherFileViewModel("test.ini");
-        var line = new DistributionLine("filterByNpcs=Skyrim.esm|000ABC12:outfitDefault=Skyrim.esm|000DEF34", true, []);
+        var line = CreateLine("filterByNpcs=Skyrim.esm|000ABC12:outfitDefault=Skyrim.esm|000DEF34", true);
 
         var result = DistributionLineParser.LineTargetsAllNpcs(file, line);
 
@@ -98,7 +98,7 @@ public class DistributionLineParserTests
     public void SkyPatcherLine_WithFactionFilter_DoesNotTargetAllNpcs()
     {
         var file = CreateSkyPatcherFileViewModel("test.ini");
-        var line = new DistributionLine("filterByFactions=Skyrim.esm|000ABC12:outfitDefault=Skyrim.esm|000DEF34", true, []);
+        var line = CreateLine("filterByFactions=Skyrim.esm|000ABC12:outfitDefault=Skyrim.esm|000DEF34", true);
 
         var result = DistributionLineParser.LineTargetsAllNpcs(file, line);
 
@@ -109,7 +109,7 @@ public class DistributionLineParserTests
     public void SkyPatcherLine_WithRaceFilter_DoesNotTargetAllNpcs()
     {
         var file = CreateSkyPatcherFileViewModel("test.ini");
-        var line = new DistributionLine("filterByRaces=Skyrim.esm|000ABC12:outfitDefault=Skyrim.esm|000DEF34", true, []);
+        var line = CreateLine("filterByRaces=Skyrim.esm|000ABC12:outfitDefault=Skyrim.esm|000DEF34", true);
 
         var result = DistributionLineParser.LineTargetsAllNpcs(file, line);
 
@@ -120,7 +120,7 @@ public class DistributionLineParserTests
     public void SkyPatcherLine_WithKeywordFilter_DoesNotTargetAllNpcs()
     {
         var file = CreateSkyPatcherFileViewModel("test.ini");
-        var line = new DistributionLine("filterByKeywords=Skyrim.esm|000ABC12:outfitDefault=Skyrim.esm|000DEF34", true, []);
+        var line = CreateLine("filterByKeywords=Skyrim.esm|000ABC12:outfitDefault=Skyrim.esm|000DEF34", true);
 
         var result = DistributionLineParser.LineTargetsAllNpcs(file, line);
 
@@ -131,7 +131,7 @@ public class DistributionLineParserTests
     public void SkyPatcherLine_WithGenderFilter_DoesNotTargetAllNpcs()
     {
         var file = CreateSkyPatcherFileViewModel("test.ini");
-        var line = new DistributionLine("filterByGender=female:outfitDefault=Skyrim.esm|000DEF34", true, []);
+        var line = CreateLine("filterByGender=female:outfitDefault=Skyrim.esm|000DEF34", true);
 
         var result = DistributionLineParser.LineTargetsAllNpcs(file, line);
 
@@ -142,7 +142,7 @@ public class DistributionLineParserTests
     public void SkyPatcherLine_WithEditorIdFilter_DoesNotTargetAllNpcs()
     {
         var file = CreateSkyPatcherFileViewModel("test.ini");
-        var line = new DistributionLine("filterByEditorIdContains=Bandit:outfitDefault=Skyrim.esm|000DEF34", true, []);
+        var line = CreateLine("filterByEditorIdContains=Bandit:outfitDefault=Skyrim.esm|000DEF34", true);
 
         var result = DistributionLineParser.LineTargetsAllNpcs(file, line);
 
@@ -153,7 +153,7 @@ public class DistributionLineParserTests
     public void SkyPatcherLine_WithModNameFilter_DoesNotTargetAllNpcs()
     {
         var file = CreateSkyPatcherFileViewModel("test.ini");
-        var line = new DistributionLine("filterByModNames=MyMod.esp:outfitDefault=Skyrim.esm|000DEF34", true, []);
+        var line = CreateLine("filterByModNames=MyMod.esp:outfitDefault=Skyrim.esm|000DEF34", true);
 
         var result = DistributionLineParser.LineTargetsAllNpcs(file, line);
 
@@ -164,7 +164,7 @@ public class DistributionLineParserTests
     public void SkyPatcherLine_WithDefaultOutfitFilter_DoesNotTargetAllNpcs()
     {
         var file = CreateSkyPatcherFileViewModel("test.ini");
-        var line = new DistributionLine("filterByDefaultOutfits=Skyrim.esm|000ABC12:outfitDefault=Skyrim.esm|000DEF34", true, []);
+        var line = CreateLine("filterByDefaultOutfits=Skyrim.esm|000ABC12:outfitDefault=Skyrim.esm|000DEF34", true);
 
         var result = DistributionLineParser.LineTargetsAllNpcs(file, line);
 
@@ -176,7 +176,7 @@ public class DistributionLineParserTests
     {
         var file = CreateSkyPatcherFileViewModel("test.ini");
         // This line has no outfit assignment, so it's not an outfit distribution
-        var line = new DistributionLine("formsToAdd=Skyrim.esm|000ABC12", false, []);
+        var line = CreateLine("formsToAdd=Skyrim.esm|000ABC12", false);
 
         var result = DistributionLineParser.LineTargetsAllNpcs(file, line);
 
@@ -187,7 +187,7 @@ public class DistributionLineParserTests
     public void SkyPatcherLine_WithSleepOutfit_NoFilters_TargetsAllNpcs()
     {
         var file = CreateSkyPatcherFileViewModel("test.ini");
-        var line = new DistributionLine("outfitSleep=Skyrim.esm|000ABC12", true, []);
+        var line = CreateLine("outfitSleep=Skyrim.esm|000ABC12", true);
 
         var result = DistributionLineParser.LineTargetsAllNpcs(file, line);
 
@@ -198,23 +198,34 @@ public class DistributionLineParserTests
 
     #region Helper Methods
 
+    private static DistributionLine CreateLine(string rawText, bool isOutfitDistribution) =>
+        new(
+            LineNumber: 1,
+            RawText: rawText,
+            Kind: DistributionLineKind.KeyValue,
+            SectionName: null,
+            Key: null,
+            Value: null,
+            IsOutfitDistribution: isOutfitDistribution,
+            OutfitFormKeys: []);
+
     private static DistributionFileViewModel CreateSpidFileViewModel(string fileName) =>
-        new(new DistributionFile
-        {
-            FileName = fileName,
-            FullPath = $"Data/{fileName}",
-            Type = DistributionFileType.Spid,
-            Lines = []
-        });
+        new(new DistributionFile(
+            FileName: fileName,
+            FullPath: $"Data/{fileName}",
+            RelativePath: fileName,
+            Type: DistributionFileType.Spid,
+            Lines: [],
+            OutfitDistributionCount: 0));
 
     private static DistributionFileViewModel CreateSkyPatcherFileViewModel(string fileName) =>
-        new(new DistributionFile
-        {
-            FileName = fileName,
-            FullPath = $"Data/{fileName}",
-            Type = DistributionFileType.SkyPatcher,
-            Lines = []
-        });
+        new(new DistributionFile(
+            FileName: fileName,
+            FullPath: $"Data/{fileName}",
+            RelativePath: fileName,
+            Type: DistributionFileType.SkyPatcher,
+            Lines: [],
+            OutfitDistributionCount: 0));
 
     #endregion
 }

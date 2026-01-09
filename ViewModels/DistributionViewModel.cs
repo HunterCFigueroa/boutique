@@ -84,8 +84,8 @@ public class DistributionViewModel : ReactiveObject
 
         EditTab.WhenAnyValue(vm => vm.DistributionFilePath)
             .Subscribe(_ => this.RaisePropertyChanged(nameof(DistributionFilePath)));
-        EditTab.WhenAnyValue(vm => vm.DistributionPreviewText)
-            .Subscribe(_ => this.RaisePropertyChanged(nameof(DistributionPreviewText)));
+        EditTab.WhenAnyValue(vm => vm.DistributionFileContent)
+            .Subscribe(_ => this.RaisePropertyChanged(nameof(DistributionFileContent)));
         EditTab.WhenAnyValue(vm => vm.SelectedDistributionFile)
             .Subscribe(_ => this.RaisePropertyChanged(nameof(SelectedDistributionFile)));
         EditTab.WhenAnyValue(vm => vm.AvailableDistributionFiles)
@@ -324,7 +324,7 @@ public class DistributionViewModel : ReactiveObject
     }
 
     public string DistributionFilePath => EditTab.DistributionFilePath;
-    public string DistributionPreviewText => EditTab.DistributionPreviewText;
+    public string DistributionFileContent => EditTab.DistributionFileContent;
     public bool HasConflicts => EditTab.HasConflicts;
     public bool ConflictsResolvedByFilename => EditTab.ConflictsResolvedByFilename;
     public string ConflictSummary => EditTab.ConflictSummary;
