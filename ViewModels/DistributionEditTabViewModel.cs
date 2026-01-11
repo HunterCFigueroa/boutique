@@ -29,6 +29,7 @@ public class DistributionEditTabViewModel : ReactiveObject
     private ObservableCollection<DistributionEntryViewModel> _distributionEntries = [];
     private bool _isBulkLoading;
     private bool _outfitsLoaded;
+    private string? _justSavedFilePath;
 
     public DistributionEditTabViewModel(
         DistributionFileWriterService fileWriterService,
@@ -704,6 +705,10 @@ public class DistributionEditTabViewModel : ReactiveObject
             _logger.Information("Saved distribution file: {FilePath} ({LineCount} lines)",
                 finalFilePath, DistributionFileContent.Split('\n').Length);
 
+            // Track the saved file path so RefreshAvailableDistributionFiles can select it
+            _justSavedFilePath = finalFilePath;
+            DistributionFilePath = finalFilePath;
+
             FileSaved?.Invoke(finalFilePath);
         }
         catch (Exception ex)
@@ -880,16 +885,40 @@ public class DistributionEditTabViewModel : ReactiveObject
     {
         var previousSelected = SelectedDistributionFile;
         var previousNewFileName = NewFileName;
+        var justSaved = _justSavedFilePath;
+        _justSavedFilePath = null; // Clear after reading
+
         var files = _cache.AllDistributionFiles.ToList();
 
-        _logger.Debug("Refreshing distribution files dropdown. Previous selection: {Selection}, NewFileName: {NewFileName}",
-            previousSelected?.DisplayName, previousNewFileName);
+        _logger.Debug("Refreshing distribution files dropdown. Previous selection: {Selection}, NewFileName: {NewFileName}, JustSaved: {JustSaved}",
+            previousSelected?.DisplayName, previousNewFileName, justSaved);
+
         AvailableDistributionFiles.Clear();
         AvailableDistributionFiles.Add(new DistributionFileSelectionItem(isNewFile: true, file: null));
         foreach (var file in files)
         {
             AvailableDistributionFiles.Add(new DistributionFileSelectionItem(isNewFile: false, file: file));
         }
+
+        // If we just saved a file, select it instead of "Create New File"
+        if (!string.IsNullOrEmpty(justSaved))
+        {
+            var savedFileItem = AvailableDistributionFiles.FirstOrDefault(item =>
+                !item.IsNewFile && item.File != null &&
+                string.Equals(item.File.FullPath, justSaved, StringComparison.OrdinalIgnoreCase));
+
+            if (savedFileItem != null)
+            {
+                _logger.Debug("Selecting just-saved file: {Path}", justSaved);
+                IsCreatingNewFile = false;
+                NewFileName = string.Empty;
+                SelectedDistributionFile = savedFileItem;
+                return;
+            }
+
+            _logger.Warning("Just-saved file not found in cache: {Path}", justSaved);
+        }
+
         if (previousSelected != null)
         {
             if (previousSelected.IsNewFile)
