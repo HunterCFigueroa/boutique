@@ -4,6 +4,7 @@
              xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
              xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
              xmlns:vm="clr-namespace:Boutique.ViewModels"
+             xmlns:util="clr-namespace:Boutique.Utilities"
              mc:Ignorable="d"
              d:DataContext="{d:DesignInstance vm:DistributionNpcsTabViewModel, IsDesignTimeCreatable=False}"
              d:DesignHeight="600"
@@ -83,7 +84,8 @@
                         <TextBlock Text="Faction:" Style="{StaticResource LabelTextStyle}" />
                         <ComboBox ItemsSource="{Binding AvailableFactions}" SelectedItem="{Binding SelectedFaction}"
                                   DisplayMemberPath="DisplayName" MinWidth="150"
-                                  IsEditable="True" IsTextSearchEnabled="True"
+                                  IsEditable="True" IsTextSearchEnabled="False"
+                                  util:FilterableComboBoxBehavior.FilterPath="DisplayName"
                                   ToolTip="Filter by faction membership (SPID FormFilter)" />
                     </StackPanel>
 
@@ -92,7 +94,8 @@
                         <TextBlock Text="Race:" Style="{StaticResource LabelTextStyle}" />
                         <ComboBox ItemsSource="{Binding AvailableRaces}" SelectedItem="{Binding SelectedRace}"
                                   DisplayMemberPath="DisplayName" MinWidth="120"
-                                  IsEditable="True" IsTextSearchEnabled="True"
+                                  IsEditable="True" IsTextSearchEnabled="False"
+                                  util:FilterableComboBoxBehavior.FilterPath="DisplayName"
                                   ToolTip="Filter by race (SPID FormFilter)" />
                     </StackPanel>
 
@@ -101,7 +104,8 @@
                         <TextBlock Text="Class:" Style="{StaticResource LabelTextStyle}" />
                         <ComboBox ItemsSource="{Binding AvailableClasses}" SelectedItem="{Binding SelectedClass}"
                                   DisplayMemberPath="DisplayName" MinWidth="130"
-                                  IsEditable="True" IsTextSearchEnabled="True"
+                                  IsEditable="True" IsTextSearchEnabled="False"
+                                  util:FilterableComboBoxBehavior.FilterPath="DisplayName"
                                   ToolTip="Filter by NPC class (SPID FormFilter)" />
                     </StackPanel>
 
@@ -110,7 +114,8 @@
                         <TextBlock Text="Keyword:" Style="{StaticResource LabelTextStyle}" />
                         <ComboBox ItemsSource="{Binding AvailableKeywords}" SelectedItem="{Binding SelectedKeyword}"
                                   DisplayMemberPath="DisplayName" MinWidth="140"
-                                  IsEditable="True" IsTextSearchEnabled="True"
+                                  IsEditable="True" IsTextSearchEnabled="False"
+                                  util:FilterableComboBoxBehavior.FilterPath="DisplayName"
                                   ToolTip="Filter by keyword (SPID StringFilter)" />
                     </StackPanel>
 

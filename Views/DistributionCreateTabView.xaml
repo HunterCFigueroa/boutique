@@ -4,6 +4,7 @@
              xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
              xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
              xmlns:vm="clr-namespace:Boutique.ViewModels"
+             xmlns:util="clr-namespace:Boutique.Utilities"
              mc:Ignorable="d"
              d:DataContext="{d:DesignInstance vm:DistributionEditTabViewModel, IsDesignTimeCreatable=False}"
              x:Name="Root"
@@ -134,8 +135,9 @@
                                         <ComboBox ItemsSource="{Binding DataContext.AvailableOutfits, ElementName=Root}"
                                                   SelectedItem="{Binding SelectedOutfit, Mode=TwoWay}"
                                                   DisplayMemberPath="EditorID" MinWidth="140" Margin="0,0,4,0" Height="22"
-                                                  MaxDropDownHeight="300" IsEditable="True" IsTextSearchEnabled="True"
-                                                  TextSearch.TextPath="EditorID" DropDownOpened="ComboBox_DropDownOpened"
+                                                  MaxDropDownHeight="300" IsEditable="True" IsTextSearchEnabled="False"
+                                                  DropDownOpened="ComboBox_DropDownOpened"
+                                                  util:FilterableComboBoxBehavior.FilterPath="EditorID"
                                                   VerticalContentAlignment="Center" />
                                         <CheckBox Content="%" IsChecked="{Binding UseChance, Mode=TwoWay}" VerticalAlignment="Center" Margin="0,0,2,0" ToolTip="Use Chance" />
                                         <TextBox Text="{Binding Chance, UpdateSourceTrigger=PropertyChanged}" Width="32" Height="22"
