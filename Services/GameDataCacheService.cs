@@ -439,14 +439,14 @@ public class GameDataCacheService
                 if (filterData != null)
                 {
                     filterDataBag.Add(filterData);
-                }
 
-                var record = new NpcRecord(
-                    npc.FormKey,
-                    npc.EditorID,
-                    Utilities.NpcDataExtractor.GetName(npc),
-                    originalModKey);
-                recordsBag.Add(new NpcRecordViewModel(record));
+                    var record = new NpcRecord(
+                        npc.FormKey,
+                        npc.EditorID,
+                        Utilities.NpcDataExtractor.GetName(npc),
+                        originalModKey);
+                    recordsBag.Add(new NpcRecordViewModel(record));
+                }
             }
             catch
             {
