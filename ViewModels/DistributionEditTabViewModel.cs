@@ -855,17 +855,21 @@ public class DistributionEditTabViewModel : ReactiveObject
             FileName = NewFileName
         };
 
-        var dataPath = _settings.SkyrimDataPath;
-        if (!string.IsNullOrWhiteSpace(dataPath) && Directory.Exists(dataPath))
+        // Use output folder as base if set, otherwise fall back to data path
+        var targetDirectory = !string.IsNullOrWhiteSpace(_settings.OutputPatchPath) && Directory.Exists(_settings.OutputPatchPath)
+            ? _settings.OutputPatchPath
+            : _settings.SkyrimDataPath;
+
+        if (!string.IsNullOrWhiteSpace(targetDirectory) && Directory.Exists(targetDirectory))
         {
-            var defaultDir = PathUtilities.GetSkyPatcherNpcPath(dataPath);
+            var defaultDir = PathUtilities.GetSkyPatcherNpcPath(targetDirectory);
             if (Directory.Exists(defaultDir))
             {
                 dialog.InitialDirectory = defaultDir;
             }
             else
             {
-                dialog.InitialDirectory = dataPath;
+                dialog.InitialDirectory = targetDirectory;
             }
         }
 
@@ -970,14 +974,22 @@ public class DistributionEditTabViewModel : ReactiveObject
             baseName = baseName[..^6];
         }
 
-        DistributionFilePath = GetDistributionFilePath(dataPath, baseName, DistributionFormat);
+        // Use output folder as base if set, otherwise fall back to data path
+        var baseDirectory = !string.IsNullOrWhiteSpace(_settings.OutputPatchPath)
+            ? _settings.OutputPatchPath
+            : dataPath;
+
+        DistributionFilePath = GetDistributionFilePath(baseDirectory, baseName, DistributionFormat);
         _logger.Debug("Updated distribution file path for format {Format}: {Path}", DistributionFormat, DistributionFilePath);
     }
 
     private void UpdateDistributionFilePathFromNewFileName()
     {
-        var dataPath = _settings.SkyrimDataPath;
-        if (string.IsNullOrWhiteSpace(dataPath) || !Directory.Exists(dataPath))
+        var targetDirectory = !string.IsNullOrWhiteSpace(_settings.OutputPatchPath) && Directory.Exists(_settings.OutputPatchPath)
+            ? _settings.OutputPatchPath
+            : _settings.SkyrimDataPath;
+
+        if (string.IsNullOrWhiteSpace(targetDirectory) || !Directory.Exists(targetDirectory))
             return;
 
         if (string.IsNullOrWhiteSpace(NewFileName))
@@ -997,21 +1009,20 @@ public class DistributionEditTabViewModel : ReactiveObject
             baseName = baseName[..^6];
         }
 
-        DistributionFilePath = GetDistributionFilePath(dataPath, baseName, DistributionFormat);
+        DistributionFilePath = GetDistributionFilePath(targetDirectory, baseName, DistributionFormat);
     }
 
-    private static string GetDistributionFilePath(string dataPath, string baseName, DistributionFileType format)
+    private static string GetDistributionFilePath(string baseDirectory, string baseName, DistributionFileType format)
     {
         if (format == DistributionFileType.Spid)
         {
-            // SPID files go in Data/ folder with *_DISTR.ini naming convention
-            return Path.Combine(dataPath, $"{baseName}_DISTR.ini");
+            // SPID files go in base directory with *_DISTR.ini naming convention
+            return Path.Combine(baseDirectory, $"{baseName}_DISTR.ini");
         }
-        else
-        {
-            // SkyPatcher files go in skse/plugins/SkyPatcher/npc/
-            return Path.Combine(PathUtilities.GetSkyPatcherNpcPath(dataPath), $"{baseName}.ini");
-        }
+
+        // SkyPatcher files go in skse/plugins/SkyPatcher/npc/ relative to base directory
+        var skyPatcherPath = PathUtilities.GetSkyPatcherNpcPath(baseDirectory);
+        return Path.Combine(skyPatcherPath, $"{baseName}.ini");
     }
 
     private void UpdateFileContent()
