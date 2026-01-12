@@ -74,6 +74,21 @@
                                     <TextBlock Text="{Binding Converter={StaticResource DistributionFileTypeConverter}}" />
                                 </DataTemplate>
                             </ComboBox.ItemTemplate>
+                            <ComboBox.ItemContainerStyle>
+                                <Style TargetType="ComboBoxItem" BasedOn="{StaticResource {x:Type ComboBoxItem}}">
+                                    <Setter Property="ToolTipService.ShowOnDisabled" Value="True" />
+                                    <Style.Triggers>
+                                        <MultiDataTrigger>
+                                            <MultiDataTrigger.Conditions>
+                                                <Condition Binding="{Binding}" Value="SkyPatcher" />
+                                                <Condition Binding="{Binding DataContext.HasChanceBasedEntries, RelativeSource={RelativeSource AncestorType=ComboBox}}" Value="True" />
+                                            </MultiDataTrigger.Conditions>
+                                            <Setter Property="IsEnabled" Value="False" />
+                                            <Setter Property="ToolTip" Value="SkyPatcher does not support chance-based distribution. Disable chance on all entries to use this format." />
+                                        </MultiDataTrigger>
+                                    </Style.Triggers>
+                                </Style>
+                            </ComboBox.ItemContainerStyle>
                         </ComboBox>
                     </StackPanel>
                     <StackPanel Orientation="Horizontal" Visibility="{Binding ShowNewFileNameInput, Converter={StaticResource BoolToVisConverter}}">

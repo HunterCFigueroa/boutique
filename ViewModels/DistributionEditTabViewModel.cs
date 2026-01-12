@@ -30,6 +30,7 @@ public class DistributionEditTabViewModel : ReactiveObject
     private bool _isBulkLoading;
     private bool _outfitsLoaded;
     private string? _justSavedFilePath;
+    private readonly Dictionary<DistributionEntryViewModel, IDisposable> _useChanceSubscriptions = new();
 
     public DistributionEditTabViewModel(
         DistributionFileWriterService fileWriterService,
@@ -234,6 +235,7 @@ public class DistributionEditTabViewModel : ReactiveObject
                         }
                         this.RaisePropertyChanged(nameof(DistributionEntriesCount));
                         UpdateFileContent();
+                        UpdateHasChanceBasedEntries();
                     }
                     if (string.IsNullOrWhiteSpace(NewFileName))
                     {
@@ -314,6 +316,12 @@ public class DistributionEditTabViewModel : ReactiveObject
     public IReadOnlyList<DistributionFileType> AvailableFormats { get; } =
         new[] { DistributionFileType.Spid, DistributionFileType.SkyPatcher };
 
+    /// <summary>
+    /// True if any distribution entry has chance-based distribution enabled.
+    /// When true, SkyPatcher format is not available (it doesn't support chance).
+    /// </summary>
+    [Reactive] public bool HasChanceBasedEntries { get; private set; }
+
     [Reactive] public ObservableCollection<NpcRecordViewModel> FilteredNpcs { get; private set; } = [];
 
     [Reactive] public ObservableCollection<FactionRecordViewModel> FilteredFactions { get; private set; } = [];
@@ -360,6 +368,14 @@ public class DistributionEditTabViewModel : ReactiveObject
 
         this.RaisePropertyChanged(nameof(DistributionEntriesCount));
 
+        if (e.OldItems != null)
+        {
+            foreach (DistributionEntryViewModel entry in e.OldItems)
+            {
+                UnsubscribeFromEntryChanges(entry);
+            }
+        }
+
         if (e.NewItems != null)
         {
             foreach (DistributionEntryViewModel entry in e.NewItems)
@@ -369,6 +385,7 @@ public class DistributionEditTabViewModel : ReactiveObject
         }
 
         UpdateFileContent();
+        UpdateHasChanceBasedEntries();
 
         _logger.Debug("OnDistributionEntriesChanged completed");
     }
@@ -379,7 +396,23 @@ public class DistributionEditTabViewModel : ReactiveObject
             .Throttle(TimeSpan.FromMilliseconds(300))
             .ObserveOn(RxApp.MainThreadScheduler)
             .Subscribe(_ => UpdateFileContent());
+
+        var useChanceSub = entry.WhenAnyValue(e => e.UseChance)
+            .Subscribe(_ => UpdateHasChanceBasedEntries());
+        _useChanceSubscriptions[entry] = useChanceSub;
     }
+
+    private void UnsubscribeFromEntryChanges(DistributionEntryViewModel entry)
+    {
+        if (_useChanceSubscriptions.TryGetValue(entry, out var sub))
+        {
+            sub.Dispose();
+            _useChanceSubscriptions.Remove(entry);
+        }
+    }
+
+    private void UpdateHasChanceBasedEntries() =>
+        HasChanceBasedEntries = DistributionEntries.Any(e => e.UseChance);
 
     private void AddDistributionEntry()
     {
@@ -792,6 +825,7 @@ public class DistributionEditTabViewModel : ReactiveObject
             }
             this.RaisePropertyChanged(nameof(DistributionEntriesCount));
             UpdateFileContent();
+            UpdateHasChanceBasedEntries();
 
             var statusMsg = $"Loaded {entries.Count} distribution entries from {Path.GetFileName(DistributionFilePath)}";
             if (parseErrors.Count > 0)
