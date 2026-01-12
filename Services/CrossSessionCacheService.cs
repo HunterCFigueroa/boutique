@@ -12,12 +12,14 @@ namespace Boutique.Services;
 public class CrossSessionCacheService
 {
     private readonly ILogger _logger;
+    private readonly PatcherSettings _settings;
     private readonly string _cacheDirectory;
     private const string CacheFileName = "game_data_cache.msgpack";
 
-    public CrossSessionCacheService(ILogger logger)
+    public CrossSessionCacheService(ILogger logger, PatcherSettings settings)
     {
         _logger = logger.ForContext<CrossSessionCacheService>();
+        _settings = settings;
 
         _cacheDirectory = Path.Combine(PathUtilities.GetBoutiqueAppDataPath(), "cache");
     }
@@ -26,6 +28,18 @@ public class CrossSessionCacheService
 
     public static string AppVersion =>
         Assembly.GetExecutingAssembly().GetName().Version?.ToString() ?? "0.0.0.0";
+
+    private string GetPluginsTxtPath()
+    {
+        var localAppData = Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData);
+        var folderName = _settings.SelectedSkyrimRelease switch
+        {
+            Mutagen.Bethesda.Skyrim.SkyrimRelease.SkyrimVR => "Skyrim VR",
+            Mutagen.Bethesda.Skyrim.SkyrimRelease.SkyrimSEGog => "Skyrim Special Edition",
+            _ => "Skyrim Special Edition"
+        };
+        return Path.Combine(localAppData, folderName, "plugins.txt");
+    }
 
     public async Task<GameDataCache?> TryLoadCacheAsync(string dataPath, CancellationToken cancellationToken = default)
     {
@@ -192,8 +206,7 @@ public class CrossSessionCacheService
         {
             var sb = new StringBuilder();
 
-            var localAppData = Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData);
-            var pluginsPath = Path.Combine(localAppData, "Skyrim Special Edition", "plugins.txt");
+            var pluginsPath = GetPluginsTxtPath();
 
             if (File.Exists(pluginsPath))
             {

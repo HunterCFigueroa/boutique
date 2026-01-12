@@ -70,7 +70,7 @@ public class PatchingService(MutagenService mutagenService, ILoggingService logg
                     try
                     {
                         _logger.Information("Existing patch detected at {OutputPath}; loading for append.", outputPath);
-                        patchMod = SkyrimMod.CreateFromBinary(outputPath, SkyrimRelease.SkyrimSE);
+                        patchMod = SkyrimMod.CreateFromBinary(outputPath, mutagenService.SkyrimRelease);
                         _logger.Information("Loaded existing patch containing {ArmorCount} armor overrides.",
                             patchMod.Armors.Count);
                     }
@@ -80,7 +80,7 @@ public class PatchingService(MutagenService mutagenService, ILoggingService logg
                         return (false, $"Unable to load existing patch: {ex.Message}");
                     }
                 else
-                    patchMod = new SkyrimMod(modKey, SkyrimRelease.SkyrimSE);
+                    patchMod = new SkyrimMod(modKey, mutagenService.SkyrimRelease);
 
                 var existingMasters = patchMod.ModHeader.MasterReferences?
                     .Select(m => m.Master) ?? [];
@@ -180,7 +180,7 @@ public class PatchingService(MutagenService mutagenService, ILoggingService logg
                     try
                     {
                         _logger.Information("Loading existing patch at {OutputPath} for outfit append.", outputPath);
-                        patchMod = SkyrimMod.CreateFromBinary(outputPath, SkyrimRelease.SkyrimSE);
+                        patchMod = SkyrimMod.CreateFromBinary(outputPath, mutagenService.SkyrimRelease);
                     }
                     catch (Exception ex)
                     {
@@ -189,7 +189,7 @@ public class PatchingService(MutagenService mutagenService, ILoggingService logg
                         return (false, $"Unable to load existing patch: {ex.Message}", (IReadOnlyList<OutfitCreationResult>)[]);
                     }
                 else
-                    patchMod = new SkyrimMod(modKey, SkyrimRelease.SkyrimSE);
+                    patchMod = new SkyrimMod(modKey, mutagenService.SkyrimRelease);
 
                 var existingOutfitMasters = patchMod.ModHeader.MasterReferences.Select(m => m.Master);
                 requiredMasters.UnionWith(existingOutfitMasters);
@@ -404,8 +404,8 @@ public class PatchingService(MutagenService mutagenService, ILoggingService logg
 
             try
             {
-                using var patchMod = SkyrimMod.CreateFromBinaryOverlay(patchPath, SkyrimRelease.SkyrimSE);
-                var dataFolder = Path.GetDirectoryName(patchPath) ?? string.Empty;
+                using var patchMod = SkyrimMod.CreateFromBinaryOverlay(patchPath, mutagenService.SkyrimRelease);
+                var dataFolder = mutagenService.DataFolderPath ?? string.Empty;
 
                 var masterRefs = patchMod.ModHeader.MasterReferences.Select(m => m.Master).ToList();
                 var missingMasters = new List<ModKey>();
@@ -515,7 +515,7 @@ public class PatchingService(MutagenService mutagenService, ILoggingService logg
                 _logger.Information("Cleaning patch {Path}: removing {Count} outfit(s) with missing masters.",
                     patchPath, outfitsToRemove.Count);
 
-                var patchMod = SkyrimMod.CreateFromBinary(patchPath, SkyrimRelease.SkyrimSE);
+                var patchMod = SkyrimMod.CreateFromBinary(patchPath, mutagenService.SkyrimRelease);
                 var outfitsToRemoveSet = outfitsToRemove.Select(o => o.FormKey).ToHashSet();
 
                 var removedCount = 0;

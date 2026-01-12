@@ -15,8 +15,6 @@ namespace Boutique.Services;
 
 public class GameAssetLocator
 {
-    private const GameRelease Release = GameRelease.SkyrimSE;
-
     private static readonly ModKey[] FallbackModKeys =
     [
         ModKey.FromNameAndExtension("Skyrim.esm"),
@@ -157,7 +155,7 @@ public class GameAssetLocator
         var directoryPath = new DirectoryPath(dataPath);
         var results = new List<CachedArchive>();
 
-        foreach (var filePath in Archive.GetApplicableArchivePaths(Release, directoryPath, modKey, _fileSystem))
+        foreach (var filePath in Archive.GetApplicableArchivePaths(_mutagenService.GameRelease, directoryPath, modKey, _fileSystem))
             TryAddArchive(results, filePath);
 
         return results;
@@ -179,7 +177,7 @@ public class GameAssetLocator
         if (File.Exists(pluginPath))
             try
             {
-                using var mod = SkyrimMod.CreateFromBinaryOverlay(pluginPath, SkyrimRelease.SkyrimSE);
+                using var mod = SkyrimMod.CreateFromBinaryOverlay(pluginPath, _mutagenService.SkyrimRelease);
                 masters = mod.ModHeader.MasterReferences
                     .Select(m => m.Master)
                     .Distinct()
@@ -208,7 +206,7 @@ public class GameAssetLocator
 
         try
         {
-            var reader = Archive.CreateReader(Release, filePath, _fileSystem);
+            var reader = Archive.CreateReader(_mutagenService.GameRelease, filePath, _fileSystem);
             archives.Add(new CachedArchive(path, reader, _logger));
         }
         catch (Exception ex)

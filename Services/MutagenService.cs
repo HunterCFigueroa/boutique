@@ -27,6 +27,10 @@ public class MutagenService(ILoggingService loggingService, PatcherSettings sett
 
     public bool IsInitialized => _environment != null;
 
+    public SkyrimRelease SkyrimRelease => GetSkyrimRelease();
+
+    public GameRelease GameRelease => GetGameRelease();
+
     private GameRelease GetGameRelease()
     {
         // Convert SkyrimRelease to GameRelease
