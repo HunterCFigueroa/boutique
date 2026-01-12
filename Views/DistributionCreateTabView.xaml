@@ -5,6 +5,7 @@
              xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
              xmlns:vm="clr-namespace:Boutique.ViewModels"
              xmlns:util="clr-namespace:Boutique.Utilities"
+             xmlns:controls="clr-namespace:Boutique.Controls"
              mc:Ignorable="d"
              d:DataContext="{d:DesignInstance vm:DistributionEditTabViewModel, IsDesignTimeCreatable=False}"
              x:Name="Root"
@@ -132,13 +133,14 @@
                                                      Command="{Binding DataContext.SelectEntryCommand, ElementName=Root}"
                                                      CommandParameter="{Binding}" Margin="0,0,8,0" FontWeight="Bold" VerticalAlignment="Center" />
                                         <TextBlock Text="Outfit:" VerticalAlignment="Center" Margin="0,0,4,0" />
-                                        <ComboBox ItemsSource="{Binding DataContext.AvailableOutfits, ElementName=Root}"
+                                        <controls:FilterableSelector
+                                                  ItemsSource="{Binding DataContext.AvailableOutfits, ElementName=Root}"
                                                   SelectedItem="{Binding SelectedOutfit, Mode=TwoWay}"
-                                                  DisplayMemberPath="EditorID" MinWidth="140" Margin="0,0,4,0" Height="22"
-                                                  MaxDropDownHeight="300" IsEditable="True" IsTextSearchEnabled="False"
-                                                  DropDownOpened="ComboBox_DropDownOpened"
-                                                  util:FilterableComboBoxBehavior.FilterPath="EditorID"
-                                                  VerticalContentAlignment="Center" />
+                                                  DisplayMemberPath="EditorID"
+                                                  FilterPath="EditorID"
+                                                  MinWidth="140" Margin="0,0,4,0"
+                                                  MaxDropDownHeight="300"
+                                                  DropDownOpened="FilterableSelector_DropDownOpened" />
                                         <CheckBox Content="%" IsChecked="{Binding UseChance, Mode=TwoWay}" VerticalAlignment="Center" Margin="0,0,2,0" ToolTip="Use Chance" />
                                         <TextBox Text="{Binding Chance, UpdateSourceTrigger=PropertyChanged}" Width="32" Height="22"
                                                  IsEnabled="{Binding UseChance}" Margin="0,0,4,0" ToolTip="Chance (0-100)"
