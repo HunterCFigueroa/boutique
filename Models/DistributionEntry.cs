@@ -22,4 +22,7 @@ public sealed class DistributionEntry
     public int? Chance { get; set; }
 }
 
-public sealed record DistributionParseError(int LineNumber, string LineContent, string Reason);
+public sealed record DistributionParseError(int LineNumber, string LineContent, string Reason)
+{
+    public string ErrorHeader => $"Line {LineNumber}: {Reason}";
+}

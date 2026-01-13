@@ -37,4 +37,10 @@
     <SolidColorBrush x:Key="Brush.Tutorial.DialogForeground" Color="#FF1A1A1A" />
     <SolidColorBrush x:Key="Brush.Tutorial.ButtonBackground" Color="#FF5B8266" />
     <SolidColorBrush x:Key="Brush.Tutorial.ButtonForeground" Color="#FFFFFFFF" />
+
+    <!-- Parse Error colors -->
+    <SolidColorBrush x:Key="Brush.Error.Background" Color="#FFF8EEEC" />
+    <SolidColorBrush x:Key="Brush.Error.Border" Color="#FFD4A5A0" />
+    <SolidColorBrush x:Key="Brush.Error.Title" Color="#FFC44D4D" />
+    <SolidColorBrush x:Key="Brush.Error.Text" Color="#FF6B4A4A" />
 </ResourceDictionary>
