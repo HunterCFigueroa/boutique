@@ -43,10 +43,9 @@ public class DistributionEntryViewModelTests
     {
         // Arrange
         var entry = new DistributionEntry { TraitFilters = new SpidTraitFilters { IsFemale = true } };
-        var vm = new DistributionEntryViewModel(entry);
-
-        // Act
-        vm.Gender = GenderFilter.Any;
+        var vm = new DistributionEntryViewModel(entry) {
+            // Act
+            Gender = GenderFilter.Any };
 
         // Assert
         Assert.Null(entry.TraitFilters.IsFemale);

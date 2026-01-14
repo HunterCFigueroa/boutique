@@ -25,7 +25,7 @@ public class EncodingTests
         var cp1251 = Encoding.GetEncoding(1251);
 
         // Russian text "Броня" (Armor)
-        var originalText = "Броня";
+        const string originalText = "Броня";
 
         // Encode to CP1251 bytes, then decode back
         var bytes = cp1251.GetBytes(originalText);

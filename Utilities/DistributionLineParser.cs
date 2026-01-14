@@ -31,23 +31,19 @@ public static class DistributionLineParser
         var trimmed = rawText.Trim();
         var filterByNpcsIndex = trimmed.IndexOf("filterByNpcs=", StringComparison.OrdinalIgnoreCase);
 
-        if (filterByNpcsIndex >= 0)
+        if (filterByNpcsIndex < 0) return results;
+        var npcStart = filterByNpcsIndex + "filterByNpcs=".Length;
+        var npcEnd = trimmed.IndexOf(':', npcStart);
+
+        if (npcEnd <= npcStart) return results;
+        var npcString = trimmed[npcStart..npcEnd];
+
+        foreach (var npcPart in npcString.Split(','))
         {
-            var npcStart = filterByNpcsIndex + "filterByNpcs=".Length;
-            var npcEnd = trimmed.IndexOf(':', npcStart);
-
-            if (npcEnd > npcStart)
+            var formKey = TryParseFormKey(npcPart.Trim());
+            if (formKey.HasValue)
             {
-                var npcString = trimmed.Substring(npcStart, npcEnd - npcStart);
-
-                foreach (var npcPart in npcString.Split(','))
-                {
-                    var formKey = TryParseFormKey(npcPart.Trim());
-                    if (formKey.HasValue)
-                    {
-                        results.Add(formKey.Value);
-                    }
-                }
+                results.Add(formKey.Value);
             }
         }
 

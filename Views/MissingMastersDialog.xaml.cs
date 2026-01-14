@@ -41,25 +41,19 @@ public partial class MissingMastersDialog : Window
 public class MissingMasterViewModel
 {
     public string MasterFileName { get; }
+
     public IReadOnlyList<AffectedOutfitViewModel> AffectedOutfits { get; }
 
     public MissingMasterViewModel(MissingMasterInfo info)
     {
         MasterFileName = info.MissingMaster.FileName;
-        AffectedOutfits = info.AffectedOutfits
-            .Select(o => new AffectedOutfitViewModel(o))
-            .ToList();
+        AffectedOutfits = [.. info.AffectedOutfits.Select(o => new AffectedOutfitViewModel(o))];
     }
 }
 
-public class AffectedOutfitViewModel
+public class AffectedOutfitViewModel(AffectedOutfitInfo info)
 {
-    public string DisplayName { get; }
-    public int OrphanedCount { get; }
+    public string DisplayName { get; } = info.EditorId ?? info.FormKey.ToString();
 
-    public AffectedOutfitViewModel(AffectedOutfitInfo info)
-    {
-        DisplayName = info.EditorId ?? info.FormKey.ToString();
-        OrphanedCount = info.OrphanedArmorFormKeys.Count;
-    }
+    public int OrphanedCount { get; } = info.OrphanedArmorFormKeys.Count;
 }

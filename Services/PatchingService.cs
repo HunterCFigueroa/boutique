@@ -12,6 +12,7 @@ namespace Boutique.Services;
 
 public class PatchingService(MutagenService mutagenService, ILoggingService loggingService)
 {
+    private const uint MinimumFormId = 0x800;
     private readonly ILogger _logger = loggingService.ForContext<PatchingService>();
 
     public bool ValidatePatch(IEnumerable<ArmorMatch> matches, out string validationMessage)
@@ -86,6 +87,7 @@ public class PatchingService(MutagenService mutagenService, ILoggingService logg
                 else
                 {
                     patchMod = new SkyrimMod(modKey, mutagenService.SkyrimRelease);
+                    EnsureMinimumFormId(patchMod);
                 }
 
                 var existingMasters = patchMod.ModHeader.MasterReferences?
@@ -200,6 +202,7 @@ public class PatchingService(MutagenService mutagenService, ILoggingService logg
                 else
                 {
                     patchMod = new SkyrimMod(modKey, mutagenService.SkyrimRelease);
+                    EnsureMinimumFormId(patchMod);
                 }
 
                 var existingOutfitMasters = patchMod.ModHeader.MasterReferences.Select(m => m.Master);
@@ -298,6 +301,12 @@ public class PatchingService(MutagenService mutagenService, ILoggingService logg
         return result;
     }
 
+    private static void EnsureMinimumFormId(SkyrimMod patchMod)
+    {
+        if (patchMod.ModHeader.Stats.NextFormID < MinimumFormId)
+            patchMod.ModHeader.Stats.NextFormID = MinimumFormId;
+    }
+
     private static void ApplyGlamOnlyAdjustments(Armor target) => target.ArmorRating = 0;
 
     private static void CopyArmorStats(Armor target, IArmorGetter source)
@@ -387,11 +396,14 @@ public class PatchingService(MutagenService mutagenService, ILoggingService logg
 
     private void TryApplyEslFlag(SkyrimMod patchMod)
     {
-        // ESL plugins can have at most 2048 new records (FormIDs 0x000-0x7FF in light master range)
-        // Override records don't count - they reuse the original FormID
+        if (mutagenService.SkyrimRelease == SkyrimRelease.SkyrimVR)
+        {
+            _logger.Information("ESL flag skipped — Skyrim VR does not natively support ESL plugins.");
+            return;
+        }
+
         const int eslRecordLimit = 2048;
 
-        // Count only NEW records (those with FormKeys belonging to this mod)
         var newRecordCount = patchMod.EnumerateMajorRecords()
             .Count(r => r.FormKey.ModKey == patchMod.ModKey);
 
