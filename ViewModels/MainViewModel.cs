@@ -110,16 +110,20 @@ public class MainViewModel : ReactiveObject
             .Subscribe(_ => ConfigureFilteredOutfitPluginsView());
 
         InitializeCommand = ReactiveCommand.CreateFromTask(InitializeAsync);
-        CreatePatchCommand = ReactiveCommand.CreateFromTask(CreatePatchAsync,
+        CreatePatchCommand = ReactiveCommand.CreateFromTask(
+            CreatePatchAsync,
             this.WhenAnyValue(x => x.Matches.Count, count => count > 0));
-        ClearMappingsCommand = ReactiveCommand.Create(ClearMappings,
+        ClearMappingsCommand = ReactiveCommand.Create(
+            ClearMappings,
             this.WhenAnyValue(x => x.Matches.Count, count => count > 0));
-        MapSelectedCommand = ReactiveCommand.Create(MapSelected,
+        MapSelectedCommand = ReactiveCommand.Create(
+            MapSelected,
             this.WhenAnyValue(
                 x => x.SelectedSourceArmors,
                 x => x.SelectedTargetArmor,
                 (sources, target) => sources.OfType<ArmorRecordViewModel>().Any() && target is not null));
-        MapGlamOnlyCommand = ReactiveCommand.Create(MapSelectedAsGlamOnly,
+        MapGlamOnlyCommand = ReactiveCommand.Create(
+            MapSelectedAsGlamOnly,
             this.WhenAnyValue(
                 x => x.SelectedSourceArmors,
                 sources => sources.OfType<ArmorRecordViewModel>().Any()));
@@ -194,6 +198,7 @@ public class MainViewModel : ReactiveObject
     [Reactive] public ObservableCollection<ArmorMatchViewModel> Matches { get; set; } = [];
 
     [Reactive] public string SourceSearchText { get; set; } = string.Empty;
+
     [Reactive] public string TargetSearchText { get; set; } = string.Empty;
 
     public ObservableCollection<ArmorRecordViewModel> OutfitArmors
@@ -295,10 +300,14 @@ public class MainViewModel : ReactiveObject
 
             var existing = Matches.FirstOrDefault(m => m.Source.Armor.FormKey == primary.Armor.FormKey);
             if (existing?.Target is not null)
+            {
                 SelectedTargetArmor =
                     _targetArmors.FirstOrDefault(t => t.Armor.FormKey == existing.Target.Armor.FormKey);
+            }
             else
+            {
                 SelectedTargetArmor = _targetArmors.FirstOrDefault(t => primary.SharesSlotWith(t));
+            }
         }
     }
 
@@ -1507,20 +1516,18 @@ public class MainViewModel : ReactiveObject
             ProgressTotal = populatedDrafts.Count + deletionCount;
 
             var requests = populatedDrafts
-                .Select(d => new OutfitCreationRequest(
+                .ConvertAll(d => new OutfitCreationRequest(
                     d.Name,
                     d.EditorId,
-                    d.GetPieces().Select(p => p.Armor).ToList()))
-                .ToList();
+                    [.. d.GetPieces().Select(p => p.Armor)]));
 
-            foreach (var editorId in _pendingOutfitDeletions)
-                requests.Add(new OutfitCreationRequest(editorId, editorId, []));
+            requests.AddRange(_pendingOutfitDeletions.Select(editorId => new OutfitCreationRequest(editorId, editorId, [])));
 
-            var progress = new Progress<(int current, int total, string message)>(p =>
+            var progress = new Progress<(int Current, int Total, string Message)>(p =>
             {
-                ProgressCurrent = p.current;
-                ProgressTotal = p.total;
-                StatusMessage = p.message;
+                ProgressCurrent = p.Current;
+                ProgressTotal = p.Total;
+                StatusMessage = p.Message;
             });
 
             var outputPath = Settings.FullOutputPath;
@@ -1565,7 +1572,8 @@ public class MainViewModel : ReactiveObject
         }
     }
 
-    public void ApplyTargetSort(string? propertyName = nameof(ArmorRecordViewModel.DisplayName),
+    public void ApplyTargetSort(
+        string? propertyName = nameof(ArmorRecordViewModel.DisplayName),
         ListSortDirection direction = ListSortDirection.Ascending)
     {
         if (TargetArmorsView is not ListCollectionView view)

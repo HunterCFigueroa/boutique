@@ -59,7 +59,6 @@ public class DistributionConflictDetectionService
 
                     conflictingFileNames.Add(existing.FileName);
                 }
-                // Then check for "all NPCs" distributions (only if not already conflicted with a specific distribution)
                 else if (allNpcsDistributions.Count > 0)
                 {
                     // Use the first "all NPCs" distribution as the conflict
@@ -209,6 +208,7 @@ public class DistributionConflictDetectionService
                     {
                         allNpcsDistributions.Add((file.FileName, outfitName));
                     }
+
                     continue;
                 }
 
@@ -246,6 +246,7 @@ public class DistributionConflictDetectionService
                 else
                     break;
             }
+
             maxZCount = Math.Max(maxZCount, zCount);
         }
 

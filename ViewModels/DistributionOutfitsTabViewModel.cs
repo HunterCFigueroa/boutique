@@ -58,11 +58,14 @@ public class DistributionOutfitsTabViewModel : ReactiveObject
             .Subscribe(_ => UpdateSelectedOutfitNpcAssignments());
     }
 
-    [Reactive] public bool IsLoading { get; private set; }
+    [Reactive]
+    public bool IsLoading { get; private set; }
 
-    [Reactive] public string StatusMessage { get; private set; } = string.Empty;
+    [Reactive]
+    public string StatusMessage { get; private set; } = string.Empty;
 
-    [Reactive] public ObservableCollection<OutfitRecordViewModel> Outfits { get; private set; } = [];
+    [Reactive]
+    public ObservableCollection<OutfitRecordViewModel> Outfits { get; private set; } = [];
 
     public OutfitRecordViewModel? SelectedOutfit
     {
@@ -79,13 +82,17 @@ public class DistributionOutfitsTabViewModel : ReactiveObject
         }
     }
 
-    [Reactive] public string OutfitSearchText { get; set; } = string.Empty;
+    [Reactive]
+    public string OutfitSearchText { get; set; } = string.Empty;
 
-    [Reactive] public bool HideVanillaOutfits { get; set; }
+    [Reactive]
+    public bool HideVanillaOutfits { get; set; }
 
-    [Reactive] public ObservableCollection<OutfitRecordViewModel> FilteredOutfits { get; private set; } = [];
+    [Reactive]
+    public ObservableCollection<OutfitRecordViewModel> FilteredOutfits { get; private set; } = [];
 
-    [Reactive] public ObservableCollection<NpcOutfitAssignmentViewModel> SelectedOutfitNpcAssignments { get; private set; } = [];
+    [Reactive]
+    public ObservableCollection<NpcOutfitAssignmentViewModel> SelectedOutfitNpcAssignments { get; private set; } = [];
 
     public ReactiveCommand<Unit, Unit> LoadOutfitsCommand { get; }
 

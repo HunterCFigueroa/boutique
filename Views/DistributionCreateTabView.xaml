@@ -153,11 +153,11 @@
                         <DataTemplate>
                             <Border Style="{DynamicResource {x:Static themes:ResourceKeys.SelectableEntryStyleKey}}">
                                 <Border.Resources>
-                                    <Style TargetType="Border" BasedOn="{DynamicResource {x:Static themes:ResourceKeys.SelectableEntryStyleKey}}">
+                                    <Style TargetType="Border" BasedOn="{StaticResource {x:Static themes:ResourceKeys.SelectableEntryStyleKey}}">
                                         <Style.Triggers>
                                             <DataTrigger Binding="{Binding IsSelected}" Value="True">
-                                                <Setter Property="Background" Value="{StaticResource Brush.CardBackground}" />
-                                                <Setter Property="BorderBrush" Value="{StaticResource Brush.Accent}" />
+                                                <Setter Property="Background" Value="{DynamicResource {x:Static util:ResourceKeys.BrushCardBackground}}" />
+                                                <Setter Property="BorderBrush" Value="{DynamicResource {x:Static util:ResourceKeys.BrushAccent}}" />
                                                 <Setter Property="BorderThickness" Value="2" />
                                             </DataTrigger>
                                         </Style.Triggers>
@@ -386,8 +386,8 @@
 
                 <!-- Preview (Collapsible) -->
                 <Expander Grid.Row="4" Header="File Preview" IsExpanded="{Binding IsFilePreviewExpanded, Mode=TwoWay}" Margin="0,6,0,0">
-                    <Border Padding="6" Background="{StaticResource Brush.CardBackground}"
-                            BorderBrush="{StaticResource Brush.Border}" BorderThickness="1" CornerRadius="0,0,4,4">
+                    <Border Padding="6" Background="{DynamicResource {x:Static util:ResourceKeys.BrushCardBackground}}"
+                            BorderBrush="{DynamicResource {x:Static util:ResourceKeys.BrushBorder}}" BorderThickness="1" CornerRadius="0,0,4,4">
                         <TextBox Text="{Binding DistributionFileContent, Mode=OneWay}" IsReadOnly="True" TextWrapping="Wrap" AcceptsReturn="True"
                                  VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Auto" FontFamily="Consolas" FontSize="11" MinHeight="120" MaxHeight="200" />
                     </Border>

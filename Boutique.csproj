@@ -70,16 +70,26 @@
             <PrivateAssets>all</PrivateAssets>
             <IncludeAssets>runtime; build; native; contentfiles; analyzers</IncludeAssets>
         </PackageReference>
+        <PackageReference Include="StyleCop.Analyzers" Version="1.2.0-beta.556">
+            <PrivateAssets>all</PrivateAssets>
+            <IncludeAssets>runtime; build; native; contentfiles; analyzers</IncludeAssets>
+        </PackageReference>
     </ItemGroup>
 
     <ItemGroup>
         <Resource Include="Assets\eye.png" />
     </ItemGroup>
 
-    <!-- Exclude test project from compilation -->
+    <ItemGroup>
+        <AdditionalFiles Include="stylecop.json" />
+    </ItemGroup>
+
+    <!-- Exclude test project directory from main project -->
     <ItemGroup>
         <Compile Remove="Boutique.Tests\**" />
+        <EmbeddedResource Remove="Boutique.Tests\**" />
         <None Remove="Boutique.Tests\**" />
+        <Content Remove="Boutique.Tests\**" />
     </ItemGroup>
 
 </Project>

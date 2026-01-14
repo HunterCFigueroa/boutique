@@ -2,8 +2,8 @@ namespace Boutique;
 
 /// <summary>
 /// Build-time feature flags. Configure in Boutique.csproj:
-/// - EnableAutoUpdate: Set to true to enable auto-update checks
-/// - EnableTutorial: Set to true to enable the tutorial system
+/// EnableAutoUpdate: Set to true to enable auto-update checks.
+/// EnableTutorial: Set to true to enable the tutorial system.
 /// </summary>
 public static class FeatureFlags
 {

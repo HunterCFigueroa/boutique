@@ -236,6 +236,7 @@ public class FilterableSelector : Control
                     _listBox.SelectedIndex = Math.Min(_listBox.SelectedIndex + 1, _listBox.Items.Count - 1);
                     _listBox.ScrollIntoView(_listBox.SelectedItem);
                 }
+
                 e.Handled = true;
                 break;
 
@@ -245,6 +246,7 @@ public class FilterableSelector : Control
                     _listBox.SelectedIndex--;
                     _listBox.ScrollIntoView(_listBox.SelectedItem);
                 }
+
                 e.Handled = true;
                 break;
 
@@ -253,6 +255,7 @@ public class FilterableSelector : Control
                 {
                     SelectItem(_listBox.SelectedItem);
                 }
+
                 e.Handled = true;
                 break;
 

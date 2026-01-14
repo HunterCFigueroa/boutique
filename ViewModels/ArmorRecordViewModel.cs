@@ -105,12 +105,14 @@ public class ArmorRecordViewModel : ReactiveObject
 
     public int SlotCompatibilityPriority => IsSlotCompatible ? 0 : 1;
 
-    [Reactive] public bool IsSlotCompatible { get; set; } = true;
+    [Reactive]
+    public bool IsSlotCompatible { get; set; } = true;
 
     public string FormKeyString => Armor.FormKey.ToString();
     public string SummaryLine => $"{DisplayName} ({SlotSummary})";
 
-    [Reactive] public bool IsMapped { get; set; }
+    [Reactive]
+    public bool IsMapped { get; set; }
 
     public bool MatchesSearch(string searchTerm)
     {

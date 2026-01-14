@@ -4,7 +4,7 @@ namespace Boutique.Utilities;
 
 public static class PathUtilities
 {
-    private static readonly string[] PluginExtensions = ["*.esp", "*.esm", "*.esl"];
+    private static readonly string[] _pluginExtensions = ["*.esp", "*.esm", "*.esl"];
 
     public static string NormalizeAssetPath(string path)
     {
@@ -28,7 +28,7 @@ public static class PathUtilities
 
     public static IEnumerable<string> EnumeratePluginFiles(string dataPath)
     {
-        foreach (var ext in PluginExtensions)
+        foreach (var ext in _pluginExtensions)
         {
             IEnumerable<string> files;
             try

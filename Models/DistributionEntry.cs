@@ -18,7 +18,7 @@ public sealed class DistributionEntry
     public List<FormKey> FactionFormKeys { get; set; } = [];
 
     /// <summary>
-    /// Keyword EditorIDs used for filtering. Includes both game keywords and virtual
+    /// Gets or sets the keyword EditorIDs used for filtering. Includes both game keywords and virtual
     /// keywords (SPID-distributed via Keyword = lines).
     /// </summary>
     public List<string> KeywordEditorIds { get; set; } = [];
@@ -35,7 +35,7 @@ public sealed class DistributionEntry
     public SpidTraitFilters TraitFilters { get; set; } = new();
 
     /// <summary>
-    /// SPID level filters (position 4). Supports level ranges (e.g., "5/20") and
+    /// Gets or sets SPID level filters (position 4). Supports level ranges (e.g., "5/20") and
     /// skill filters (e.g., "12(85/999)" for Alteration skill 85+).
     /// </summary>
     public string? LevelFilters { get; set; }

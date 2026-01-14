@@ -6,7 +6,7 @@ namespace Boutique.Utilities;
 
 public static class FormKeyHelper
 {
-    private static readonly string[] ModKeyExtensions = [".esp", ".esm", ".esl"];
+    private static readonly string[] _modKeyExtensions = [".esp", ".esm", ".esl"];
 
     public static string Format(FormKey formKey) => $"{formKey.ModKey.FileName}|{formKey.ID:X8}";
 
@@ -29,12 +29,12 @@ public static class FormKeyHelper
         if (trimmed.StartsWith("0x", StringComparison.OrdinalIgnoreCase))
             trimmed = trimmed[2..];
 
-        return trimmed.Length >= 1 && trimmed.Length <= 8 && trimmed.All(char.IsAsciiHexDigit);
+        return trimmed.Length is >= 1 and <= 8 && trimmed.All(char.IsAsciiHexDigit);
     }
 
     public static int FindModKeyEnd(string text)
     {
-        foreach (var ext in ModKeyExtensions)
+        foreach (var ext in _modKeyExtensions)
         {
             var idx = text.IndexOf(ext, StringComparison.OrdinalIgnoreCase);
             if (idx >= 0)

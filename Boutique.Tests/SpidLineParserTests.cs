@@ -1,3 +1,4 @@
+using Boutique.Models;
 using Boutique.Utilities;
 using Xunit;
 
@@ -44,12 +45,23 @@ public class SpidLineParserTests
     }
 
     [Fact]
-    public void TryParse_NotOutfitLine_ReturnsFalse()
+    public void TryParseOutfit_NotOutfitLine_ReturnsFalse()
     {
-        var result = SpidLineParser.TryParse("Spell = 0x800~MyMod.esp", out var filter);
+        var result = SpidLineParser.TryParseOutfit("Spell = 0x800~MyMod.esp", out var filter);
 
         Assert.False(result);
         Assert.Null(filter);
+    }
+
+    [Fact]
+    public void TryParse_SpellLine_ParsesCorrectly()
+    {
+        var result = SpidLineParser.TryParse("Spell = 0x800~MyMod.esp", out var filter);
+
+        Assert.True(result);
+        Assert.NotNull(filter);
+        Assert.Equal(SpidFormType.Spell, filter.FormType);
+        Assert.Equal("0x800~MyMod.esp", filter.FormIdentifier);
     }
 
     [Fact]

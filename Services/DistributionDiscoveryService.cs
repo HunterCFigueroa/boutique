@@ -55,6 +55,7 @@ public class DistributionDiscoveryService(ILogger logger)
                 spidFileCount++;
                 TryParse(spidFile, DistributionFileType.Spid);
             }
+
             _logger.Information("[PERF] SPID file parsing: {ElapsedMs}ms ({Count} files)", spidParseSw.ElapsedMilliseconds, spidFileCount);
 
             _logger.Debug("Found {Count} SPID distribution files (*_DISTR.ini)", spidFileCount);
@@ -88,6 +89,7 @@ public class DistributionDiscoveryService(ILogger logger)
                         TryParse(iniFile, DistributionFileType.SkyPatcher);
                     }
                 }
+
                 _logger.Information("[PERF] SkyPatcher file parsing: {ElapsedMs}ms ({Count} valid files)", skyParseSw.ElapsedMilliseconds, skyPatcherFileCount);
                 _logger.Debug("Found {Count} SkyPatcher distribution files", skyPatcherFileCount);
             }
@@ -405,7 +407,6 @@ public class DistributionDiscoveryService(ILogger logger)
         return cleaned;
     }
 
-
     internal static IReadOnlyList<string> ExtractSkyPatcherOutfitKeys(string trimmed)
     {
         var keys = new List<string>();
@@ -516,5 +517,4 @@ public class DistributionDiscoveryService(ILogger logger)
 
         return !string.IsNullOrEmpty(modPart) && !string.IsNullOrEmpty(formIdPart);
     }
-
 }

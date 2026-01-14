@@ -9,7 +9,7 @@ public sealed record FactionRecord(
     ModKey ModKey)
 {
     /// <summary>
-    /// Display name prefers EditorID over localized Name to avoid duplicates in dropdowns.
+    /// Gets the display name which prefers EditorID over localized Name to avoid duplicates in dropdowns.
     /// EditorIDs are unique per record while Names can be duplicated across mods.
     /// </summary>
     public string DisplayName => !string.IsNullOrWhiteSpace(EditorID) ? EditorID : Name ?? "(No EditorID)";

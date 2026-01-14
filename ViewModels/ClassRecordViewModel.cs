@@ -23,7 +23,8 @@ public class ClassRecordViewModel : ReactiveObject, ISelectableRecordViewModel
     public string FormKeyString => ClassRecord.FormKeyString;
     public FormKey FormKey => ClassRecord.FormKey;
 
-    [Reactive] public bool IsSelected { get; set; }
+    [Reactive]
+    public bool IsSelected { get; set; }
 
     public bool MatchesSearch(string searchTerm)
     {

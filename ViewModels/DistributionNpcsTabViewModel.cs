@@ -95,11 +95,14 @@ public class DistributionNpcsTabViewModel : ReactiveObject
         _logger.Debug("Populated {Count} NPC outfit assignments from cache.", NpcOutfitAssignments.Count);
     }
 
-    [Reactive] public bool IsLoading { get; private set; }
+    [Reactive]
+    public bool IsLoading { get; private set; }
 
-    [Reactive] public string StatusMessage { get; private set; } = string.Empty;
+    [Reactive]
+    public string StatusMessage { get; private set; } = string.Empty;
 
-    [Reactive] public ObservableCollection<NpcOutfitAssignmentViewModel> NpcOutfitAssignments { get; private set; } = [];
+    [Reactive]
+    public ObservableCollection<NpcOutfitAssignmentViewModel> NpcOutfitAssignments { get; private set; } = [];
 
     public NpcOutfitAssignmentViewModel? SelectedNpcAssignment
     {
@@ -116,37 +119,44 @@ public class DistributionNpcsTabViewModel : ReactiveObject
         }
     }
 
-    [Reactive] public string NpcOutfitSearchText { get; set; } = string.Empty;
+    [Reactive]
+    public string NpcOutfitSearchText { get; set; } = string.Empty;
 
-    [Reactive] public bool HideVanillaDistributions { get; set; }
+    [Reactive]
+    public bool HideVanillaDistributions { get; set; }
 
-    [Reactive] public ObservableCollection<NpcOutfitAssignmentViewModel> FilteredNpcOutfitAssignments { get; private set; } = [];
+    [Reactive]
+    public ObservableCollection<NpcOutfitAssignmentViewModel> FilteredNpcOutfitAssignments { get; private set; } = [];
 
-    [Reactive] public string SelectedNpcOutfitContents { get; private set; } = string.Empty;
+    [Reactive]
+    public string SelectedNpcOutfitContents { get; private set; } = string.Empty;
 
     /// <summary>
-    /// The NpcFilterData for the currently selected NPC, used to display detailed stats.
+    /// Gets the NpcFilterData for the currently selected NPC, used to display detailed stats.
     /// </summary>
-    [Reactive] public NpcFilterData? SelectedNpcFilterData { get; private set; }
+    [Reactive]
+    public NpcFilterData? SelectedNpcFilterData { get; private set; }
 
     #region SPID Filter Properties
 
     /// <summary>
-    /// The current filter criteria.
+    /// Gets the current filter criteria.
     /// </summary>
     public NpcSpidFilter Filter { get; } = new();
 
-    /// <summary>Gender filter options for the dropdown.</summary>
+    /// <summary>Gets the gender filter options for the dropdown.</summary>
     public IReadOnlyList<string> GenderFilterOptions { get; } = ["Any", "Female", "Male"];
 
-    [Reactive] public string SelectedGenderFilter { get; set; } = "Any";
+    [Reactive]
+    public string SelectedGenderFilter { get; set; } = "Any";
 
-    /// <summary>Unique filter options for the dropdown.</summary>
+    /// <summary>Gets the unique filter options for the dropdown.</summary>
     public IReadOnlyList<string> UniqueFilterOptions { get; } = ["Any", "Unique Only", "Non-Unique"];
 
-    [Reactive] public string SelectedUniqueFilter { get; set; } = "Any";
+    [Reactive]
+    public string SelectedUniqueFilter { get; set; } = "Any";
 
-    /// <summary>Templated filter options for the dropdown.</summary>
+    /// <summary>Gets the templated filter options for the dropdown.</summary>
     public IReadOnlyList<string> TemplatedFilterOptions { get; } = ["Any", "Templated", "Non-Templated"];
 
     [Reactive] public string SelectedTemplatedFilter { get; set; } = "Any";

@@ -246,21 +246,35 @@ public class DistributionEntryViewModel : ReactiveObject
 
     public DistributionEntry Entry { get; }
 
-    [Reactive] public DistributionType Type { get; set; } = DistributionType.Outfit;
+    [Reactive]
+    public DistributionType Type { get; set; } = DistributionType.Outfit;
 
-    [Reactive] public IOutfitGetter? SelectedOutfit { get; set; }
+    [Reactive]
+    public IOutfitGetter? SelectedOutfit { get; set; }
 
-    [Reactive] public string KeywordToDistribute { get; set; } = string.Empty;
+    [Reactive]
+    public string KeywordToDistribute { get; set; } = string.Empty;
 
     public bool IsOutfitDistribution => Type == DistributionType.Outfit;
     public bool IsKeywordDistribution => Type == DistributionType.Keyword;
 
-    [Reactive] public bool UseChance { get; set; }
-    [Reactive] public int Chance { get; set; } = 100;
-    [Reactive] public string LevelFilters { get; set; } = string.Empty;
-    [Reactive] public GenderFilter Gender { get; set; } = GenderFilter.Any;
-    [Reactive] public UniqueFilter Unique { get; set; } = UniqueFilter.Any;
-    [Reactive] public bool? IsChild { get; set; }
+    [Reactive]
+    public bool UseChance { get; set; }
+
+    [Reactive]
+    public int Chance { get; set; } = 100;
+
+    [Reactive]
+    public string LevelFilters { get; set; } = string.Empty;
+
+    [Reactive]
+    public GenderFilter Gender { get; set; } = GenderFilter.Any;
+
+    [Reactive]
+    public UniqueFilter Unique { get; set; } = UniqueFilter.Any;
+
+    [Reactive]
+    public bool? IsChild { get; set; }
 
     public static DistributionType[] TypeOptions { get; } = [DistributionType.Outfit, DistributionType.Keyword];
     public static GenderFilter[] GenderOptions { get; } = [GenderFilter.Any, GenderFilter.Female, GenderFilter.Male];

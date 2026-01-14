@@ -9,52 +9,52 @@ namespace Boutique.Models;
 public class CopiedNpcFilter
 {
     /// <summary>
-    /// Gender filter: null = any, true = female, false = male
+    /// Gets the gender filter: null = any, true = female, false = male.
     /// </summary>
     public bool? IsFemale { get; init; }
 
     /// <summary>
-    /// Unique NPC filter: null = any, true = unique only, false = non-unique only
+    /// Gets the unique NPC filter: null = any, true = unique only, false = non-unique only.
     /// </summary>
     public bool? IsUnique { get; init; }
 
     /// <summary>
-    /// Templated NPC filter: null = any, true = templated only, false = non-templated only
+    /// Gets the templated NPC filter: null = any, true = templated only, false = non-templated only.
     /// </summary>
     public bool? IsTemplated { get; init; }
 
     /// <summary>
-    /// Child NPC filter: null = any, true = children only, false = adults only
+    /// Gets the child NPC filter: null = any, true = children only, false = adults only.
     /// </summary>
     public bool? IsChild { get; init; }
 
     /// <summary>
-    /// Factions to filter by.
+    /// Gets the factions to filter by.
     /// </summary>
     public IReadOnlyList<FormKey> Factions { get; init; } = [];
 
     /// <summary>
-    /// Races to filter by.
+    /// Gets the races to filter by.
     /// </summary>
     public IReadOnlyList<FormKey> Races { get; init; } = [];
 
     /// <summary>
-    /// Keywords to filter by.
+    /// Gets the keywords to filter by.
     /// </summary>
     public IReadOnlyList<FormKey> Keywords { get; init; } = [];
 
     /// <summary>
-    /// Classes to filter by.
+    /// Gets the classes to filter by.
     /// </summary>
     public IReadOnlyList<FormKey> Classes { get; init; } = [];
 
     /// <summary>
-    /// Human-readable description of the filter for display purposes.
+    /// Gets the human-readable description of the filter for display purposes.
     /// </summary>
     public string Description { get; init; } = string.Empty;
 
     /// <summary>
-    /// Returns true if this filter has any criteria that can be applied to a distribution entry.
+    /// Gets a value indicating whether this filter has any criteria that can be applied to a distribution entry.
     /// Trait filters (gender, unique, child) are only applicable to SPID format.
     /// </summary>
     public bool HasDistributableFilters =>
@@ -64,7 +64,7 @@ public class CopiedNpcFilter
         Classes.Count > 0;
 
     /// <summary>
-    /// Returns true if this filter has trait filters (gender, unique, child, etc.)
+    /// Gets a value indicating whether this filter has trait filters (gender, unique, child, etc.)
     /// that can be applied to SPID format distributions.
     /// </summary>
     public bool HasTraitFilters =>

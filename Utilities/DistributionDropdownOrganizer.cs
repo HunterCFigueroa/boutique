@@ -12,6 +12,7 @@ public static class DistributionDropdownOrganizer
     /// Organizes files into a dropdown structure with headers and items.
     /// Files with duplicate names get their unique path shown.
     /// </summary>
+    /// <returns>Tree-like structure for rendering.</returns>
     public static DistributionDropdownStructure Organize(IEnumerable<DistributionFileViewModel> files)
     {
         var fileList = files.ToList();

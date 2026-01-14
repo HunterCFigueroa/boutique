@@ -8,6 +8,12 @@ charset = utf-8
 trim_trailing_whitespace = true
 insert_final_newline = true
 
+# Rider/ReSharper specific
+resharper_csharp_keep_blank_lines_in_code = 1
+resharper_csharp_keep_blank_lines_in_declarations = 1
+resharper_csharp_remove_blank_lines_near_braces_in_code = true
+resharper_csharp_remove_blank_lines_near_braces_in_declarations = true
+
 [*.{json,yml,yaml}]
 indent_size = 2
 
@@ -192,7 +198,7 @@ dotnet_naming_symbols.types.applicable_accessibilities = public, internal, priva
 
 dotnet_naming_symbols.private_fields.applicable_kinds = field
 dotnet_naming_symbols.private_fields.applicable_accessibilities = private, private_protected
-dotnet_naming_symbols.private_fields.required_modifiers = 
+dotnet_naming_symbols.private_fields.required_modifiers =
 
 dotnet_naming_symbols.const_fields.applicable_kinds = field
 dotnet_naming_symbols.const_fields.required_modifiers = const
@@ -269,3 +275,94 @@ dotnet_diagnostic.RCS1246.severity = suggestion  # Use element access
 dotnet_diagnostic.RCS1090.severity = none     # Add call to ConfigureAwait (not needed in WPF)
 dotnet_diagnostic.RCS1021.severity = none     # Use expression-bodied lambda (preference)
 dotnet_diagnostic.RCS1080.severity = none     # Use 'Count/Length' property instead of 'Any' (perf micro-optimization)
+
+###############################
+# StyleCop Rules              #
+###############################
+
+# SA0001: XML comment analysis disabled (we use GenerateDocumentationFile)
+dotnet_diagnostic.SA0001.severity = none
+
+# SA1101: Prefix local calls with this (conflicts with dotnet_style_qualification)
+dotnet_diagnostic.SA1101.severity = none
+
+# SA1200: Using directives should be placed correctly (we use outside namespace)
+dotnet_diagnostic.SA1200.severity = none
+
+# SA1309: Field names should not begin with underscore (conflicts with naming convention)
+dotnet_diagnostic.SA1309.severity = none
+
+# SA1413: Use trailing comma in multi-line initializers
+dotnet_diagnostic.SA1413.severity = none
+
+# SA1503: Braces should not be omitted (we prefer when_multiline)
+dotnet_diagnostic.SA1503.severity = none
+
+# SA1516: Elements should be separated by blank line
+dotnet_diagnostic.SA1516.severity = suggestion
+
+# SA1600: Elements should be documented (too noisy, covered by CS1591)
+dotnet_diagnostic.SA1600.severity = none
+
+# SA1601: Partial elements should be documented
+dotnet_diagnostic.SA1601.severity = none
+
+# SA1602: Enumeration items should be documented
+dotnet_diagnostic.SA1602.severity = none
+
+# SA1633: File should have header (optional for personal projects)
+dotnet_diagnostic.SA1633.severity = none
+
+# SA1634-SA1641: File header rules (disabled since SA1633 is off)
+dotnet_diagnostic.SA1634.severity = none
+dotnet_diagnostic.SA1635.severity = none
+dotnet_diagnostic.SA1636.severity = none
+dotnet_diagnostic.SA1637.severity = none
+dotnet_diagnostic.SA1638.severity = none
+dotnet_diagnostic.SA1639.severity = none
+dotnet_diagnostic.SA1640.severity = none
+dotnet_diagnostic.SA1641.severity = none
+
+# SA1649: File name should match first type name
+dotnet_diagnostic.SA1649.severity = warning
+
+# SX1101: Do not prefix local calls with this (alternative to SA1101)
+dotnet_diagnostic.SX1101.severity = none
+
+# SX1309: Field names should begin with underscore (we use this convention)
+dotnet_diagnostic.SX1309.severity = warning
+
+# SA1124: Do not use regions (preference - regions can help organize large files)
+dotnet_diagnostic.SA1124.severity = none
+
+# SA1201: Elements should appear in the correct order (too invasive for existing codebase)
+dotnet_diagnostic.SA1201.severity = none
+
+# SA1202: Elements should be ordered by access (too invasive)
+dotnet_diagnostic.SA1202.severity = none
+
+# SA1204: Static members should appear before non-static members (too invasive)
+dotnet_diagnostic.SA1204.severity = none
+
+# SA1402: File may only contain a single type (we use related types in same file)
+dotnet_diagnostic.SA1402.severity = none
+
+# SA1134: Attributes should be placed on separate lines (we use compact [Reactive] style)
+dotnet_diagnostic.SA1134.severity = none
+
+# SA1623: Property documentation should start with "Gets" (too prescriptive)
+dotnet_diagnostic.SA1623.severity = none
+
+# SA1629: Documentation should end with period (too strict for inline docs)
+dotnet_diagnostic.SA1629.severity = none
+
+# SA1649: File name should match first type (disabled since SA1402 is disabled)
+dotnet_diagnostic.SA1649.severity = none
+
+# SA1611: Element parameters should be documented
+dotnet_diagnostic.SA1611.severity = none
+
+dotnet_diagnostic.SA1615.severity = none
+dotnet_diagnostic.SA1514.severity = none
+
+dotnet_diagnostic.RCS1181.severity = none
