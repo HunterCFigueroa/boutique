@@ -134,14 +134,10 @@ public class DistributionDiscoveryService(ILogger logger)
             {
                 files.Add(parsed);
                 parsedCount++;
-                _logger.Debug(
-                    "Successfully parsed {Type} file: {Path} ({OutfitCount} outfit, {KeywordCount} keyword distributions)",
-                    type, path, parsed.OutfitDistributionCount, parsed.KeywordDistributionCount);
             }
             else
             {
                 skippedCount++;
-                _logger.Debug("Skipped {Type} file (no distributions): {Path}", type, path);
             }
         }
     }
@@ -168,7 +164,6 @@ public class DistributionDiscoveryService(ILogger logger)
     {
         try
         {
-            _logger.Debug("Parsing {Type} distribution file: {Path}", type, filePath);
             var lines = new List<DistributionLine>();
             var currentSection = string.Empty;
             var lineNumber = 0;
@@ -225,14 +220,12 @@ public class DistributionDiscoveryService(ILogger logger)
                 {
                     outfitCount++;
                     outfitFormKeys = ExtractOutfitFormKeys(type, trimmed);
-                    _logger.Debug("Found outfit distribution line {LineNumber} in {Path}: {Line}", lineNumber, filePath, trimmed);
                 }
 
                 if (isKeywordDistribution)
                 {
                     keywordCount++;
                     keywordIdentifier = ExtractKeywordIdentifier(trimmed);
-                    _logger.Debug("Found keyword distribution line {LineNumber} in {Path}: {Keyword}", lineNumber, filePath, keywordIdentifier);
                 }
 
                 lines.Add(new DistributionLine(lineNumber, raw, kind, sectionName, key, value, isOutfitDistribution,
@@ -241,15 +234,8 @@ public class DistributionDiscoveryService(ILogger logger)
 
             var relativePath = Path.GetRelativePath(dataFolderPath, filePath);
 
-            _logger.Debug(
-                "Parsed {Type} file {Path}: {TotalLines} total lines, {OutfitCount} outfit distributions, {KeywordCount} keyword distributions",
-                type, filePath, totalLines, outfitCount, keywordCount);
-
             if (outfitCount == 0 && keywordCount == 0)
-            {
-                _logger.Debug("Skipping {Type} file {Path} - no outfit or keyword distributions found", type, filePath);
                 return null;
-            }
 
             return new DistributionFile(
                 Path.GetFileName(filePath),

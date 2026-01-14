@@ -534,11 +534,6 @@ public class NpcOutfitResolutionService
         sorted.AddRange(spidFiles);
         sorted.AddRange(skyPatcherFiles);
 
-        foreach (var file in sorted)
-        {
-            _logger.Debug("Processing order: {Type} - {FileName}", file.Type, file.FileName);
-        }
-
         return sorted;
     }
 

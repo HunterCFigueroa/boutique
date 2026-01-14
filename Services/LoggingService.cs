@@ -21,7 +21,7 @@ public sealed class LoggingService : ILoggingService
         LogFilePattern = Path.Combine(LogDirectory, "Boutique-.log");
 
         _logger = new LoggerConfiguration()
-            .MinimumLevel.Debug()
+            .MinimumLevel.Information()
             .Enrich.FromLogContext()
             .WriteTo.Async(configuration =>
 #pragma warning disable CA1305 // File sink configuration doesn't involve locale-sensitive formatting

@@ -16,6 +16,7 @@ public class MutagenService(ILoggingService loggingService, PatcherSettings sett
 {
     private readonly ILogger _logger = loggingService.ForContext<MutagenService>();
     private readonly PatcherSettings _settings = settings;
+    private readonly SemaphoreSlim _initLock = new(1, 1);
     private IGameEnvironment<ISkyrimMod, ISkyrimModGetter>? _environment;
 
     public event EventHandler? PluginsChanged;
@@ -54,31 +55,43 @@ public class MutagenService(ILoggingService loggingService, PatcherSettings sett
 
     public async Task InitializeAsync(string dataFolderPath)
     {
-        var sw = System.Diagnostics.Stopwatch.StartNew();
+        if (IsInitialized)
+            return;
 
-        await Task.Run(() =>
+        await _initLock.WaitAsync();
+        try
         {
-            DataFolderPath = dataFolderPath;
+            if (IsInitialized)
+                return;
 
-            // Determine if we should use explicit path or auto-detection
-            // Use explicit path if: it's set, exists, and contains plugin files
-            var useExplicitPath = !string.IsNullOrWhiteSpace(dataFolderPath) &&
-                                  PathUtilities.HasPluginFiles(dataFolderPath);
+            var sw = System.Diagnostics.Stopwatch.StartNew();
 
-            if (useExplicitPath)
+            await Task.Run(() =>
             {
-                _logger.Information("Using explicit data path: {DataPath}", dataFolderPath);
-                InitializeWithExplicitPath(dataFolderPath);
-            }
-            else
-            {
-                _logger.Information("Using auto-detection (no explicit path or path has no plugins)");
-                InitializeWithAutoDetection(dataFolderPath);
-            }
-        });
+                DataFolderPath = dataFolderPath;
 
-        _logger.Information("[PERF] MutagenService.InitializeAsync total: {ElapsedMs}ms", sw.ElapsedMilliseconds);
-        Initialized?.Invoke(this, EventArgs.Empty);
+                var useExplicitPath = !string.IsNullOrWhiteSpace(dataFolderPath) &&
+                                      PathUtilities.HasPluginFiles(dataFolderPath);
+
+                if (useExplicitPath)
+                {
+                    _logger.Information("Using explicit data path: {DataPath}", dataFolderPath);
+                    InitializeWithExplicitPath(dataFolderPath);
+                }
+                else
+                {
+                    _logger.Information("Using auto-detection (no explicit path or path has no plugins)");
+                    InitializeWithAutoDetection(dataFolderPath);
+                }
+            });
+
+            _logger.Information("[PERF] MutagenService.InitializeAsync total: {ElapsedMs}ms", sw.ElapsedMilliseconds);
+            Initialized?.Invoke(this, EventArgs.Empty);
+        }
+        finally
+        {
+            _initLock.Release();
+        }
     }
 
     private void InitializeWithExplicitPath(string dataFolderPath)
