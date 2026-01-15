@@ -327,5 +327,132 @@ public class SkyPatcherSyntaxTests
         Assert.Equal(0xABCDEFu, outfit[0].ID);
     }
 
+    [Fact]
+    public void RealExample_FactionsOrFilter_ParsesCorrectly()
+    {
+        var line = "filterByFactionsOr=Skyrim.esm|0x000FDEAC,Skyrim.esm|0x1BCC0:outfitDefault=MyMod.esp|0x800";
+
+        var factions = SkyPatcherSyntax.ParseFormKeys(line, "filterByFactionsOr");
+
+        Assert.Equal(2, factions.Count);
+        Assert.Equal(0xFDEACu, factions[0].ID);
+        Assert.Equal(0x1BCC0u, factions[1].ID);
+    }
+
+    [Fact]
+    public void RealExample_EditorIdFactions_ExtractsValues()
+    {
+        var line = "filterByFactionsOr=DA16OrcAmbushFaction,DA16OrcDreamFaction:outfitDefault=TH_OrcScaling_OF";
+
+        var values = SkyPatcherSyntax.ExtractFilterValuesWithVariants(line, "filterByFactions");
+
+        Assert.Equal(2, values.Count);
+        Assert.Equal("DA16OrcAmbushFaction", values[0]);
+        Assert.Equal("DA16OrcDreamFaction", values[1]);
+    }
+
+    #endregion
+
+    #region Filter variant methods
+
+    [Fact]
+    public void ExtractFilterValuesWithVariants_CombinesBothFormats()
+    {
+        var line = "filterByFactions=Skyrim.esm|0x100:filterByFactionsOr=Skyrim.esm|0x200,Skyrim.esm|0x300:outfitDefault=MyMod.esp|0x800";
+
+        var values = SkyPatcherSyntax.ExtractFilterValuesWithVariants(line, "filterByFactions");
+
+        Assert.Equal(3, values.Count);
+        Assert.Equal("Skyrim.esm|0x100", values[0]);
+        Assert.Equal("Skyrim.esm|0x200", values[1]);
+        Assert.Equal("Skyrim.esm|0x300", values[2]);
+    }
+
+    [Fact]
+    public void HasAnyVariant_Base_ReturnsTrue()
+    {
+        var line = "filterByFactions=Skyrim.esm|0x100:outfitDefault=MyMod.esp|0x800";
+
+        Assert.True(SkyPatcherSyntax.HasAnyVariant(line, "filterByFactions"));
+    }
+
+    [Fact]
+    public void HasAnyVariant_Or_ReturnsTrue()
+    {
+        var line = "filterByFactionsOr=Skyrim.esm|0x100:outfitDefault=MyMod.esp|0x800";
+
+        Assert.True(SkyPatcherSyntax.HasAnyVariant(line, "filterByFactions"));
+    }
+
+    [Fact]
+    public void HasAnyVariant_Excluded_ReturnsTrue()
+    {
+        var line = "filterByFactionsExcluded=Skyrim.esm|0x100:outfitDefault=MyMod.esp|0x800";
+
+        Assert.True(SkyPatcherSyntax.HasAnyVariant(line, "filterByFactions"));
+    }
+
+    [Fact]
+    public void HasAnyVariant_None_ReturnsFalse()
+    {
+        var line = "filterByNpcs=Skyrim.esm|0x100:outfitDefault=MyMod.esp|0x800";
+
+        Assert.False(SkyPatcherSyntax.HasAnyVariant(line, "filterByFactions"));
+    }
+
+    #endregion
+
+    #region Filter detection
+
+    [Fact]
+    public void GetAllFilterNames_ReturnsAllFilters()
+    {
+        var line = "filterByNpcs=Skyrim.esm|0x100:filterByFactions=Skyrim.esm|0x200:outfitDefault=MyMod.esp|0x800";
+
+        var filters = SkyPatcherSyntax.GetAllFilterNames(line);
+
+        Assert.Equal(3, filters.Count);
+        Assert.Contains("filterByNpcs", filters);
+        Assert.Contains("filterByFactions", filters);
+        Assert.Contains("outfitDefault", filters);
+    }
+
+    [Fact]
+    public void GetUnsupportedFilters_KnownFilters_ReturnsEmpty()
+    {
+        var line = "filterByFactionsOr=Faction1:filterByGender=female:outfitDefault=MyMod.esp|0x800";
+
+        var unsupported = SkyPatcherSyntax.GetUnsupportedFilters(line);
+
+        Assert.Empty(unsupported);
+    }
+
+    [Fact]
+    public void GetUnsupportedFilters_UnknownFilter_ReturnsIt()
+    {
+        var line = "filterByCustomThing=Value:outfitDefault=MyMod.esp|0x800";
+
+        var unsupported = SkyPatcherSyntax.GetUnsupportedFilters(line);
+
+        Assert.Single(unsupported);
+        Assert.Equal("filterByCustomThing", unsupported[0]);
+    }
+
+    [Fact]
+    public void HasUnsupportedFilters_AllSupported_ReturnsFalse()
+    {
+        var line = "filterByFactionsOr=Faction1:outfitDefault=MyMod.esp|0x800";
+
+        Assert.False(SkyPatcherSyntax.HasUnsupportedFilters(line));
+    }
+
+    [Fact]
+    public void HasUnsupportedFilters_HasUnsupported_ReturnsTrue()
+    {
+        var line = "filterByUnknown=Value:outfitDefault=MyMod.esp|0x800";
+
+        Assert.True(SkyPatcherSyntax.HasUnsupportedFilters(line));
+    }
+
     #endregion
 }

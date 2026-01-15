@@ -217,9 +217,9 @@ public class DistributionFileWriterService
 
                     if (trimmed.Contains("outfitDefault=", StringComparison.OrdinalIgnoreCase))
                     {
-                        entry = ParseDistributionLine(trimmed, linkCache, outfitByEditorId);
-                        if (entry == null)
-                            parseFailureReason = "Could not resolve outfit or parse SkyPatcher syntax";
+                        var (parsedEntry, reason) = ParseDistributionLine(trimmed, linkCache, outfitByEditorId);
+                        entry = parsedEntry;
+                        parseFailureReason = reason;
                     }
                     else if (SpidLineParser.TryParse(trimmed, out var spidFilter) && spidFilter != null)
                     {
@@ -281,83 +281,88 @@ public class DistributionFileWriterService
         }, cancellationToken);
     }
 
-    private DistributionEntry? ParseDistributionLine(
+    private (DistributionEntry? Entry, string? Reason) ParseDistributionLine(
         string line,
         ILinkCache<ISkyrimMod, ISkyrimModGetter> linkCache,
         IReadOnlyDictionary<string, FormKey> outfitByEditorId)
     {
         try
         {
-            var outfitPartIndex = line.IndexOf("outfitDefault=", StringComparison.OrdinalIgnoreCase);
-            if (outfitPartIndex < 0)
-                return null;
+            if (!SkyPatcherSyntax.HasFilter(line, "outfitDefault"))
+                return (null, null);
 
-            // Extract filter strings first
-            var npcStrings = ExtractFilterStrings(line, "filterByNpcs=", outfitPartIndex);
-            var factionStrings = ExtractFilterStrings(line, "filterByFactions=", outfitPartIndex);
-            var keywordStrings = ExtractFilterStrings(line, "filterByKeywords=", outfitPartIndex);
-            var raceStrings = ExtractFilterStrings(line, "filterByRaces=", outfitPartIndex);
-            var classStrings = ExtractFilterStrings(line, "filterByClass=", outfitPartIndex);
+            var npcStrings = SkyPatcherSyntax.ExtractFilterValues(line, "filterByNpcs");
+            var factionStrings = SkyPatcherSyntax.ExtractFilterValuesWithVariants(line, "filterByFactions");
+            var keywordStrings = SkyPatcherSyntax.ExtractFilterValuesWithVariants(line, "filterByKeywords");
+            var raceStrings = SkyPatcherSyntax.ExtractFilterValuesWithVariants(line, "filterByRaces");
+            var classStrings = SkyPatcherSyntax.ExtractFilterValues(line, "filterByClass");
+            var genderFilter = SkyPatcherSyntax.ParseGenderFilter(line);
 
-            // Resolve to FormKeys - supports both FormKey format and EditorID
             var npcFormKeys = ResolveNpcIdentifiers(npcStrings, linkCache);
             var factionFormKeys = ResolveFactionIdentifiers(factionStrings, linkCache);
             var keywordEditorIds = ResolveKeywordIdentifiersToEditorIds(keywordStrings, linkCache);
             var raceFormKeys = ResolveRaceIdentifiers(raceStrings, linkCache);
             var classFormKeys = ResolveClassIdentifiers(classStrings, linkCache);
 
+            var hasAnyParsedFilter = npcFormKeys.Count > 0 ||
+                                      factionFormKeys.Count > 0 ||
+                                      keywordEditorIds.Count > 0 ||
+                                      raceFormKeys.Count > 0 ||
+                                      classFormKeys.Count > 0 ||
+                                      genderFilter.HasValue;
+
+            var hasAnyFilterInLine =
+                SkyPatcherSyntax.HasFilter(line, "filterByNpcs") ||
+                SkyPatcherSyntax.HasAnyVariant(line, "filterByFactions") ||
+                SkyPatcherSyntax.HasAnyVariant(line, "filterByKeywords") ||
+                SkyPatcherSyntax.HasAnyVariant(line, "filterByRaces") ||
+                SkyPatcherSyntax.HasFilter(line, "filterByClass") ||
+                SkyPatcherSyntax.HasFilter(line, "filterByGender") ||
+                SkyPatcherSyntax.HasFilter(line, "filterByEditorIdContains") ||
+                SkyPatcherSyntax.HasFilter(line, "filterByEditorIdContainsOr") ||
+                SkyPatcherSyntax.HasFilter(line, "filterByModNames") ||
+                SkyPatcherSyntax.HasFilter(line, "filterByDefaultOutfits");
+
+            if (hasAnyFilterInLine && !hasAnyParsedFilter)
+            {
+                _logger.Debug("Line has filters but none could be resolved - preserving unchanged: {Line}", line);
+                return (null, "SkyPatcher filter distribution (preserved)");
+            }
+
             var outfitString = SkyPatcherSyntax.ExtractFilterValue(line, "outfitDefault");
             if (string.IsNullOrWhiteSpace(outfitString))
-                return null;
+                return (null, null);
 
             var outfitFormKey = FormKeyHelper.ResolveOutfit(outfitString, linkCache, outfitByEditorId);
 
             if (!outfitFormKey.HasValue)
             {
                 _logger.Debug("Could not resolve outfit identifier: {Identifier}", outfitString);
-                return null;
+                return (null, "SkyPatcher distribution (preserved)");
             }
 
             if (!linkCache.TryResolve<IOutfitGetter>(outfitFormKey.Value, out var outfit))
             {
                 _logger.Debug("Could not resolve outfit FormKey: {FormKey}", outfitFormKey.Value);
-                return null;
+                return (null, "SkyPatcher distribution (preserved)");
             }
 
-            return new DistributionEntry
+            return (new DistributionEntry
             {
                 Outfit = outfit,
                 NpcFormKeys = npcFormKeys,
                 FactionFormKeys = factionFormKeys,
                 KeywordEditorIds = keywordEditorIds,
                 RaceFormKeys = raceFormKeys,
-                ClassFormKeys = classFormKeys
-            };
+                ClassFormKeys = classFormKeys,
+                TraitFilters = new SpidTraitFilters { IsFemale = genderFilter }
+            }, null);
         }
         catch (Exception ex)
         {
             _logger.Debug(ex, "Failed to parse distribution line: {Line}", line);
-            return null;
+            return (null, "SkyPatcher distribution (preserved)");
         }
-    }
-
-    private static List<string> ExtractFilterStrings(string line, string filterPrefix, int outfitPartIndex)
-    {
-        var partIndex = line.IndexOf(filterPrefix, StringComparison.OrdinalIgnoreCase);
-        if (partIndex < 0)
-            return [];
-
-        var start = partIndex + filterPrefix.Length;
-        var end = line.IndexOf(':', start);
-        if (end < 0 || end > outfitPartIndex)
-            end = outfitPartIndex;
-
-        var filterString = line.Substring(start, end - start);
-        return filterString
-            .Split(',')
-            .Select(s => s.Trim())
-            .Where(s => !string.IsNullOrWhiteSpace(s))
-            .ToList();
     }
 
     private List<FormKey> ResolveNpcIdentifiers(List<string> identifiers, ILinkCache<ISkyrimMod, ISkyrimModGetter> linkCache)

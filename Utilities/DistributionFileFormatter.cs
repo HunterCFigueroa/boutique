@@ -52,19 +52,24 @@ public static class DistributionFileFormatter
 
         if (unparsedLines is not { Count: > 0 }) return string.Join(Environment.NewLine, lines);
 
-        // Separate preserved lines (other SPID types like Spell, Perk, etc.) from actual parse errors
-        var preservedLines = unparsedLines.Where(e => e.Reason.EndsWith("(preserved)", StringComparison.Ordinal)).ToList();
+        var spidPreserved = unparsedLines.Where(e => e.Reason.EndsWith("(preserved)", StringComparison.Ordinal) && e.Reason.Contains("SPID", StringComparison.OrdinalIgnoreCase)).ToList();
+        var skyPatcherPreserved = unparsedLines.Where(e => e.Reason.EndsWith("(preserved)", StringComparison.Ordinal) && e.Reason.Contains("SkyPatcher", StringComparison.OrdinalIgnoreCase)).ToList();
         var errorLines = unparsedLines.Where(e => !e.Reason.EndsWith("(preserved)", StringComparison.Ordinal)).ToList();
 
-        // Add preserved lines first (other SPID distribution types)
-        if (preservedLines.Count > 0)
+        if (spidPreserved.Count > 0)
         {
             lines.Add(string.Empty);
             lines.Add("; Other SPID distributions (preserved from original file)");
-            lines.AddRange(preservedLines.Select(preserved => preserved.LineContent));
+            lines.AddRange(spidPreserved.Select(preserved => preserved.LineContent));
         }
 
-        // Add actual parse errors
+        if (skyPatcherPreserved.Count > 0)
+        {
+            lines.Add(string.Empty);
+            lines.Add("; SkyPatcher distributions with unresolved filters (preserved from original file)");
+            lines.AddRange(skyPatcherPreserved.Select(preserved => preserved.LineContent));
+        }
+
         if (errorLines.Count <= 0) return string.Join(Environment.NewLine, lines);
 
         lines.Add(string.Empty);
