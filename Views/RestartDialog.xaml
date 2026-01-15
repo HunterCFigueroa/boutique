@@ -1,7 +1,9 @@
 <Window x:Class="Boutique.Views.RestartDialog"
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-        Title="Restart Required"
+        xmlns:lex="http://wpflocalizeextension.codeplex.com"
+        xmlns:res="clr-namespace:Boutique.Resources"
+        Title="{lex:Loc res:LocalizationKeys+Restart.Title}"
         Width="400" Height="180"
         WindowStartupLocation="CenterOwner"
         ResizeMode="NoResize"
@@ -16,19 +18,19 @@
         </Grid.RowDefinitions>
 
         <TextBlock Grid.Row="0"
-                   Text="To apply the color scheme change, you need to quit and reopen Boutique."
+                   Text="{lex:Loc res:LocalizationKeys+Restart.Message}"
                    TextWrapping="Wrap"
                    VerticalAlignment="Center"
                    FontSize="14"
                    Foreground="{StaticResource Brush.TextPrimary}" />
 
         <StackPanel Grid.Row="1" Orientation="Horizontal" HorizontalAlignment="Right" Margin="0,20,0,0">
-            <Button Content="I'll do it later!"
+            <Button Content="{lex:Loc res:LocalizationKeys+Restart.Later}"
                     Click="LaterButton_Click"
                     MinWidth="110"
                     Margin="0,0,10,0"
                     Padding="12,6" />
-            <Button Content="Quit Now"
+            <Button Content="{lex:Loc res:LocalizationKeys+Restart.QuitNow}"
                     Click="QuitButton_Click"
                     MinWidth="90"
                     Padding="12,6" />

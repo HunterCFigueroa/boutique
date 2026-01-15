@@ -14,6 +14,7 @@ public class GuiSettings
     public string? PatchFileName { get; set; }
     public SkyrimRelease SelectedSkyrimRelease { get; set; }
     public string? LastDistributionFilePath { get; set; }
+    public string? Language { get; set; }
 
     public double? WindowLeft { get; set; }
     public double? WindowTop { get; set; }
@@ -108,6 +109,18 @@ public class GuiSettingsService
             if (_settings.LastDistributionFilePath == value)
                 return;
             _settings.LastDistributionFilePath = value;
+            SaveSettings();
+        }
+    }
+
+    public string? Language
+    {
+        get => _settings.Language;
+        set
+        {
+            if (_settings.Language == value)
+                return;
+            _settings.Language = value;
             SaveSettings();
         }
     }

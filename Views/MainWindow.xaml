@@ -6,9 +6,10 @@
         xmlns:views="clr-namespace:Boutique.Views"
         xmlns:vm="clr-namespace:Boutique.ViewModels"
         xmlns:guideline="clr-namespace:GuideLine.WPF.View;assembly=GuideLine"
+        xmlns:lex="http://wpflocalizeextension.codeplex.com"
         mc:Ignorable="d"
         d:DataContext="{d:DesignInstance vm:MainViewModel, IsDesignTimeCreatable=False}"
-        Title="Boutique" Height="800" Width="1400"
+        Title="{lex:Loc AppTitle}" Height="800" Width="1400"
         WindowStartupLocation="CenterScreen"
         Background="{StaticResource Brush.PrimaryBackground}">
 
@@ -20,16 +21,16 @@
         <TabControl x:Name="MainTabControl" Grid.Row="0" Margin="8"
                     SelectedIndex="{Binding MainTabIndex, Mode=TwoWay}"
                     SelectionChanged="TabControl_OnSelectionChanged">
-            <TabItem x:Name="DistributionTab" Header="Distribution">
+            <TabItem x:Name="DistributionTab" Header="{lex:Loc Tab_Distribution}">
                 <views:DistributionView DataContext="{Binding Distribution}" />
             </TabItem>
-            <TabItem x:Name="OutfitCreatorTab" Header="Outfit Creator">
+            <TabItem x:Name="OutfitCreatorTab" Header="{lex:Loc Tab_OutfitCreator}">
                 <views:OutfitCreatorView DataContext="{Binding}" />
             </TabItem>
-            <TabItem x:Name="ArmorPatchTab" Header="Armor Patch">
+            <TabItem x:Name="ArmorPatchTab" Header="{lex:Loc Tab_ArmorPatch}">
                 <views:ArmorPatchView DataContext="{Binding}" />
             </TabItem>
-            <TabItem x:Name="SettingsTab" Header="Settings">
+            <TabItem x:Name="SettingsTab" Header="{lex:Loc Tab_Settings}">
                 <views:SettingsPanelView DataContext="{Binding}" />
             </TabItem>
         </TabControl>
@@ -53,12 +54,12 @@
 
             <!-- Right: Output Patch Name + Refresh -->
             <StackPanel x:Name="PatchFileNamePanel" Grid.Column="1" Orientation="Horizontal" VerticalAlignment="Center">
-                <TextBlock Text="Patch:" Margin="0,0,6,0" VerticalAlignment="Center"
+                <TextBlock Text="{lex:Loc Status_Patch}" Margin="0,0,6,0" VerticalAlignment="Center"
                            Foreground="{StaticResource Brush.TextSecondary}" />
                 <TextBox Text="{Binding Settings.PatchFileName, UpdateSourceTrigger=PropertyChanged}"
                          MinWidth="160" FontFamily="Consolas" FontSize="11" VerticalAlignment="Center" />
                 <Button x:Name="RefreshButton" Command="{Binding Distribution.RefreshCommand}"
-                        ToolTip="Refresh All Data (including output patch)"
+                        ToolTip="{lex:Loc Button_Refresh}"
                         MinWidth="0" Width="24" Height="24" Padding="0" Margin="8,0,0,0"
                         VerticalAlignment="Center">
                     <TextBlock Text="↻" FontSize="14" />

@@ -1,7 +1,9 @@
 <Window x:Class="Boutique.Views.MissingMastersDialog"
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-        Title="Missing Masters Detected"
+        xmlns:lex="http://wpflocalizeextension.codeplex.com"
+        xmlns:res="clr-namespace:Boutique.Resources"
+        Title="{lex:Loc res:LocalizationKeys+MissingMasters.Title}"
         Width="550" Height="450"
         MinWidth="450" MinHeight="350"
         WindowStartupLocation="CenterOwner"
@@ -18,12 +20,12 @@
 
         <!-- Header -->
         <StackPanel Grid.Row="0" Margin="0,0,0,15">
-            <TextBlock Text="⚠️ Missing Master Plugins Detected"
+            <TextBlock Text="{lex:Loc res:LocalizationKeys+MissingMasters.Header}"
                        FontSize="16"
                        FontWeight="SemiBold"
                        Foreground="{StaticResource Brush.Warning}"
                        Margin="0,0,0,8" />
-            <TextBlock Text="Your BoutiquePatch references plugins that are no longer in your load order. The outfits below contain armor from these missing masters and cannot be loaded."
+            <TextBlock Text="{lex:Loc res:LocalizationKeys+MissingMasters.Description}"
                        TextWrapping="Wrap"
                        FontSize="13"
                        Foreground="{StaticResource Brush.TextSecondary}" />
@@ -88,13 +90,13 @@
         <!-- Buttons -->
         <StackPanel Grid.Row="3" Orientation="Horizontal" HorizontalAlignment="Right" Margin="0,16,0,0">
             <Button x:Name="AddMastersButton"
-                    Content="I'll add the master(s) back"
+                    Content="{lex:Loc res:LocalizationKeys+MissingMasters.AddBack}"
                     Click="AddMastersButton_Click"
                     MinWidth="160"
                     Margin="0,0,10,0"
                     Padding="14,8" />
             <Button x:Name="CleanPatchButton"
-                    Content="Clean patch (remove outfits)"
+                    Content="{lex:Loc res:LocalizationKeys+MissingMasters.CleanPatch}"
                     Click="CleanPatchButton_Click"
                     MinWidth="180"
                     Padding="14,8" />

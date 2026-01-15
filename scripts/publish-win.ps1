@@ -41,15 +41,15 @@ if ($boutiqueProcesses)
 if ($Version -ne "")
 {
     Write-Host "Updating version to $Version..." -ForegroundColor Cyan
-    
+
     # Read the csproj content
     $csprojContent = Get-Content $projectPath -Raw
-    
+
     # Update version properties using regex
     $csprojContent = $csprojContent -replace '<Version>[^<]+</Version>', "<Version>$Version</Version>"
     $csprojContent = $csprojContent -replace '<AssemblyVersion>[^<]+</AssemblyVersion>', "<AssemblyVersion>$Version.0</AssemblyVersion>"
     $csprojContent = $csprojContent -replace '<FileVersion>[^<]+</FileVersion>', "<FileVersion>$Version.0</FileVersion>"
-    
+
     # Write back
     Set-Content -Path $projectPath -Value $csprojContent -NoNewline
     Write-Host "Version updated to $Version" -ForegroundColor Green
@@ -107,6 +107,31 @@ New-Item -ItemType Directory -Path $tempZipDir | Out-Null
 
 # Copy the exe to temp directory
 Copy-Item $exePath $tempZipDir
+
+# Copy satellite assemblies (translations) from build output
+# Single-file publish doesn't include these, so we get them from the intermediate build folder
+$buildOutputPath = Join-Path $PSScriptRoot "..\bin\$Configuration\net8.0-windows10.0.19041\$Runtime"
+if (-not (Test-Path $buildOutputPath))
+{
+    $buildOutputPath = Join-Path $PSScriptRoot "..\bin\$Configuration\net8.0-windows10.0.19041"
+}
+
+$cultureFolders = @(Get-ChildItem -Path $buildOutputPath -Directory -ErrorAction SilentlyContinue | Where-Object {
+    $_.Name -match "^[a-z]{2}(-[A-Za-z]{2,})?$" -and (Test-Path (Join-Path $_.FullName "Boutique.resources.dll"))
+})
+
+foreach ($folder in $cultureFolders)
+{
+    $destFolder = Join-Path $tempZipDir $folder.Name
+    New-Item -ItemType Directory -Path $destFolder -Force | Out-Null
+    Copy-Item (Join-Path $folder.FullName "Boutique.resources.dll") $destFolder
+    Write-Host "  Including translation: $($folder.Name)" -ForegroundColor DarkGray
+}
+
+if ($cultureFolders.Count -gt 0)
+{
+    Write-Host "Included $($cultureFolders.Count) translation(s)" -ForegroundColor Green
+}
 
 # Create the zip
 Compress-Archive -Path "$tempZipDir\*" -DestinationPath $zipPath -Force

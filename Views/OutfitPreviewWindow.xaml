@@ -2,7 +2,9 @@
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:helix="clr-namespace:HelixToolkit.Wpf.SharpDX;assembly=HelixToolkit.Wpf.SharpDX"
-        Title="Outfit Preview"
+        xmlns:lex="http://wpflocalizeextension.codeplex.com"
+        xmlns:res="clr-namespace:Boutique.Resources"
+        Title="{lex:Loc res:LocalizationKeys+Preview.Title}"
         Width="900"
         Height="700"
         WindowStartupLocation="CenterOwner"
@@ -39,12 +41,12 @@
                             Margin="0,0,0,10">
                         <TextBlock TextWrapping="Wrap"
                                    Foreground="#664D03">
-                            <Run FontWeight="SemiBold">Some assets were missing when previewing this outfit.</Run>
+                            <Run FontWeight="SemiBold" Text="{lex:Loc res:LocalizationKeys+Preview.MissingAssetsWarning}" />
                             <LineBreak /><LineBreak />
-                            <Run>Some creators like [ELLE] make their outfits such that you have to run BodySlide with the outfit before it's fully usable. If this sounds like it might be the case, quit Boutique and do all the requisite BodySlide steps, then get back here and try again!</Run>
+                            <Run Text="{lex:Loc res:LocalizationKeys+Preview.BodySlideHint}" />
                         </TextBlock>
                     </Border>
-                    <TextBlock Text="Missing assets:" FontWeight="Bold" />
+                    <TextBlock Text="{lex:Loc res:LocalizationKeys+Preview.MissingAssets}" FontWeight="Bold" />
                     <ItemsControl x:Name="MissingAssetsList" Margin="0,4,0,0">
                         <ItemsControl.ItemTemplate>
                             <DataTemplate>
@@ -54,8 +56,7 @@
                     </ItemsControl>
                 </StackPanel>
 
-                <Expander
-                  Header="Lighting multipliers (Debug)"
+                <Expander Header="{lex:Loc res:LocalizationKeys+Preview.LightingDebug}"
                           IsExpanded="False"
                           Margin="0,0,0,12">
                     <Grid Margin="0,6,0,0">
@@ -71,7 +72,7 @@
                             <ColumnDefinition Width="Auto" />
                         </Grid.ColumnDefinitions>
 
-                        <TextBlock Grid.Row="0" Grid.Column="0" Text="Ambient" Margin="0,0,8,0"
+                        <TextBlock Grid.Row="0" Grid.Column="0" Text="{lex:Loc res:LocalizationKeys+Preview.Ambient}" Margin="0,0,8,0"
                                    VerticalAlignment="Center" />
                         <Slider x:Name="AmbientMultiplierSlider"
                                 Grid.Row="0"
@@ -86,7 +87,7 @@
                                    Text="{Binding Value, ElementName=AmbientMultiplierSlider, StringFormat=F2}"
                                    Width="48" VerticalAlignment="Center" TextAlignment="Right" />
 
-                        <TextBlock Grid.Row="1" Grid.Column="0" Text="Key/Fill" Margin="0,6,8,0"
+                        <TextBlock Grid.Row="1" Grid.Column="0" Text="{lex:Loc res:LocalizationKeys+Preview.KeyFill}" Margin="0,6,8,0"
                                    VerticalAlignment="Center" />
                         <Slider x:Name="KeyFillMultiplierSlider"
                                 Grid.Row="1"
@@ -101,7 +102,7 @@
                                    Text="{Binding Value, ElementName=KeyFillMultiplierSlider, StringFormat=F2}"
                                    Width="48" VerticalAlignment="Center" TextAlignment="Right" />
 
-                        <TextBlock Grid.Row="2" Grid.Column="0" Text="Rim" Margin="0,6,8,0" VerticalAlignment="Center" />
+                        <TextBlock Grid.Row="2" Grid.Column="0" Text="{lex:Loc res:LocalizationKeys+Preview.Rim}" Margin="0,6,8,0" VerticalAlignment="Center" />
                         <Slider x:Name="RimMultiplierSlider"
                                 Grid.Row="2"
                                 Grid.Column="1"
@@ -115,7 +116,7 @@
                                    Text="{Binding Value, ElementName=RimMultiplierSlider, StringFormat=F2}" Width="48"
                                    VerticalAlignment="Center" TextAlignment="Right" />
 
-                        <TextBlock Grid.Row="3" Grid.Column="0" Text="Frontal" Margin="0,6,8,0"
+                        <TextBlock Grid.Row="3" Grid.Column="0" Text="{lex:Loc res:LocalizationKeys+Preview.Frontal}" Margin="0,6,8,0"
                                    VerticalAlignment="Center" />
                         <Slider x:Name="FrontalMultiplierSlider"
                                 Grid.Row="3"
@@ -133,11 +134,11 @@
                 </Expander>
 
                 <StackPanel Orientation="Horizontal" HorizontalAlignment="Right">
-                    <Button Content="Reset View"
+                    <Button Content="{lex:Loc res:LocalizationKeys+Buttons.ResetView}"
                             Margin="0,0,8,0"
                             Padding="14,6"
                             Click="OnResetView" />
-                    <Button Content="Close"
+                    <Button Content="{lex:Loc res:LocalizationKeys+Buttons.Close}"
                             Padding="14,6"
                             IsCancel="True"
                             Click="OnClose" />

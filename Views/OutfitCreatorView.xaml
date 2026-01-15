@@ -5,6 +5,8 @@
              xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
              xmlns:vm="clr-namespace:Boutique.ViewModels"
              xmlns:themes="clr-namespace:Boutique.Themes"
+             xmlns:lex="http://wpflocalizeextension.codeplex.com"
+             xmlns:res="clr-namespace:Boutique.Resources"
              mc:Ignorable="d"
              d:DataContext="{d:DesignInstance vm:MainViewModel, IsDesignTimeCreatable=False}"
              d:DesignHeight="800"
@@ -26,7 +28,7 @@
             </Grid.ColumnDefinitions>
 
             <!-- Left Panel: Plugin Selection -->
-            <GroupBox Grid.Column="0" Header="Source Plugins" Padding="6">
+            <GroupBox Grid.Column="0" Header="{lex:Loc res:LocalizationKeys+OutfitCreator.SourcePlugins}" Padding="6">
                 <Grid>
                     <Grid.RowDefinitions>
                         <RowDefinition Height="Auto" />
@@ -36,8 +38,8 @@
                     <Grid Grid.Row="0" Margin="0,0,0,6">
                         <TextBox x:Name="PluginSearchBox"
                                  Text="{Binding OutfitPluginSearchText, UpdateSourceTrigger=PropertyChanged}"
-                                 ToolTip="Filter plugins by name" />
-                        <TextBlock Text="🔍 Filter..." Foreground="Gray" IsHitTestVisible="False"
+                                 ToolTip="{lex:Loc res:LocalizationKeys+OutfitCreator.FilterPlugins}" />
+                        <TextBlock Text="{lex:Loc res:LocalizationKeys+Labels.FilterPlaceholder}" Foreground="Gray" IsHitTestVisible="False"
                                    Margin="6,0,0,0" VerticalAlignment="Center"
                                    Visibility="{Binding Text, ElementName=PluginSearchBox, Converter={StaticResource StringEmptyToVisConverter}, ConverterParameter=Inverse}" />
                     </Grid>
@@ -59,7 +61,7 @@
             <GridSplitter Grid.Column="1" Width="4" HorizontalAlignment="Stretch" Background="LightGray" />
 
             <!-- Middle Panel: Armors from Selected Plugin -->
-            <GroupBox Grid.Column="2" Header="Available Armors" Padding="6">
+            <GroupBox Grid.Column="2" Header="{lex:Loc res:LocalizationKeys+OutfitCreator.AvailableArmors}" Padding="6">
                 <Grid>
                     <Grid.RowDefinitions>
                         <RowDefinition Height="Auto" />
@@ -73,7 +75,7 @@
                             <ColumnDefinition Width="*" />
                             <ColumnDefinition Width="Auto" />
                         </Grid.ColumnDefinitions>
-                        <TextBlock Grid.Column="0" Text="Search:" Style="{DynamicResource {x:Static themes:ResourceKeys.LabelTextStyleKey}}" />
+                        <TextBlock Grid.Column="0" Text="{lex:Loc res:LocalizationKeys+Labels.Search}" Style="{DynamicResource {x:Static themes:ResourceKeys.LabelTextStyleKey}}" />
                         <TextBox Grid.Column="1" Text="{Binding OutfitSearchText, UpdateSourceTrigger=PropertyChanged}" />
                         <TextBlock Grid.Column="2"
                                    Text="{Binding OutfitArmors.Count, StringFormat='{}{0} armors'}"
@@ -99,18 +101,18 @@
                                     <DataTemplate>
                                         <Button Content="👁" Click="PreviewArmorButton_Click"
                                                 Style="{DynamicResource {x:Static themes:ResourceKeys.IconButtonStyleKey}}"
-                                                Width="28" Height="28" FontSize="12" ToolTip="Preview armor" />
+                                                Width="28" Height="28" FontSize="12" ToolTip="{lex:Loc res:LocalizationKeys+OutfitCreator.PreviewArmor}" />
                                     </DataTemplate>
                                 </DataGridTemplateColumn.CellTemplate>
                             </DataGridTemplateColumn>
-                            <DataGridTextColumn Header="Name" Width="*" IsReadOnly="True" Binding="{Binding DisplayName, Mode=OneWay}" />
-                            <DataGridTextColumn Header="Slots" Width="100" IsReadOnly="True" Binding="{Binding SlotSummary, Mode=OneWay}" />
-                            <DataGridTextColumn Header="Form ID" Width="100" IsReadOnly="True" SortMemberPath="FormIdSortable" Binding="{Binding FormIdDisplay, Mode=OneWay}" />
+                            <DataGridTextColumn Header="{lex:Loc res:LocalizationKeys+Headers.Name}" Width="*" IsReadOnly="True" Binding="{Binding DisplayName, Mode=OneWay}" />
+                            <DataGridTextColumn Header="{lex:Loc res:LocalizationKeys+Headers.Slots}" Width="100" IsReadOnly="True" Binding="{Binding SlotSummary, Mode=OneWay}" />
+                            <DataGridTextColumn Header="{lex:Loc res:LocalizationKeys+Headers.FormID}" Width="100" IsReadOnly="True" SortMemberPath="FormIdSortable" Binding="{Binding FormIdDisplay, Mode=OneWay}" />
                         </DataGrid.Columns>
                     </DataGrid>
 
                     <Button Grid.Row="2"
-                            Content="Create New Outfit from Selected"
+                            Content="{lex:Loc res:LocalizationKeys+OutfitCreator.CreateNewOutfit}"
                             Command="{Binding CreateOutfitCommand}"
                             HorizontalAlignment="Right"
                             Margin="0,4,0,0"
@@ -121,7 +123,7 @@
             <GridSplitter Grid.Column="3" Width="4" HorizontalAlignment="Stretch" Background="LightGray" />
 
             <!-- Right Panel: Outfit Drafts -->
-            <GroupBox Grid.Column="4" Header="Outfit Queue" Padding="6"
+            <GroupBox Grid.Column="4" Header="{lex:Loc res:LocalizationKeys+OutfitCreator.OutfitQueue}" Padding="6"
                       IsEnabled="{Binding IsCreatingOutfits, Converter={StaticResource InverseBoolConverter}}">
                 <Grid>
                     <Grid.RowDefinitions>
@@ -136,7 +138,7 @@
                             DragLeave="NewOutfitDropZone_OnDragLeave"
                             DragOver="NewOutfitDropZone_OnDragOver"
                             Drop="NewOutfitDropZone_OnDrop">
-                        <TextBlock Text="Drop armors here to create a new outfit (double-click an armor to quick add)."
+                        <TextBlock Text="{lex:Loc res:LocalizationKeys+OutfitCreator.DropArmorsHere}"
                                    Style="{DynamicResource {x:Static themes:ResourceKeys.EmptyStateTextStyleKey}}" TextWrapping="Wrap" />
                     </Border>
 
@@ -154,14 +156,14 @@
                                     </ItemsControl.ItemTemplate>
                                 </ItemsControl>
                             </ScrollViewer>
-                            <Button Content="Copy Existing Outfits"
+                            <Button Content="{lex:Loc res:LocalizationKeys+OutfitCreator.CopyExistingOutfits}"
                                     Command="{Binding CopyExistingOutfitsCommand}"
                                     HorizontalAlignment="Right" Margin="0,6,0,0" Padding="10,4" />
                         </StackPanel>
                     </Border>
 
                     <Grid Grid.Row="2">
-                        <TextBlock Text="No outfits queued. Select armors and click Create Outfit."
+                        <TextBlock Text="{lex:Loc res:LocalizationKeys+OutfitCreator.NoOutfitsQueued}"
                                    Style="{DynamicResource {x:Static themes:ResourceKeys.EmptyStateTextStyleKey}}"
                                    Visibility="{Binding HasOutfitDrafts, Converter={StaticResource InverseBoolToVisConverter}}" />
 
@@ -193,13 +195,13 @@
                                                     <StackPanel Grid.Column="1" Orientation="Horizontal" VerticalAlignment="Top">
                                                         <Button Content="👁" Command="{Binding PreviewCommand}"
                                                                 Style="{DynamicResource {x:Static themes:ResourceKeys.IconButtonStyleKey}}"
-                                                                Width="28" Height="28" Margin="0,0,4,0" FontSize="14" ToolTip="Preview Outfit" />
+                                                                Width="28" Height="28" Margin="0,0,4,0" FontSize="14" ToolTip="{lex:Loc res:LocalizationKeys+OutfitCreator.PreviewOutfit}" />
                                                         <Button Content="⎘" Command="{Binding DuplicateCommand}"
                                                                 Style="{DynamicResource {x:Static themes:ResourceKeys.IconButtonStyleKey}}"
-                                                                Width="28" Height="28" Margin="0,0,4,0" FontSize="14" ToolTip="Duplicate Outfit" />
+                                                                Width="28" Height="28" Margin="0,0,4,0" FontSize="14" ToolTip="{lex:Loc res:LocalizationKeys+OutfitCreator.DuplicateOutfit}" />
                                                         <Button Command="{Binding RemoveSelfCommand}"
                                                                 Style="{DynamicResource {x:Static themes:ResourceKeys.InlineRemoveButtonStyleKey}}"
-                                                                Width="28" Height="28" FontSize="14" ToolTip="Remove Outfit" />
+                                                                Width="28" Height="28" FontSize="14" ToolTip="{lex:Loc res:LocalizationKeys+OutfitCreator.RemoveOutfit}" />
                                                     </StackPanel>
                                                 </Grid>
                                                 <ItemsControl ItemsSource="{Binding Pieces}">
@@ -217,12 +219,12 @@
                                                                         Command="{Binding DataContext.RemovePieceCommand, RelativeSource={RelativeSource AncestorType=ItemsControl}}"
                                                                         CommandParameter="{Binding}"
                                                                         Style="{DynamicResource {x:Static themes:ResourceKeys.InlineRemoveButtonStyleKey}}"
-                                                                        Margin="4,0,0,0" FontSize="9" ToolTip="Remove piece" />
+                                                                        Margin="4,0,0,0" FontSize="9" ToolTip="{lex:Loc res:LocalizationKeys+OutfitCreator.RemovePiece}" />
                                                             </Grid>
                                                         </DataTemplate>
                                                     </ItemsControl.ItemTemplate>
                                                 </ItemsControl>
-                                                <TextBlock Text="No pieces selected." Style="{DynamicResource {x:Static themes:ResourceKeys.EmptyStateTextStyleKey}}"
+                                                <TextBlock Text="{lex:Loc res:LocalizationKeys+OutfitCreator.NoPiecesSelected}" Style="{DynamicResource {x:Static themes:ResourceKeys.EmptyStateTextStyleKey}}"
                                                            HorizontalAlignment="Left" FontSize="12" Margin="0,2,0,0"
                                                            Visibility="{Binding HasPieces, Converter={StaticResource InverseBoolToVisConverter}}" />
                                             </StackPanel>
@@ -248,9 +250,9 @@
                     Style="{DynamicResource {x:Static themes:ResourceKeys.PrimaryButtonStyleKey}}"
                     IsEnabled="{Binding HasOutfitDrafts}">
                 <Grid>
-                    <TextBlock Text="Save Outfits" Visibility="{Binding IsCreatingOutfits, Converter={StaticResource InverseBoolToVisConverter}}" />
+                    <TextBlock Text="{lex:Loc res:LocalizationKeys+OutfitCreator.SaveOutfits}" Visibility="{Binding IsCreatingOutfits, Converter={StaticResource InverseBoolToVisConverter}}" />
                     <StackPanel Orientation="Horizontal" Visibility="{Binding IsCreatingOutfits, Converter={StaticResource BoolToVisConverter}}">
-                        <TextBlock Text="Saving..." Margin="0,0,8,0" />
+                        <TextBlock Text="{lex:Loc res:LocalizationKeys+Status.Saving}" Margin="0,0,8,0" />
                         <ProgressBar IsIndeterminate="True" Width="60" Height="12" />
                     </StackPanel>
                 </Grid>

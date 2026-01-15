@@ -38,17 +38,20 @@ public class SettingsViewModel : ReactiveObject
     private readonly GuiSettingsService _guiSettings;
     private readonly ThemeService _themeService;
     private readonly TutorialService _tutorialService;
+    private readonly LocalizationService _localizationService;
 
     public SettingsViewModel(
         PatcherSettings settings,
         GuiSettingsService guiSettings,
         ThemeService themeService,
-        TutorialService tutorialService)
+        TutorialService tutorialService,
+        LocalizationService localizationService)
     {
         _settings = settings;
         _guiSettings = guiSettings;
         _themeService = themeService;
         _tutorialService = tutorialService;
+        _localizationService = localizationService;
 
         var savedDataPath = !string.IsNullOrEmpty(guiSettings.SkyrimDataPath) ? guiSettings.SkyrimDataPath : settings.SkyrimDataPath;
         SkyrimDataPath = NormalizeDataPath(savedDataPath);
@@ -101,6 +104,13 @@ public class SettingsViewModel : ReactiveObject
                 ShowRestartDialog();
             });
 
+        SelectedLanguage = _localizationService.GetCurrentLanguageOption() ?? AvailableLanguages[0];
+
+        this.WhenAnyValue(x => x.SelectedLanguage)
+            .Skip(1)
+            .Where(lang => lang != null)
+            .Subscribe(lang => _localizationService.SetLanguage(lang!.Code));
+
         BrowseDataPathCommand = new RelayCommand(BrowseDataPath);
         BrowseOutputPathCommand = new RelayCommand(BrowseOutputPath);
         AutoDetectPathCommand = new RelayCommand(AutoDetectPath);
@@ -118,6 +128,7 @@ public class SettingsViewModel : ReactiveObject
     [Reactive] public string PatchFileName { get; set; } = string.Empty;
     [Reactive] public SkyrimRelease SelectedSkyrimRelease { get; set; }
     [Reactive] public ThemeOption SelectedTheme { get; set; }
+    [Reactive] public LanguageOption? SelectedLanguage { get; set; }
 
     public IReadOnlyList<SkyrimRelease> SkyrimReleaseOptions { get; } = new[]
     {
@@ -126,6 +137,7 @@ public class SettingsViewModel : ReactiveObject
         SkyrimRelease.SkyrimSEGog
     };
     public IReadOnlyList<ThemeOption> ThemeOptions { get; } = Enum.GetValues<ThemeOption>();
+    public IReadOnlyList<LanguageOption> AvailableLanguages => _localizationService.AvailableLanguages;
 
     public string FullOutputPath
     {

@@ -55,6 +55,7 @@ public partial class App
         builder.RegisterType<ThemeService>().SingleInstance();
         builder.RegisterType<TutorialService>().SingleInstance();
         builder.RegisterType<GuiSettingsService>().SingleInstance();
+        builder.RegisterType<LocalizationService>().SingleInstance();
 
         builder.RegisterType<MainViewModel>().AsSelf().SingleInstance();
         builder.RegisterType<SettingsViewModel>().AsSelf().SingleInstance();
@@ -70,6 +71,10 @@ public partial class App
         try
         {
             var mainWindow = _container.Resolve<MainWindow>();
+
+            var localizationService = _container.Resolve<LocalizationService>();
+            localizationService.Initialize();
+
             mainWindow.Show();
             Log.Information("Main window displayed.");
         }

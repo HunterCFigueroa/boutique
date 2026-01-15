@@ -5,6 +5,8 @@
              xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
              xmlns:vm="clr-namespace:Boutique.ViewModels"
              xmlns:themes="clr-namespace:Boutique.Themes"
+             xmlns:lex="http://wpflocalizeextension.codeplex.com"
+             xmlns:res="clr-namespace:Boutique.Resources"
              mc:Ignorable="d"
              d:DataContext="{d:DesignInstance vm:MainViewModel, IsDesignTimeCreatable=False}"
              d:DesignHeight="800"
@@ -17,7 +19,7 @@
             <RowDefinition Height="Auto" />
         </Grid.RowDefinitions>
 
-        <GroupBox Grid.Row="0" Header="Plugin Selection" Padding="6" Margin="0,0,0,6">
+        <GroupBox Grid.Row="0" Header="{lex:Loc res:LocalizationKeys+ArmorPatch.PluginSelection}" Padding="6" Margin="0,0,0,6">
             <Grid>
                 <Grid.ColumnDefinitions>
                     <ColumnDefinition Width="*" />
@@ -26,19 +28,19 @@
                 </Grid.ColumnDefinitions>
 
                 <StackPanel Grid.Column="0" Margin="0">
-                    <TextBlock Text="Source Plugin" FontWeight="SemiBold" Margin="0,0,0,2" />
+                    <TextBlock Text="{lex:Loc res:LocalizationKeys+ArmorPatch.SourcePlugin}" FontWeight="SemiBold" Margin="0,0,0,2" />
                     <ComboBox ItemsSource="{Binding AvailablePlugins}"
                               SelectedItem="{Binding SelectedSourcePlugin}"
                               IsEditable="True" IsTextSearchEnabled="True" StaysOpenOnEdit="True"
-                              IsTextSearchCaseSensitive="False" ToolTip="Type to search plugins" />
+                              IsTextSearchCaseSensitive="False" ToolTip="{lex:Loc res:LocalizationKeys+ArmorPatch.TypeToSearch}" />
                 </StackPanel>
 
                 <StackPanel Grid.Column="2" Margin="0">
-                    <TextBlock Text="Target Plugin" FontWeight="SemiBold" Margin="0,0,0,2" />
+                    <TextBlock Text="{lex:Loc res:LocalizationKeys+ArmorPatch.TargetPlugin}" FontWeight="SemiBold" Margin="0,0,0,2" />
                     <ComboBox ItemsSource="{Binding AvailablePlugins}"
                               SelectedItem="{Binding SelectedTargetPlugin}"
                               IsEditable="True" IsTextSearchEnabled="True" StaysOpenOnEdit="True"
-                              IsTextSearchCaseSensitive="False" ToolTip="Type to search plugins" />
+                              IsTextSearchCaseSensitive="False" ToolTip="{lex:Loc res:LocalizationKeys+ArmorPatch.TypeToSearch}" />
                 </StackPanel>
             </Grid>
         </GroupBox>
@@ -50,7 +52,7 @@
                 <ColumnDefinition Width="3*" />
             </Grid.ColumnDefinitions>
 
-            <GroupBox Grid.Column="0" Header="Source Armors" Padding="6">
+            <GroupBox Grid.Column="0" Header="{lex:Loc res:LocalizationKeys+ArmorPatch.SourceArmors}" Padding="6">
                 <Grid>
                     <Grid.RowDefinitions>
                         <RowDefinition Height="Auto" />
@@ -58,7 +60,7 @@
                     </Grid.RowDefinitions>
 
                     <StackPanel Grid.Row="0" Orientation="Horizontal" Margin="0,0,0,4">
-                        <TextBlock Text="Search:" Style="{DynamicResource {x:Static themes:ResourceKeys.LabelTextStyleKey}}" Margin="0,0,4,0" />
+                        <TextBlock Text="{lex:Loc res:LocalizationKeys+Labels.Search}" Style="{DynamicResource {x:Static themes:ResourceKeys.LabelTextStyleKey}}" Margin="0,0,4,0" />
                         <TextBox Width="200" Text="{Binding SourceSearchText, UpdateSourceTrigger=PropertyChanged}" />
                         <TextBlock Text="{Binding SourceArmors.Count, StringFormat='{}{0} armors'}"
                                    Margin="8,0,0,0" VerticalAlignment="Center" />
@@ -84,10 +86,10 @@
                             </Style>
                         </DataGrid.RowStyle>
                         <DataGrid.Columns>
-                            <DataGridTextColumn Header="Name" Width="*" IsReadOnly="True" Binding="{Binding DisplayName, Mode=OneWay}" />
-                            <DataGridTextColumn Header="Slots" Width="130" IsReadOnly="True" Binding="{Binding SlotSummary, Mode=OneWay}" />
-                            <DataGridTextColumn Header="Form ID" Width="120" IsReadOnly="True" SortMemberPath="FormIdSortable" Binding="{Binding FormIdDisplay, Mode=OneWay}" />
-                            <DataGridTextColumn Header="Mod" Width="150" IsReadOnly="True" Binding="{Binding ModDisplayName, Mode=OneWay}"
+                            <DataGridTextColumn Header="{lex:Loc res:LocalizationKeys+Headers.Name}" Width="*" IsReadOnly="True" Binding="{Binding DisplayName, Mode=OneWay}" />
+                            <DataGridTextColumn Header="{lex:Loc res:LocalizationKeys+Headers.Slots}" Width="130" IsReadOnly="True" Binding="{Binding SlotSummary, Mode=OneWay}" />
+                            <DataGridTextColumn Header="{lex:Loc res:LocalizationKeys+Headers.FormID}" Width="120" IsReadOnly="True" SortMemberPath="FormIdSortable" Binding="{Binding FormIdDisplay, Mode=OneWay}" />
+                            <DataGridTextColumn Header="{lex:Loc res:LocalizationKeys+Headers.Mod}" Width="150" IsReadOnly="True" Binding="{Binding ModDisplayName, Mode=OneWay}"
                                                 ElementStyle="{DynamicResource {x:Static themes:ResourceKeys.DataGridSecondaryColumnStyleKey}}" />
                         </DataGrid.Columns>
                     </DataGrid>
@@ -96,7 +98,7 @@
 
             <GridSplitter Grid.Column="1" Width="4" HorizontalAlignment="Stretch" Background="LightGray" />
 
-            <GroupBox Grid.Column="2" Header="Target Armors" Padding="6">
+            <GroupBox Grid.Column="2" Header="{lex:Loc res:LocalizationKeys+ArmorPatch.TargetArmors}" Padding="6">
                 <Grid>
                     <Grid.RowDefinitions>
                         <RowDefinition Height="Auto" />
@@ -110,15 +112,15 @@
                         </Grid.RowDefinitions>
 
                         <StackPanel Grid.Row="0" Orientation="Horizontal" Margin="0,0,0,4">
-                            <TextBlock Text="Search:" Style="{DynamicResource {x:Static themes:ResourceKeys.LabelTextStyleKey}}" Margin="0,0,4,0" />
+                            <TextBlock Text="{lex:Loc res:LocalizationKeys+Labels.Search}" Style="{DynamicResource {x:Static themes:ResourceKeys.LabelTextStyleKey}}" Margin="0,0,4,0" />
                             <TextBox Width="200" Text="{Binding TargetSearchText, UpdateSourceTrigger=PropertyChanged}" />
                             <TextBlock Text="{Binding TargetArmors.Count, StringFormat='{}{0} candidates'}"
                                        Margin="8,0,0,0" VerticalAlignment="Center" />
                         </StackPanel>
 
                         <StackPanel Grid.Row="1" Orientation="Horizontal" VerticalAlignment="Center">
-                            <Button Content="Map Selection" Command="{Binding MapSelectedCommand}" />
-                            <Button Content="Mark Glam Only" Command="{Binding MapGlamOnlyCommand}" />
+                            <Button Content="{lex:Loc res:LocalizationKeys+ArmorPatch.MapSelection}" Command="{Binding MapSelectedCommand}" />
+                            <Button Content="{lex:Loc res:LocalizationKeys+ArmorPatch.MarkGlamOnly}" Command="{Binding MapGlamOnlyCommand}" />
                             <TextBlock Text="{Binding Matches.Count, StringFormat='{}{0} mappings'}"
                                        Margin="8,0,0,0" VerticalAlignment="Center" />
                         </StackPanel>
@@ -146,19 +148,19 @@
                             </Style>
                         </DataGrid.RowStyle>
                         <DataGrid.Columns>
-                            <DataGridTextColumn Header="Name" Width="*" IsReadOnly="True" Binding="{Binding DisplayName, Mode=OneWay}" />
-                            <DataGridTextColumn Header="Slots" Width="130" IsReadOnly="True" Binding="{Binding SlotSummary, Mode=OneWay}" />
-                            <DataGridTextColumn Header="Form ID" Width="120" IsReadOnly="True" SortMemberPath="FormIdSortable" Binding="{Binding FormIdDisplay, Mode=OneWay}" />
-                            <DataGridTextColumn Header="Mod" Width="150" IsReadOnly="True" Binding="{Binding ModDisplayName, Mode=OneWay}"
+                            <DataGridTextColumn Header="{lex:Loc res:LocalizationKeys+Headers.Name}" Width="*" IsReadOnly="True" Binding="{Binding DisplayName, Mode=OneWay}" />
+                            <DataGridTextColumn Header="{lex:Loc res:LocalizationKeys+Headers.Slots}" Width="130" IsReadOnly="True" Binding="{Binding SlotSummary, Mode=OneWay}" />
+                            <DataGridTextColumn Header="{lex:Loc res:LocalizationKeys+Headers.FormID}" Width="120" IsReadOnly="True" SortMemberPath="FormIdSortable" Binding="{Binding FormIdDisplay, Mode=OneWay}" />
+                            <DataGridTextColumn Header="{lex:Loc res:LocalizationKeys+Headers.Mod}" Width="150" IsReadOnly="True" Binding="{Binding ModDisplayName, Mode=OneWay}"
                                                 ElementStyle="{DynamicResource {x:Static themes:ResourceKeys.DataGridSecondaryColumnStyleKey}}" />
-                            <DataGridTextColumn Header="Armor" Width="80" IsReadOnly="True" Binding="{Binding ArmorRating, Mode=OneWay}" />
+                            <DataGridTextColumn Header="{lex:Loc res:LocalizationKeys+Headers.Armor}" Width="80" IsReadOnly="True" Binding="{Binding ArmorRating, Mode=OneWay}" />
                         </DataGrid.Columns>
                     </DataGrid>
                 </Grid>
             </GroupBox>
         </Grid>
 
-        <GroupBox Grid.Row="2" Header="Mapping Preview" Padding="6" Margin="0,4,0,0">
+        <GroupBox Grid.Row="2" Header="{lex:Loc res:LocalizationKeys+ArmorPatch.MappingPreview}" Padding="6" Margin="0,4,0,0">
             <Grid>
                 <Grid.RowDefinitions>
                     <RowDefinition Height="Auto" />
@@ -172,7 +174,7 @@
                     </Grid.ColumnDefinitions>
                     <TextBlock Text="{Binding Matches.Count, StringFormat='{}{0} total mappings'}"
                                FontWeight="Bold" VerticalAlignment="Center" />
-                    <Button Grid.Column="1" Content="Clear All" Command="{Binding ClearMappingsCommand}"
+                    <Button Grid.Column="1" Content="{lex:Loc res:LocalizationKeys+Buttons.ClearAll}" Command="{Binding ClearMappingsCommand}"
                             Visibility="{Binding Matches.Count, Converter={StaticResource CollectionCountToVisConverter}}" />
                 </Grid>
 
@@ -215,7 +217,7 @@
                                                         <Setter Property="Text" Value="{Binding Target.DisplayName, Mode=OneWay}" />
                                                         <Style.Triggers>
                                                             <DataTrigger Binding="{Binding IsGlamOnly}" Value="True">
-                                                                <Setter Property="Text" Value="Glam-only (zero stats)" />
+                                                                <Setter Property="Text" Value="{lex:Loc res:LocalizationKeys+ArmorPatch.GlamOnlyZeroStats}" />
                                                             </DataTrigger>
                                                         </Style.Triggers>
                                                     </Style>
@@ -245,7 +247,7 @@
 
                                         <Button Grid.Column="3" Style="{DynamicResource {x:Static themes:ResourceKeys.InlineRemoveButtonStyleKey}}"
                                                 FontSize="14" FontWeight="Bold" Width="24" Height="24"
-                                                Margin="8,0,0,0" ToolTip="Remove mapping"
+                                                Margin="8,0,0,0" ToolTip="{lex:Loc res:LocalizationKeys+ArmorPatch.RemoveMapping}"
                                                 Command="{Binding DataContext.RemoveMappingCommand, RelativeSource={RelativeSource AncestorType=ItemsControl}}"
                                                 CommandParameter="{Binding}" />
                                     </Grid>
@@ -265,7 +267,7 @@
             <TextBlock Grid.Column="0"
                        Text="{Binding Matches.Count, StringFormat='{}{0} mapping(s) queued'}"
                        VerticalAlignment="Center" />
-            <Button Grid.Column="1" Content="Create Patch" Command="{Binding CreatePatchCommand}"
+            <Button Grid.Column="1" Content="{lex:Loc res:LocalizationKeys+ArmorPatch.CreatePatch}" Command="{Binding CreatePatchCommand}"
                     Style="{DynamicResource {x:Static themes:ResourceKeys.PrimaryButtonStyleKey}}"
                     Padding="12,6" FontSize="13" HorizontalAlignment="Right"
                     IsEnabled="{Binding IsPatching, Converter={StaticResource InverseBoolConverter}}" />
