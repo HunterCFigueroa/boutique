@@ -88,6 +88,127 @@ public class FormKeyHelperTests
         Assert.NotEqual(FormKey.Null, formKey);
     }
 
+    [Fact]
+    public void TryParse_PipeFormatWithSpaces_ParsesCorrectly()
+    {
+        var success = FormKeyHelper.TryParse(" MyMod.esp | 0x12345 ", out var formKey);
+
+        Assert.True(success);
+        Assert.Equal("MyMod.esp", formKey.ModKey.FileName);
+        Assert.Equal(0x12345u, formKey.ID);
+    }
+
+    [Fact]
+    public void TryParse_TildeFormatWithSpaces_ParsesCorrectly()
+    {
+        var success = FormKeyHelper.TryParse(" 0x12345 ~ MyMod.esp ", out var formKey);
+
+        Assert.True(success);
+        Assert.Equal("MyMod.esp", formKey.ModKey.FileName);
+        Assert.Equal(0x12345u, formKey.ID);
+    }
+
+    [Fact]
+    public void TryParse_UppercaseHex_ParsesCorrectly()
+    {
+        var success = FormKeyHelper.TryParse("MyMod.esp|0xABCDEF", out var formKey);
+
+        Assert.True(success);
+        Assert.Equal(0xABCDEFu, formKey.ID);
+    }
+
+    [Fact]
+    public void TryParse_LowercaseHex_ParsesCorrectly()
+    {
+        var success = FormKeyHelper.TryParse("MyMod.esp|0xabcdef", out var formKey);
+
+        Assert.True(success);
+        Assert.Equal(0xABCDEFu, formKey.ID);
+    }
+
+    [Fact]
+    public void TryParse_MixedCaseHex_ParsesCorrectly()
+    {
+        var success = FormKeyHelper.TryParse("MyMod.esp|0xAbCdEf", out var formKey);
+
+        Assert.True(success);
+        Assert.Equal(0xABCDEFu, formKey.ID);
+    }
+
+    [Fact]
+    public void TryParse_PaddedFormId_ParsesCorrectly()
+    {
+        var success = FormKeyHelper.TryParse("MyMod.esp|00012345", out var formKey);
+
+        Assert.True(success);
+        Assert.Equal(0x12345u, formKey.ID);
+    }
+
+    [Fact]
+    public void TryParse_EightDigitFormId_ParsesCorrectly()
+    {
+        var success = FormKeyHelper.TryParse("MyMod.esp|00ABCDEF", out var formKey);
+
+        Assert.True(success);
+        Assert.Equal(0xABCDEFu, formKey.ID);
+    }
+
+    [Fact]
+    public void TryParse_WhitespaceOnly_ReturnsFalse()
+    {
+        var success = FormKeyHelper.TryParse("   ", out var formKey);
+
+        Assert.False(success);
+        Assert.Equal(FormKey.Null, formKey);
+    }
+
+    [Fact]
+    public void TryParse_OnlyPipe_ReturnsFalse()
+    {
+        var success = FormKeyHelper.TryParse("|", out _);
+
+        Assert.False(success);
+    }
+
+    [Fact]
+    public void TryParse_OnlyTilde_ReturnsFalse()
+    {
+        var success = FormKeyHelper.TryParse("~", out _);
+
+        Assert.False(success);
+    }
+
+    [Fact]
+    public void TryParse_InvalidHexChars_ReturnsFalse()
+    {
+        var success = FormKeyHelper.TryParse("MyMod.esp|0xGHIJKL", out _);
+
+        Assert.False(success);
+    }
+
+    [Fact]
+    public void TryParse_ModKeyWithSpaces_ParsesCorrectly()
+    {
+        var success = FormKeyHelper.TryParse("My Mod With Spaces.esp|0x800", out var formKey);
+
+        Assert.True(success);
+        Assert.Equal("My Mod With Spaces.esp", formKey.ModKey.FileName);
+    }
+
+    [Theory]
+    [InlineData("Skyrim.esm|0x7", "Skyrim.esm", 0x7u)]
+    [InlineData("0x800~MyMod.esp", "MyMod.esp", 0x800u)]
+    [InlineData("Test.esl|00ABCDEF", "Test.esl", 0xABCDEFu)]
+    [InlineData("0xABCDEF~Another.esm", "Another.esm", 0xABCDEFu)]
+    public void TryParse_BothFormats_ParsesCorrectly(string input, string expectedMod, uint expectedId)
+    {
+        var success = FormKeyHelper.TryParse(input, out var formKey);
+
+        Assert.True(success);
+        Assert.Equal(expectedMod, formKey.ModKey.FileName);
+        Assert.Equal(expectedId, formKey.ID);
+    }
+
     #endregion
 
     #region Format - FormKey formatting
@@ -108,6 +229,120 @@ public class FormKeyHelperTests
         var result = FormKeyHelper.Format(formKey);
 
         Assert.Equal("Test.esp|00000001", result);
+    }
+
+    [Fact]
+    public void Format_EslFile_FormatsCorrectly()
+    {
+        var formKey = new FormKey(ModKey.FromNameAndExtension("Light.esl"), 0x800);
+        var result = FormKeyHelper.Format(formKey);
+
+        Assert.Equal("Light.esl|00000800", result);
+    }
+
+    [Fact]
+    public void Format_EsmFile_FormatsCorrectly()
+    {
+        var formKey = new FormKey(ModKey.FromNameAndExtension("Skyrim.esm"), 0xABCDEF);
+        var result = FormKeyHelper.Format(formKey);
+
+        Assert.Equal("Skyrim.esm|00ABCDEF", result);
+    }
+
+    [Fact]
+    public void Format_LargeFormId_FormatsCorrectly()
+    {
+        var formKey = new FormKey(ModKey.FromNameAndExtension("Test.esp"), 0x00FFFFFF);
+        var result = FormKeyHelper.Format(formKey);
+
+        Assert.Equal("Test.esp|00FFFFFF", result);
+    }
+
+    [Fact]
+    public void Format_ZeroFormId_FormatsWithPadding()
+    {
+        var formKey = new FormKey(ModKey.FromNameAndExtension("Test.esp"), 0x0);
+        var result = FormKeyHelper.Format(formKey);
+
+        Assert.Equal("Test.esp|00000000", result);
+    }
+
+    [Fact]
+    public void Format_OutputCanBeParsedByTryParse()
+    {
+        var original = new FormKey(ModKey.FromNameAndExtension("MyMod.esp"), 0x12345);
+        var formatted = FormKeyHelper.Format(original);
+        var success = FormKeyHelper.TryParse(formatted, out var parsed);
+
+        Assert.True(success);
+        Assert.Equal(original, parsed);
+    }
+
+    [Theory]
+    [InlineData("Mod.esp", 0x800u, "Mod.esp|00000800")]
+    [InlineData("Skyrim.esm", 0x7u, "Skyrim.esm|00000007")]
+    [InlineData("Test.esl", 0x00ABCDEF, "Test.esl|00ABCDEF")]
+    [InlineData("Space In Name.esp", 0x100u, "Space In Name.esp|00000100")]
+    public void Format_VariousInputs_FormatsCorrectly(string modName, uint formId, string expected)
+    {
+        var formKey = new FormKey(ModKey.FromNameAndExtension(modName), formId);
+        var result = FormKeyHelper.Format(formKey);
+
+        Assert.Equal(expected, result);
+    }
+
+    #endregion
+
+    #region FormatForSpid - SPID syntax formatting
+
+    [Fact]
+    public void FormatForSpid_StandardFormKey_FormatsWithTilde()
+    {
+        var formKey = new FormKey(ModKey.FromNameAndExtension("MyMod.esp"), 0x12345);
+        var result = FormKeyHelper.FormatForSpid(formKey);
+
+        Assert.Equal("0x12345~MyMod.esp", result);
+    }
+
+    [Fact]
+    public void FormatForSpid_SmallFormId_NoLeadingZeros()
+    {
+        var formKey = new FormKey(ModKey.FromNameAndExtension("Test.esp"), 0x800);
+        var result = FormKeyHelper.FormatForSpid(formKey);
+
+        Assert.Equal("0x800~Test.esp", result);
+    }
+
+    [Fact]
+    public void FormatForSpid_LargeFormId_FormatsCorrectly()
+    {
+        var formKey = new FormKey(ModKey.FromNameAndExtension("Test.esp"), 0xABCDEF);
+        var result = FormKeyHelper.FormatForSpid(formKey);
+
+        Assert.Equal("0xABCDEF~Test.esp", result);
+    }
+
+    [Fact]
+    public void FormatForSpid_OutputCanBeParsedByTryParse()
+    {
+        var original = new FormKey(ModKey.FromNameAndExtension("MyMod.esp"), 0x800);
+        var formatted = FormKeyHelper.FormatForSpid(original);
+        var success = FormKeyHelper.TryParse(formatted, out var parsed);
+
+        Assert.True(success);
+        Assert.Equal(original, parsed);
+    }
+
+    [Theory]
+    [InlineData("Mod.esp", 0x1u, "0x1~Mod.esp")]
+    [InlineData("Skyrim.esm", 0x7u, "0x7~Skyrim.esm")]
+    [InlineData("Test.esl", 0xABCDEFu, "0xABCDEF~Test.esl")]
+    public void FormatForSpid_VariousInputs_FormatsCorrectly(string modName, uint formId, string expected)
+    {
+        var formKey = new FormKey(ModKey.FromNameAndExtension(modName), formId);
+        var result = FormKeyHelper.FormatForSpid(formKey);
+
+        Assert.Equal(expected, result);
     }
 
     #endregion

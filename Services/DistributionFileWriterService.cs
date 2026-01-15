@@ -515,32 +515,13 @@ public class DistributionFileWriterService
         return results;
     }
 
-    private static string FormatFormKey(FormKey formKey) => $"{formKey.ModKey.FileName}|{formKey.ID:X8}";
+    private static string FormatFormKey(FormKey formKey) => FormKeyHelper.Format(formKey);
 
     private static string FormatOutfitIdentifier(IOutfitGetter outfit) =>
         $"0x{outfit.FormKey.ID:X}~{outfit.FormKey.ModKey.FileName}";
 
-    private static FormKey? TryParseFormKey(string text)
-    {
-        if (string.IsNullOrWhiteSpace(text))
-            return null;
-
-        var trimmed = text.Trim();
-        var pipeIndex = trimmed.IndexOf('|');
-        if (pipeIndex < 0)
-            return null;
-
-        var modKeyString = trimmed.Substring(0, pipeIndex).Trim();
-        var formIdString = trimmed.Substring(pipeIndex + 1).Trim();
-
-        if (!ModKey.TryFromNameAndExtension(modKeyString, out var modKey))
-            return null;
-
-        if (!uint.TryParse(formIdString, System.Globalization.NumberStyles.HexNumber, null, out var formId))
-            return null;
-
-        return new FormKey(modKey, formId);
-    }
+    private static FormKey? TryParseFormKey(string text) =>
+        FormKeyHelper.TryParse(text, out var formKey) ? formKey : null;
 
     private static string FormatSpidLine(DistributionEntry entry, ILinkCache<ISkyrimMod, ISkyrimModGetter> linkCache)
     {
