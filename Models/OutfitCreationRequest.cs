@@ -1,3 +1,4 @@
+using Mutagen.Bethesda.Plugins;
 using Mutagen.Bethesda.Skyrim;
 
 namespace Boutique.Models;
@@ -5,4 +6,5 @@ namespace Boutique.Models;
 public record OutfitCreationRequest(
     string Name,
     string EditorId,
-    IReadOnlyList<IArmorGetter> Pieces);
+    IReadOnlyList<IArmorGetter> Pieces,
+    FormKey? ExistingFormKey = null);

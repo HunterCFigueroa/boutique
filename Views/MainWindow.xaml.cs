@@ -56,10 +56,10 @@ public partial class MainWindow : Window
 
         var outfitNameDisposable = viewModel.RequestOutfitName.RegisterHandler(async interaction =>
         {
-            var prompt = interaction.Input;
+            var (prompt, defaultValue) = interaction.Input;
             var result = await Dispatcher.InvokeAsync(() =>
             {
-                var input = Interaction.InputBox(prompt, "Create Outfit", string.Empty);
+                var input = Interaction.InputBox(prompt, "Create Outfit", defaultValue);
                 return string.IsNullOrWhiteSpace(input) ? null : input;
             });
             interaction.SetOutput(result);

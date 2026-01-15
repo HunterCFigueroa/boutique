@@ -161,7 +161,7 @@ public class MainViewModel : ReactiveObject
 
     public Interaction<string, Unit> PatchCreatedNotification { get; } = new();
     public Interaction<string, bool> ConfirmOverwritePatch { get; } = new();
-    public Interaction<string, string?> RequestOutfitName { get; } = new();
+    public Interaction<(string Prompt, string DefaultValue), string?> RequestOutfitName { get; } = new();
     public Interaction<ArmorPreviewScene, Unit> ShowPreview { get; } = new();
     public Interaction<MissingMastersResult, bool> HandleMissingMasters { get; } = new();
 
@@ -558,7 +558,8 @@ public class MainViewModel : ReactiveObject
                 pieces,
                 RemoveOutfitDraft,
                 RemoveOutfitPiece,
-                PreviewDraftAsync);
+                PreviewDraftAsync,
+                DuplicateDraftAsync);
 
             draft.FormKey = existing.FormKey;
             draft.PropertyChanged += OutfitDraftOnPropertyChanged;
@@ -715,7 +716,8 @@ public class MainViewModel : ReactiveObject
                     pieces,
                     RemoveOutfitDraft,
                     RemoveOutfitPiece,
-                    PreviewDraftAsync);
+                    PreviewDraftAsync,
+                    DuplicateDraftAsync);
 
                 draft.FormKey = outfit.FormKey;
                 draft.PropertyChanged += OutfitDraftOnPropertyChanged;
@@ -1341,7 +1343,7 @@ public class MainViewModel : ReactiveObject
         else
         {
             const string namePrompt = "Enter the outfit name (also used as the EditorID):";
-            outfitName = await RequestOutfitName.Handle(namePrompt).ToTask();
+            outfitName = await RequestOutfitName.Handle((namePrompt, "")).ToTask();
 
             if (string.IsNullOrWhiteSpace(outfitName))
             {
@@ -1364,7 +1366,8 @@ public class MainViewModel : ReactiveObject
             distinctPieces,
             RemoveOutfitDraft,
             RemoveOutfitPiece,
-            PreviewDraftAsync);
+            PreviewDraftAsync,
+            DuplicateDraftAsync);
 
         draft.PropertyChanged += OutfitDraftOnPropertyChanged;
         _outfitDrafts.Add(draft);
@@ -1372,6 +1375,44 @@ public class MainViewModel : ReactiveObject
         StatusMessage = $"Queued outfit '{draft.Name}' with {distinctPieces.Count} piece(s).";
         _logger.Information("Queued outfit draft {EditorId} with {PieceCount} pieces.", draft.EditorId,
             distinctPieces.Count);
+    }
+
+    public async Task DuplicateDraftAsync(OutfitDraftViewModel draft)
+    {
+        var pieces = draft.GetPieces();
+        if (pieces.Count == 0)
+        {
+            StatusMessage = $"Outfit '{draft.EditorId}' has no pieces to duplicate.";
+            return;
+        }
+
+        const string namePrompt = "Enter a name for the duplicated outfit:";
+        var defaultName = draft.Name + "_copy";
+        var newName = await RequestOutfitName.Handle((namePrompt, defaultName)).ToTask();
+
+        if (string.IsNullOrWhiteSpace(newName))
+        {
+            StatusMessage = "Duplicate canceled.";
+            return;
+        }
+
+        var sanitizedName = SanitizeOutfitName(newName.Trim());
+        sanitizedName = EnsureUniqueOutfitName(sanitizedName, null);
+
+        var newDraft = new OutfitDraftViewModel(
+            sanitizedName,
+            sanitizedName,
+            pieces,
+            RemoveOutfitDraft,
+            RemoveOutfitPiece,
+            PreviewDraftAsync,
+            DuplicateDraftAsync);
+
+        newDraft.PropertyChanged += OutfitDraftOnPropertyChanged;
+        _outfitDrafts.Add(newDraft);
+
+        StatusMessage = $"Duplicated outfit as '{sanitizedName}' with {pieces.Count} piece(s).";
+        _logger.Information("Duplicated outfit draft {OriginalEditorId} to {NewEditorId}", draft.EditorId, sanitizedName);
     }
 
     public async Task PreviewDraftAsync(OutfitDraftViewModel draft)
@@ -1555,9 +1596,9 @@ public class MainViewModel : ReactiveObject
     private async Task SaveOutfitsAsync()
     {
         var populatedDrafts = _outfitDrafts.Where(d => d.HasPieces).ToList();
-        var deletionCount = _pendingOutfitDeletions.Count;
+        var deletionsToProcess = _pendingOutfitDeletions.ToList();
 
-        if (populatedDrafts.Count == 0 && deletionCount == 0)
+        if (populatedDrafts.Count == 0 && deletionsToProcess.Count == 0)
         {
             StatusMessage = "No outfits to save or delete.";
             _logger.Debug("SaveOutfitsAsync invoked with no drafts or deletions.");
@@ -1569,15 +1610,16 @@ public class MainViewModel : ReactiveObject
         try
         {
             ProgressCurrent = 0;
-            ProgressTotal = populatedDrafts.Count + deletionCount;
+            ProgressTotal = populatedDrafts.Count + deletionsToProcess.Count;
 
             var requests = populatedDrafts
                 .ConvertAll(d => new OutfitCreationRequest(
                     d.Name,
                     d.EditorId,
-                    [.. d.GetPieces().Select(p => p.Armor)]));
+                    [.. d.GetPieces().Select(p => p.Armor)],
+                    d.FormKey));
 
-            requests.AddRange(_pendingOutfitDeletions.Select(editorId => new OutfitCreationRequest(editorId, editorId, [])));
+            requests.AddRange(deletionsToProcess.Select(editorId => new OutfitCreationRequest(editorId, editorId, [])));
 
             var progress = new Progress<(int Current, int Total, string Message)>(p =>
             {
@@ -1598,8 +1640,9 @@ public class MainViewModel : ReactiveObject
 
             if (success)
             {
-                _pendingOutfitDeletions.Clear();
-                HasPendingOutfitDeletions = false;
+                foreach (var editorId in deletionsToProcess)
+                    _pendingOutfitDeletions.Remove(editorId);
+                HasPendingOutfitDeletions = _pendingOutfitDeletions.Count > 0;
 
                 foreach (var result in results)
                 {
@@ -1625,6 +1668,10 @@ public class MainViewModel : ReactiveObject
             IsCreatingOutfits = false;
             ProgressCurrent = 0;
             ProgressTotal = 0;
+
+            // Re-trigger auto-save if there are pending changes that were queued during this save
+            if (HasOutfitDrafts || HasPendingOutfitDeletions)
+                TriggerAutoSave();
         }
     }
 

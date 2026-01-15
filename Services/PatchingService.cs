@@ -214,12 +214,19 @@ public class PatchingService(MutagenService mutagenService, ILoggingService logg
                 var total = outfitList.Count;
                 var current = 0;
 
-                foreach (var (name, editorId, pieces) in outfitList)
+                foreach (var (name, editorId, pieces, existingFormKey) in outfitList)
                 {
                     current++;
                     progress?.Report((current, total, $"Writing outfit {name}..."));
 
-                    var existing = patchMod.Outfits
+                    Outfit? existing = null;
+                    if (existingFormKey.HasValue)
+                    {
+                        existing = patchMod.Outfits
+                            .FirstOrDefault(o => o.FormKey == existingFormKey.Value);
+                    }
+
+                    existing ??= patchMod.Outfits
                         .FirstOrDefault(o =>
                             string.Equals(o.EditorID, editorId, StringComparison.OrdinalIgnoreCase));
 
@@ -243,6 +250,14 @@ public class PatchingService(MutagenService mutagenService, ILoggingService logg
                     if (existing != null)
                     {
                         outfit = existing;
+                        if (!string.Equals(outfit.EditorID, editorId, StringComparison.OrdinalIgnoreCase))
+                        {
+                            _logger.Information(
+                                "Renaming outfit {OldEditorId} to {NewEditorId}.",
+                                outfit.EditorID, editorId);
+                            outfit.EditorID = editorId;
+                        }
+
                         _logger.Information(
                             "Updating existing outfit {EditorId} with {PieceCount} piece(s).",
                             editorId, pieces.Count);

@@ -121,7 +121,8 @@
             <GridSplitter Grid.Column="3" Width="4" HorizontalAlignment="Stretch" Background="LightGray" />
 
             <!-- Right Panel: Outfit Drafts -->
-            <GroupBox Grid.Column="4" Header="Outfit Queue" Padding="6">
+            <GroupBox Grid.Column="4" Header="Outfit Queue" Padding="6"
+                      IsEnabled="{Binding IsCreatingOutfits, Converter={StaticResource InverseBoolConverter}}">
                 <Grid>
                     <Grid.RowDefinitions>
                         <RowDefinition Height="Auto" />
@@ -192,10 +193,13 @@
                                                     <StackPanel Grid.Column="1" Orientation="Horizontal" VerticalAlignment="Top">
                                                         <Button Content="👁" Command="{Binding PreviewCommand}"
                                                                 Style="{DynamicResource {x:Static themes:ResourceKeys.IconButtonStyleKey}}"
-                                                                Margin="0,0,2,0" FontSize="10" ToolTip="Preview outfit" />
+                                                                Width="28" Height="28" Margin="0,0,4,0" FontSize="14" ToolTip="Preview Outfit" />
+                                                        <Button Content="⎘" Command="{Binding DuplicateCommand}"
+                                                                Style="{DynamicResource {x:Static themes:ResourceKeys.IconButtonStyleKey}}"
+                                                                Width="28" Height="28" Margin="0,0,4,0" FontSize="14" ToolTip="Duplicate Outfit" />
                                                         <Button Command="{Binding RemoveSelfCommand}"
                                                                 Style="{DynamicResource {x:Static themes:ResourceKeys.InlineRemoveButtonStyleKey}}"
-                                                                Width="22" Height="22" FontSize="12" ToolTip="Remove outfit" />
+                                                                Width="28" Height="28" FontSize="14" ToolTip="Remove Outfit" />
                                                     </StackPanel>
                                                 </Grid>
                                                 <ItemsControl ItemsSource="{Binding Pieces}">
