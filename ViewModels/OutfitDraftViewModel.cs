@@ -74,12 +74,12 @@ public class OutfitDraftViewModel : ReactiveObject
 
     public bool IsOverride { get; init; }
 
-    public string? OverrideSourceMod { get; init; }
+    public ModKey? OverrideSourceMod { get; init; }
 
     public string FormIdDisplay => FormKey.HasValue ? $"0x{FormKey.Value.ID:X8}" : "Pending";
 
     public string? OverrideDisplayText => IsOverride && FormKey.HasValue
-        ? $"Overrides {FormIdDisplay} in {OverrideSourceMod ?? FormKey.Value.ModKey.FileName}"
+        ? $"Overrides {FormIdDisplay} in {OverrideSourceMod?.FileName ?? FormKey.Value.ModKey.FileName}"
         : null;
 
     public string Header => $"{Name} ({EditorId}) — FormID {FormIdDisplay}";

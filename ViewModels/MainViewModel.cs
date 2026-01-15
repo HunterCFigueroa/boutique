@@ -1333,7 +1333,7 @@ public class MainViewModel : ReactiveObject
         return Task.CompletedTask;
     }
 
-    private string? GetWinningModForOutfit(FormKey formKey, ModKey? excludeMod)
+    private ModKey? GetWinningModForOutfit(FormKey formKey, ModKey? excludeMod)
     {
         if (_mutagenService.LinkCache is not { } linkCache)
             return null;
@@ -1346,7 +1346,7 @@ public class MainViewModel : ReactiveObject
                 if (excludeMod.HasValue && context.ModKey == excludeMod.Value)
                     continue;
 
-                return context.ModKey.FileName;
+                return context.ModKey;
             }
         }
         catch
@@ -1354,7 +1354,7 @@ public class MainViewModel : ReactiveObject
             // Fall back to FormKey origin if resolution fails
         }
 
-        return formKey.ModKey.FileName;
+        return formKey.ModKey;
     }
 
     private async Task CreateOutfitAsync()
@@ -1672,7 +1672,8 @@ public class MainViewModel : ReactiveObject
                     d.EditorId,
                     [.. d.GetPieces().Select(p => p.Armor)],
                     d.FormKey,
-                    d.IsOverride));
+                    d.IsOverride,
+                    d.OverrideSourceMod));
 
             requests.AddRange(deletionsToProcess.Select(editorId => new OutfitCreationRequest(editorId, editorId, [])));
 

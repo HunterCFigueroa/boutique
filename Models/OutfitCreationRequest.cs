@@ -8,4 +8,5 @@ public record OutfitCreationRequest(
     string EditorId,
     IReadOnlyList<IArmorGetter> Pieces,
     FormKey? ExistingFormKey = null,
-    bool IsOverride = false);
+    bool IsOverride = false,
+    ModKey? OverrideSourceMod = null);

@@ -2,7 +2,6 @@ using System.IO;
 using Boutique.Models;
 using Mutagen.Bethesda;
 using Mutagen.Bethesda.Plugins;
-using Mutagen.Bethesda.Plugins.Binary.Parameters;
 using Mutagen.Bethesda.Plugins.Records;
 using Mutagen.Bethesda.Skyrim;
 using Noggog;
@@ -14,11 +13,6 @@ public class PatchingService(MutagenService mutagenService, ILoggingService logg
 {
     private const uint MinimumFormId = 0x800;
     private readonly ILogger _logger = loggingService.ForContext<PatchingService>();
-
-    private static readonly BinaryWriteParameters DefaultWriteParameters = new()
-    {
-        LowerRangeDisallowedHandler = new NoCheckIfLowerRangeDisallowed()
-    };
 
     public bool ValidatePatch(IEnumerable<ArmorMatch> matches, out string validationMessage)
     {
@@ -86,7 +80,7 @@ public class PatchingService(MutagenService mutagenService, ILoggingService logg
         progress?.Report((1, 1, "Writing patch file..."));
         mutagenService.ReleaseLinkCache();
 
-        WritePatchWithRetry(patchMod, outputPath, DefaultWriteParameters);
+        WritePatchWithRetry(patchMod, outputPath, requiredMasters);
     }
 
     private async Task RefreshAfterWrite(string outputPath, IProgress<(int current, int total, string message)>? progress)
@@ -197,7 +191,7 @@ public class PatchingService(MutagenService mutagenService, ILoggingService logg
                 var total = outfitList.Count;
                 var current = 0;
 
-                foreach (var (name, editorId, pieces, existingFormKey, isOverride) in outfitList)
+                foreach (var (name, editorId, pieces, existingFormKey, isOverride, overrideSourceMod) in outfitList)
                 {
                     current++;
                     progress?.Report((current, total, $"Writing outfit {name}..."));
@@ -214,10 +208,13 @@ public class PatchingService(MutagenService mutagenService, ILoggingService logg
 
                         requiredMasters.Add(sourceOutfit.FormKey.ModKey);
 
-                        var contexts = mutagenService.LinkCache.ResolveAllContexts<IOutfit, IOutfitGetter>(existingFormKey.Value);
-                        foreach (var context in contexts)
+                        if (overrideSourceMod.HasValue)
                         {
-                            requiredMasters.Add(context.ModKey);
+                            requiredMasters.Add(overrideSourceMod.Value);
+                            _logger.Debug(
+                                "Adding override source mod {SourceMod} as master for outfit {FormKey}",
+                                overrideSourceMod.Value.FileName,
+                                existingFormKey.Value);
                         }
 
                         var overrideItems = overrideOutfit.Items ??= [];
@@ -383,15 +380,32 @@ public class PatchingService(MutagenService mutagenService, ILoggingService logg
             string.Join(", ", masterList.Select(m => m.Master.FileName)));
     }
 
-    private void WritePatchWithRetry(SkyrimMod patchMod, string outputPath, BinaryWriteParameters writeParameters)
+    private void WritePatchWithRetry(SkyrimMod patchMod, string outputPath, HashSet<ModKey> extraMasters)
     {
-        var tempPath = outputPath + ".tmp";
+        var tempPath = Path.Combine(
+            Path.GetDirectoryName(outputPath)!,
+            "_temp_" + Path.GetFileName(outputPath));
 
-        var tempWriteParameters = writeParameters with
+        _logger.Debug(
+            "Masters before write: {Masters}",
+            string.Join(", ", patchMod.ModHeader.MasterReferences.Select(m => m.Master.FileName)));
+        _logger.Debug(
+            "Extra masters to include: {ExtraMasters}",
+            string.Join(", ", extraMasters.Select(m => m.FileName)));
+
+        patchMod.BeginWrite
+            .ToPath(tempPath)
+            .WithNoLoadOrder()
+            .WithExtraIncludedMasters(extraMasters)
+            .NoModKeySync()
+            .Write();
+
+        using (var writtenMod = SkyrimMod.CreateFromBinaryOverlay(tempPath, mutagenService.SkyrimRelease))
         {
-            ModKey = ModKeyOption.NoCheck
-        };
-        patchMod.WriteToBinary(tempPath, tempWriteParameters);
+            _logger.Information(
+                "Masters after write: {Masters}",
+                string.Join(", ", writtenMod.ModHeader.MasterReferences.Select(m => m.Master.FileName)));
+        }
 
         GC.Collect();
         GC.WaitForPendingFinalizers();
@@ -429,21 +443,22 @@ public class PatchingService(MutagenService mutagenService, ILoggingService logg
 
         const int eslRecordLimit = 2048;
 
+        var totalRecordCount = patchMod.EnumerateMajorRecords().Count();
         var newRecordCount = patchMod.EnumerateMajorRecords()
             .Count(r => r.FormKey.ModKey == patchMod.ModKey);
 
-        if (newRecordCount < eslRecordLimit)
+        if (totalRecordCount < eslRecordLimit)
         {
             patchMod.ModHeader.Flags |= SkyrimModHeader.HeaderFlag.Small;
             _logger.Information(
-                "ESL flag applied. New record count: {Count} (limit: {Limit}).",
-                newRecordCount, eslRecordLimit);
+                "ESL flag applied. Total records: {Total} ({New} new, {Override} overrides), limit: {Limit}.",
+                totalRecordCount, newRecordCount, totalRecordCount - newRecordCount, eslRecordLimit);
         }
         else
         {
             _logger.Warning(
-                "ESL flag NOT applied. New record count {Count} exceeds limit of {Limit}.",
-                newRecordCount, eslRecordLimit);
+                "ESL flag NOT applied. Total record count {Total} exceeds limit of {Limit}.",
+                totalRecordCount, eslRecordLimit);
         }
     }
 
@@ -606,7 +621,7 @@ public class PatchingService(MutagenService mutagenService, ILoggingService logg
 
                 mutagenService.ReleaseLinkCache();
 
-                WritePatchWithRetry(patchMod, patchPath, DefaultWriteParameters);
+                WritePatchWithRetry(patchMod, patchPath, remainingMasters);
 
                 _logger.Information("Patch cleaned successfully. Removed {Count} outfit(s).", removedCount);
                 return (true, $"Successfully removed {removedCount} outfit(s) with missing masters.");
