@@ -17,7 +17,7 @@ jobs:
       - name: Setup .NET
         uses: actions/setup-dotnet@v4
         with:
-          dotnet-version: '8.0.x'
+          dotnet-version: "8.0.x"
 
       - name: Restore dependencies
         run: dotnet restore
@@ -38,14 +38,18 @@ jobs:
             -p:IncludeNativeLibrariesForSelfExtract=true `
             --output ./publish
 
+      - name: Copy satellite assemblies (translations)
+        run: |
+          $buildOutput = "bin/Release/net8.0-windows10.0.19041/win-x64"
+          $cultureFolders = Get-ChildItem $buildOutput -Directory | Where-Object { $_.Name -match '^[a-z]{2}(-[A-Za-z]+)?$' }
+          foreach ($folder in $cultureFolders) {
+            Copy-Item $folder.FullName -Destination "./publish/$($folder.Name)" -Recurse -Force
+            Write-Host "Copied translation: $($folder.Name)"
+          }
+
       - name: Upload build artifacts
         uses: actions/upload-artifact@v4
         with:
           name: Boutique-win-x64
-          path: |
-            ./publish/Boutique.exe
-            ./publish/Boutique.pdb
+          path: ./publish/
           retention-days: 30
-
-
-

@@ -18,7 +18,7 @@ jobs:
       - name: Setup .NET
         uses: actions/setup-dotnet@v4
         with:
-          dotnet-version: '8.0.x'
+          dotnet-version: "8.0.x"
 
       - name: Restore dependencies
         run: dotnet restore
@@ -36,14 +36,20 @@ jobs:
             -p:IncludeNativeLibrariesForSelfExtract=true `
             --output ./publish
 
+      - name: Copy satellite assemblies (translations)
+        run: |
+          $buildOutput = "bin/Release/net8.0-windows10.0.19041/win-x64"
+          $cultureFolders = Get-ChildItem $buildOutput -Directory | Where-Object { $_.Name -match '^[a-z]{2}(-[A-Za-z]+)?$' }
+          foreach ($folder in $cultureFolders) {
+            Copy-Item $folder.FullName -Destination "./publish/$($folder.Name)" -Recurse -Force
+            Write-Host "Copied translation: $($folder.Name)"
+          }
+
       - name: Create zip archive
         run: |
-          Compress-Archive -Path ./publish/Boutique.exe, ./publish/Boutique.pdb -DestinationPath ./Boutique-${{ github.ref_name }}-win-x64.zip
+          Compress-Archive -Path ./publish/* -DestinationPath ./Boutique-${{ github.ref_name }}-win-x64.zip
 
       - name: Upload release asset
         uses: softprops/action-gh-release@v2
         with:
           files: ./Boutique-${{ github.ref_name }}-win-x64.zip
-
-
-
