@@ -1443,13 +1443,30 @@ public class DistributionEditTabViewModel : ReactiveObject
         try
         {
             StatusMessage = $"Building preview for {label}...";
-            var scene = await _armorPreviewService.BuildPreviewAsync(armorPieces, GenderedModelVariant.Female);
-            var sceneWithMetadata = scene with
+
+            var initialGender = entry.Gender switch
             {
-                OutfitLabel = label,
-                SourceFile = outfit.FormKey.ModKey.FileName.String
+                GenderFilter.Male => GenderedModelVariant.Male,
+                GenderFilter.Female => GenderedModelVariant.Female,
+                _ => GenderedModelVariant.Female
             };
-            var collection = new ArmorPreviewSceneCollection(sceneWithMetadata);
+
+            var metadata = new OutfitMetadata(label, outfit.FormKey.ModKey.FileName.String, false);
+            var collection = new ArmorPreviewSceneCollection(
+                count: 1,
+                initialIndex: 0,
+                metadata: new[] { metadata },
+                sceneBuilder: async (_, gender) =>
+                {
+                    var scene = await _armorPreviewService.BuildPreviewAsync(armorPieces, gender);
+                    return scene with
+                    {
+                        OutfitLabel = label,
+                        SourceFile = outfit.FormKey.ModKey.FileName.String
+                    };
+                },
+                initialGender: initialGender);
+
             await ShowPreview.Handle(collection);
             StatusMessage = $"Preview ready for {label}.";
         }

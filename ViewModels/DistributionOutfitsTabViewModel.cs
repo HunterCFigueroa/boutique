@@ -242,13 +242,23 @@ public class DistributionOutfitsTabViewModel : ReactiveObject
         try
         {
             StatusMessage = $"Building preview for {label}...";
-            var scene = await _armorPreviewService.BuildPreviewAsync(armorPieces, GenderedModelVariant.Female);
-            var sceneWithMetadata = scene with
-            {
-                OutfitLabel = label,
-                SourceFile = outfit.FormKey.ModKey.FileName.String
-            };
-            var collection = new ArmorPreviewSceneCollection(sceneWithMetadata);
+
+            var metadata = new OutfitMetadata(label, outfit.FormKey.ModKey.FileName.String, false);
+            var collection = new ArmorPreviewSceneCollection(
+                count: 1,
+                initialIndex: 0,
+                metadata: new[] { metadata },
+                sceneBuilder: async (_, gender) =>
+                {
+                    var scene = await _armorPreviewService.BuildPreviewAsync(armorPieces, gender);
+                    return scene with
+                    {
+                        OutfitLabel = label,
+                        SourceFile = outfit.FormKey.ModKey.FileName.String
+                    };
+                },
+                initialGender: GenderedModelVariant.Female);
+
             await ShowPreview.Handle(collection);
             StatusMessage = $"Preview ready for {label}.";
         }
@@ -289,17 +299,36 @@ public class DistributionOutfitsTabViewModel : ReactiveObject
             return;
         }
 
+        var owningNpc = SelectedOutfitNpcAssignments
+            .FirstOrDefault(npc => npc.Distributions.Contains(clickedDistribution));
+        var initialGender = owningNpc != null
+            ? GetNpcGender(owningNpc.NpcFormKey, linkCache)
+            : GenderedModelVariant.Female;
+
         try
         {
             StatusMessage = $"Building preview for {label}...";
-            var scene = await _armorPreviewService.BuildPreviewAsync(armorPieces, GenderedModelVariant.Female);
-            var sceneWithMetadata = scene with
-            {
-                OutfitLabel = clickedDistribution.OutfitEditorId ?? clickedDistribution.OutfitFormKey.ToString(),
-                SourceFile = clickedDistribution.FileName,
-                IsWinner = clickedDistribution.IsWinner
-            };
-            var collection = new ArmorPreviewSceneCollection(sceneWithMetadata);
+
+            var metadata = new OutfitMetadata(
+                clickedDistribution.OutfitEditorId ?? clickedDistribution.OutfitFormKey.ToString(),
+                clickedDistribution.FileName,
+                clickedDistribution.IsWinner);
+            var collection = new ArmorPreviewSceneCollection(
+                count: 1,
+                initialIndex: 0,
+                metadata: new[] { metadata },
+                sceneBuilder: async (_, gender) =>
+                {
+                    var scene = await _armorPreviewService.BuildPreviewAsync(armorPieces, gender);
+                    return scene with
+                    {
+                        OutfitLabel = clickedDistribution.OutfitEditorId ?? clickedDistribution.OutfitFormKey.ToString(),
+                        SourceFile = clickedDistribution.FileName,
+                        IsWinner = clickedDistribution.IsWinner
+                    };
+                },
+                initialGender: initialGender);
+
             await ShowPreview.Handle(collection);
             StatusMessage = $"Preview ready for {label}.";
         }
@@ -465,5 +494,17 @@ public class DistributionOutfitsTabViewModel : ReactiveObject
                 outfit.NpcCount = 0;
             }
         }
+    }
+
+    private static GenderedModelVariant GetNpcGender(FormKey npcFormKey, ILinkCache<ISkyrimMod, ISkyrimModGetter> linkCache)
+    {
+        if (linkCache.TryResolve<INpcGetter>(npcFormKey, out var npc))
+        {
+            return npc.Configuration.Flags.HasFlag(NpcConfiguration.Flag.Female)
+                ? GenderedModelVariant.Female
+                : GenderedModelVariant.Male;
+        }
+
+        return GenderedModelVariant.Female;
     }
 }
