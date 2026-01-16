@@ -35,6 +35,7 @@ public class DistributionNpcsTabViewModel : ReactiveObject
         var notLoading = this.WhenAnyValue(vm => vm.IsLoading, loading => !loading);
         ScanNpcOutfitsCommand = ReactiveCommand.CreateFromTask(ScanNpcOutfitsAsync, notLoading);
         PreviewNpcOutfitCommand = ReactiveCommand.CreateFromTask<NpcOutfitAssignmentViewModel>(PreviewNpcOutfitAsync, notLoading);
+        PreviewDistributionOutfitCommand = ReactiveCommand.CreateFromTask<OutfitDistribution>(PreviewDistributionOutfitAsync, notLoading);
         ClearFiltersCommand = ReactiveCommand.Create(ClearFilters);
 
         var hasFilters = this.WhenAnyValue(vm => vm.HasActiveFilters);
@@ -222,11 +223,13 @@ public class DistributionNpcsTabViewModel : ReactiveObject
 
     public ReactiveCommand<NpcOutfitAssignmentViewModel, Unit> PreviewNpcOutfitCommand { get; }
 
+    public ReactiveCommand<OutfitDistribution, Unit> PreviewDistributionOutfitCommand { get; }
+
     public ReactiveCommand<Unit, Unit> ClearFiltersCommand { get; }
 
     public ReactiveCommand<Unit, Unit> CopyFilterCommand { get; }
 
-    public Interaction<ArmorPreviewScene, Unit> ShowPreview { get; } = new();
+    public Interaction<ArmorPreviewSceneCollection, Unit> ShowPreview { get; } = new();
 
     /// <summary>
     /// Event raised when a filter is copied, allowing parent to store it for pasting.
@@ -323,13 +326,92 @@ public class DistributionNpcsTabViewModel : ReactiveObject
         {
             StatusMessage = $"Building preview for {label}...";
             var scene = await _armorPreviewService.BuildPreviewAsync(armorPieces, GenderedModelVariant.Female);
-            await ShowPreview.Handle(scene);
+            var sceneWithMetadata = scene with
+            {
+                OutfitLabel = label,
+                SourceFile = outfit.FormKey.ModKey.FileName.String
+            };
+            var collection = new ArmorPreviewSceneCollection(sceneWithMetadata);
+            await ShowPreview.Handle(collection);
             StatusMessage = $"Preview ready for {label}.";
         }
         catch (Exception ex)
         {
             _logger.Error(ex, "Failed to preview outfit {Identifier}", label);
             StatusMessage = $"Failed to preview outfit: {ex.Message}";
+        }
+    }
+
+    private async Task PreviewDistributionOutfitAsync(OutfitDistribution? clickedDistribution)
+    {
+        if (clickedDistribution == null || SelectedNpcAssignment == null)
+        {
+            StatusMessage = "No distribution to preview.";
+            return;
+        }
+
+        if (!_mutagenService.IsInitialized || _mutagenService.LinkCache is not ILinkCache<ISkyrimMod, ISkyrimModGetter> linkCache)
+        {
+            StatusMessage = "Initialize Skyrim data path before previewing outfits.";
+            return;
+        }
+
+        try
+        {
+            StatusMessage = "Building outfit preview...";
+
+            var distributions = SelectedNpcAssignment.Distributions;
+            var clickedIndex = -1;
+            for (var i = 0; i < distributions.Count; i++)
+            {
+                if (distributions[i] == clickedDistribution)
+                {
+                    clickedIndex = i;
+                    break;
+                }
+            }
+
+            if (clickedIndex == -1)
+                clickedIndex = 0;
+
+            var metadata = distributions
+                .Select(d => new OutfitMetadata(
+                    d.OutfitEditorId ?? d.OutfitFormKey.ToString(),
+                    d.FileName,
+                    d.IsWinner))
+                .ToList();
+
+            var collection = new ArmorPreviewSceneCollection(
+                distributions.Count,
+                clickedIndex,
+                metadata,
+                async index =>
+                {
+                    var distribution = distributions[index];
+
+                    if (!linkCache.TryResolve<IOutfitGetter>(distribution.OutfitFormKey, out var outfit))
+                        throw new InvalidOperationException($"Could not resolve outfit: {distribution.OutfitFormKey}");
+
+                    var armorPieces = OutfitResolver.GatherArmorPieces(outfit, linkCache);
+                    if (armorPieces.Count == 0)
+                        throw new InvalidOperationException($"Outfit '{outfit.EditorID ?? outfit.FormKey.ToString()}' has no armor pieces");
+
+                    var scene = await _armorPreviewService.BuildPreviewAsync(armorPieces, GenderedModelVariant.Female);
+                    return scene with
+                    {
+                        OutfitLabel = distribution.OutfitEditorId ?? distribution.OutfitFormKey.ToString(),
+                        SourceFile = distribution.FileName,
+                        IsWinner = distribution.IsWinner
+                    };
+                });
+
+            await ShowPreview.Handle(collection);
+            StatusMessage = $"Preview ready with {distributions.Count} outfit(s).";
+        }
+        catch (Exception ex)
+        {
+            _logger.Error(ex, "Failed to preview outfits");
+            StatusMessage = $"Failed to preview outfits: {ex.Message}";
         }
     }
 

@@ -44,6 +44,7 @@ public class DistributionOutfitsTabViewModel : ReactiveObject
         var notLoading = this.WhenAnyValue(vm => vm.IsLoading, loading => !loading);
         LoadOutfitsCommand = ReactiveCommand.CreateFromTask(LoadOutfitsAsync, notLoading);
         PreviewOutfitCommand = ReactiveCommand.CreateFromTask<OutfitRecordViewModel>(PreviewOutfitAsync, notLoading);
+        PreviewDistributionOutfitCommand = ReactiveCommand.CreateFromTask<OutfitDistribution>(PreviewDistributionOutfitAsync, notLoading);
         CopyOutfitCommand = ReactiveCommand.CreateFromTask<OutfitRecordViewModel>(CopyOutfit, notLoading);
         CopyOutfitAsOverrideCommand = ReactiveCommand.CreateFromTask<OutfitRecordViewModel>(CopyOutfitAsOverride, notLoading);
 
@@ -100,11 +101,13 @@ public class DistributionOutfitsTabViewModel : ReactiveObject
 
     public ReactiveCommand<OutfitRecordViewModel, Unit> PreviewOutfitCommand { get; }
 
+    public ReactiveCommand<OutfitDistribution, Unit> PreviewDistributionOutfitCommand { get; }
+
     public ReactiveCommand<OutfitRecordViewModel, Unit> CopyOutfitCommand { get; }
 
     public ReactiveCommand<OutfitRecordViewModel, Unit> CopyOutfitAsOverrideCommand { get; }
 
-    public Interaction<ArmorPreviewScene, Unit> ShowPreview { get; } = new();
+    public Interaction<ArmorPreviewSceneCollection, Unit> ShowPreview { get; } = new();
 
     /// <summary>
     /// Event raised when an outfit is copied to create a distribution entry.
@@ -240,7 +243,64 @@ public class DistributionOutfitsTabViewModel : ReactiveObject
         {
             StatusMessage = $"Building preview for {label}...";
             var scene = await _armorPreviewService.BuildPreviewAsync(armorPieces, GenderedModelVariant.Female);
-            await ShowPreview.Handle(scene);
+            var sceneWithMetadata = scene with
+            {
+                OutfitLabel = label,
+                SourceFile = outfit.FormKey.ModKey.FileName.String
+            };
+            var collection = new ArmorPreviewSceneCollection(sceneWithMetadata);
+            await ShowPreview.Handle(collection);
+            StatusMessage = $"Preview ready for {label}.";
+        }
+        catch (Exception ex)
+        {
+            _logger.Error(ex, "Failed to preview outfit {Identifier}", label);
+            StatusMessage = $"Failed to preview outfit: {ex.Message}";
+        }
+    }
+
+    private async Task PreviewDistributionOutfitAsync(OutfitDistribution? clickedDistribution)
+    {
+        if (clickedDistribution == null)
+        {
+            StatusMessage = "No distribution to preview.";
+            return;
+        }
+
+        if (!_mutagenService.IsInitialized || _mutagenService.LinkCache is not ILinkCache<ISkyrimMod, ISkyrimModGetter> linkCache)
+        {
+            StatusMessage = "Initialize Skyrim data path before previewing outfits.";
+            return;
+        }
+
+        var outfitFormKey = clickedDistribution.OutfitFormKey;
+        if (!linkCache.TryResolve<IOutfitGetter>(outfitFormKey, out var outfit))
+        {
+            StatusMessage = $"Could not resolve outfit: {outfitFormKey}";
+            return;
+        }
+
+        var label = outfit.EditorID ?? outfit.FormKey.ToString();
+        var armorPieces = OutfitResolver.GatherArmorPieces(outfit, linkCache);
+
+        if (armorPieces.Count == 0)
+        {
+            StatusMessage = $"Outfit '{label}' has no armor pieces to preview.";
+            return;
+        }
+
+        try
+        {
+            StatusMessage = $"Building preview for {label}...";
+            var scene = await _armorPreviewService.BuildPreviewAsync(armorPieces, GenderedModelVariant.Female);
+            var sceneWithMetadata = scene with
+            {
+                OutfitLabel = clickedDistribution.OutfitEditorId ?? clickedDistribution.OutfitFormKey.ToString(),
+                SourceFile = clickedDistribution.FileName,
+                IsWinner = clickedDistribution.IsWinner
+            };
+            var collection = new ArmorPreviewSceneCollection(sceneWithMetadata);
+            await ShowPreview.Handle(collection);
             StatusMessage = $"Preview ready for {label}.";
         }
         catch (Exception ex)

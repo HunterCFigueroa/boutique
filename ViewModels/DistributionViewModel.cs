@@ -289,7 +289,7 @@ public class DistributionViewModel : ReactiveObject
     /// Event raised when an outfit should be copied to the Outfit Creator tab.
     /// </summary>
     public event EventHandler<CopiedOutfit>? OutfitCopiedToCreator;
-    public Interaction<ArmorPreviewScene, Unit> ShowPreview { get; } = new();
+    public Interaction<ArmorPreviewSceneCollection, Unit> ShowPreview { get; } = new();
 
     #region Distribution Files
 
@@ -415,6 +415,7 @@ public class DistributionViewModel : ReactiveObject
     public NpcFilterData? SelectedNpcFilterData => NpcsTab.SelectedNpcFilterData;
     public ReactiveCommand<Unit, Unit> ScanNpcOutfitsCommand => NpcsTab.ScanNpcOutfitsCommand;
     public ReactiveCommand<NpcOutfitAssignmentViewModel, Unit> PreviewNpcOutfitCommand => NpcsTab.PreviewNpcOutfitCommand;
+    public ReactiveCommand<OutfitDistribution, Unit> PreviewDistributionOutfitCommand => NpcsTab.PreviewDistributionOutfitCommand;
     public IReadOnlyList<string> GenderFilterOptions => NpcsTab.GenderFilterOptions;
 
     public string SelectedGenderFilter
