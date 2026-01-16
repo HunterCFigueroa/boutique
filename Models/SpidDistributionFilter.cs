@@ -119,7 +119,13 @@ public sealed class SpidFilterSection
     /// </summary>
     public List<SpidFilterExpression> Expressions { get; init; } = [];
 
-    public bool IsEmpty => Expressions.Count == 0;
+    /// <summary>
+    /// Global exclusions (comma-separated negated terms that apply to ALL expressions as AND NOT).
+    /// These are formatted with comma prefix (,-ExclusionX) rather than plus (+-ExclusionX).
+    /// </summary>
+    public List<SpidFilterPart> GlobalExclusions { get; init; } = [];
+
+    public bool IsEmpty => Expressions.Count == 0 && GlobalExclusions.Count == 0;
 
     /// <summary>
     /// True if any expression contains keywords (non-NPC identifiers like ActorTypeNPC).
@@ -131,7 +137,14 @@ public sealed class SpidFilterSection
     /// </summary>
     public bool HasFactions => Expressions.Any(e => e.Parts.Any(p => p.LooksLikeFaction));
 
-    public override string ToString() => string.Join(", ", Expressions.Select(e => e.ToString()));
+    public override string ToString()
+    {
+        var exprStr = string.Join(", ", Expressions.Select(e => e.ToString()));
+        if (GlobalExclusions.Count == 0)
+            return exprStr;
+        var exclusionStr = string.Join(", ", GlobalExclusions.Select(p => p.ToString()));
+        return string.IsNullOrEmpty(exprStr) ? exclusionStr : $"{exprStr}, {exclusionStr}";
+    }
 }
 
 /// <summary>

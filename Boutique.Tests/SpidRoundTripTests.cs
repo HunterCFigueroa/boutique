@@ -403,6 +403,50 @@ public class SpidRoundTripTests
 
     #endregion
 
+    #region Wildcard and Exclusion Cases
+
+    [Theory]
+    [InlineData("Keyword = MAGECORE_isMage|*Conjurer,*Cryomancer,*Mage")]
+    [InlineData("Keyword = TestKeyword|*Guard,*Soldier,*Warrior")]
+    public void RoundTrip_WildcardOrFilters_PreservesLine(string input)
+    {
+        var parsed = SpidLineParser.TryParse(input, out var filter);
+        Assert.True(parsed);
+        Assert.NotNull(filter);
+
+        var formatted = DistributionFileFormatter.FormatSpidDistributionFilter(filter);
+        Assert.Equal(input, formatted);
+    }
+
+    [Theory]
+    [InlineData("Keyword = MAGECORE_isGroupB|MAGECORE_isMage+MAGECORE_isFemale,-MAGECORE_isGroupA|NONE|NONE|NONE|NONE|50")]
+    [InlineData("Keyword = MAGECORE_isGroupC|MAGECORE_isMage+MAGECORE_isFemale,-MAGECORE_isGroupA,-MAGECORE_isGroupB|NONE|NONE|NONE|NONE|25")]
+    public void RoundTrip_GlobalExclusions_PreservesLine(string input)
+    {
+        var parsed = SpidLineParser.TryParse(input, out var filter);
+        Assert.True(parsed);
+        Assert.NotNull(filter);
+
+        var formatted = DistributionFileFormatter.FormatSpidDistributionFilter(filter);
+        Assert.Equal(input, formatted);
+    }
+
+    [Theory]
+    [InlineData("Outfit = TestOutfit|KeywordA+KeywordB,-ExcludeC")]
+    [InlineData("Outfit = TestOutfit|KeywordA,-ExcludeB,-ExcludeC")]
+    [InlineData("Outfit = TestOutfit|-OnlyExclude")]
+    public void RoundTrip_MixedPositiveAndNegative_PreservesLine(string input)
+    {
+        var parsed = SpidLineParser.TryParse(input, out var filter);
+        Assert.True(parsed);
+        Assert.NotNull(filter);
+
+        var formatted = DistributionFileFormatter.FormatSpidDistributionFilter(filter);
+        Assert.Equal(input, formatted);
+    }
+
+    #endregion
+
     #region Bulk File Round-Trip Tests
 
     [Fact]

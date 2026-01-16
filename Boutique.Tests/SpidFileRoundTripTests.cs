@@ -325,6 +325,15 @@ public class SpidFileRoundTripTests(ITestOutputHelper output)
                 return false;
         }
 
+        if (a.GlobalExclusions.Count != b.GlobalExclusions.Count)
+            return false;
+
+        for (var i = 0; i < a.GlobalExclusions.Count; i++)
+        {
+            if (!FilterPartsEquivalent(a.GlobalExclusions[i], b.GlobalExclusions[i]))
+                return false;
+        }
+
         return true;
     }
 

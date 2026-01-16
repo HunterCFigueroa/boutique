@@ -30,7 +30,11 @@ public static class DistributionFileFormatter
         {
             string? line = null;
 
-            if (entry.Type == DistributionType.Keyword)
+            if (entry.Entry.OriginalSpidFilter != null && format == DistributionFileType.Spid)
+            {
+                line = FormatSpidDistributionFilter(entry.Entry.OriginalSpidFilter);
+            }
+            else if (entry.Type == DistributionType.Keyword)
             {
                 if (!string.IsNullOrWhiteSpace(entry.KeywordToDistribute))
                 {
@@ -421,14 +425,14 @@ public static class DistributionFileFormatter
 
     /// <summary>
     /// Formats a SpidFilterSection back to SPID syntax.
-    /// Uses + for AND (within expression) and , for OR (between expressions).
+    /// Uses + for AND (within expression), , for OR (between expressions), and , for global exclusions.
     /// </summary>
     public static string? FormatFilterSection(SpidFilterSection section)
     {
         if (section.IsEmpty)
             return null;
 
-        var expressions = new List<string>();
+        var result = new List<string>();
 
         foreach (var expr in section.Expressions)
         {
@@ -441,10 +445,15 @@ public static class DistributionFileFormatter
                 return $"{prefix}{part.Value}";
             });
 
-            expressions.Add(string.Join("+", parts));
+            result.Add(string.Join("+", parts));
         }
 
-        return expressions.Count > 0 ? string.Join(",", expressions) : null;
+        foreach (var exclusion in section.GlobalExclusions)
+        {
+            result.Add($"-{exclusion.Value}");
+        }
+
+        return result.Count > 0 ? string.Join(",", result) : null;
     }
 
     /// <summary>

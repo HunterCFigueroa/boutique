@@ -71,6 +71,17 @@ public class SpidFilterMatchingService
         if (filters.IsEmpty)
             return true;
 
+        // Check global exclusions first (AND NOT logic - all must NOT match)
+        foreach (var exclusion in filters.GlobalExclusions)
+        {
+            if (MatchesStringPart(npc, new SpidFilterPart { Value = exclusion.Value, IsNegated = false }, virtualKeywords))
+                return false;
+        }
+
+        // If there are only global exclusions and no expressions, NPC matches if none of the exclusions matched
+        if (filters.Expressions.Count == 0)
+            return true;
+
         // OR logic: at least one expression must match
         foreach (var expression in filters.Expressions)
         {
@@ -184,6 +195,17 @@ public class SpidFilterMatchingService
     private static bool MatchesFormFilters(NpcFilterData npc, SpidFilterSection filters)
     {
         if (filters.IsEmpty)
+            return true;
+
+        // Check global exclusions first (AND NOT logic - all must NOT match)
+        foreach (var exclusion in filters.GlobalExclusions)
+        {
+            if (MatchesFormValue(npc, exclusion.Value))
+                return false;
+        }
+
+        // If there are only global exclusions and no expressions, NPC matches if none of the exclusions matched
+        if (filters.Expressions.Count == 0)
             return true;
 
         // OR logic: at least one expression must match

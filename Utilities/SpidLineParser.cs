@@ -225,25 +225,10 @@ public static class SpidLineParser
             }
         }
 
-        // Add global exclusions to every expression (they act as AND NOT)
+        // Store global exclusions separately (they act as AND NOT on the whole section)
         if (globalExclusions.Count > 0)
         {
-            if (section.Expressions.Count == 0)
-            {
-                // If there are only exclusions and no positive expressions,
-                // create a single expression with just the exclusions
-                var exclusionExpr = new SpidFilterExpression();
-                exclusionExpr.Parts.AddRange(globalExclusions);
-                section.Expressions.Add(exclusionExpr);
-            }
-            else
-            {
-                // Add exclusions to each expression
-                foreach (var expression in section.Expressions)
-                {
-                    expression.Parts.AddRange(globalExclusions);
-                }
-            }
+            section.GlobalExclusions.AddRange(globalExclusions);
         }
 
         return section;

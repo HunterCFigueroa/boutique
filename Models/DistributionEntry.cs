@@ -18,6 +18,12 @@ public sealed class DistributionEntry
     public List<FormKey> FactionFormKeys { get; set; } = [];
 
     /// <summary>
+    /// The original parsed SPID filter, preserved for round-trip formatting.
+    /// When set, formatting uses this instead of reconstructing from resolved values.
+    /// </summary>
+    public SpidDistributionFilter? OriginalSpidFilter { get; set; }
+
+    /// <summary>
     /// Gets or sets the keyword EditorIDs used for filtering. Includes both game keywords and virtual
     /// keywords (SPID-distributed via Keyword = lines).
     /// </summary>

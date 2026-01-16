@@ -81,10 +81,10 @@ public static class SpidFilterResolver
                 LocationFormKeys = locationFormKeys,
                 FormListFormKeys = formListFormKeys,
                 TraitFilters = filter.TraitFilters,
-                LevelFilters = filter.LevelFilters
+                LevelFilters = filter.LevelFilters,
+                OriginalSpidFilter = filter
             };
 
-            // Set chance if not 100%
             if (filter.Chance != 100)
             {
                 entry.Chance = filter.Chance;
@@ -149,7 +149,8 @@ public static class SpidFilterResolver
                 LocationFormKeys = locationFormKeys,
                 FormListFormKeys = formListFormKeys,
                 TraitFilters = filter.TraitFilters,
-                LevelFilters = filter.LevelFilters
+                LevelFilters = filter.LevelFilters,
+                OriginalSpidFilter = filter
             };
 
             if (filter.Chance != 100)
