@@ -11,12 +11,12 @@ using Mutagen.Bethesda.Plugins;
 using Mutagen.Bethesda.Plugins.Cache;
 using Mutagen.Bethesda.Skyrim;
 using ReactiveUI;
-using ReactiveUI.Fody.Helpers;
+using ReactiveUI.SourceGenerators;
 using Serilog;
 
 namespace Boutique.ViewModels;
 
-public class DistributionEditTabViewModel : ReactiveObject
+public partial class DistributionEditTabViewModel : ReactiveObject
 {
     private readonly DistributionFileWriterService _fileWriterService;
     private readonly ArmorPreviewService _armorPreviewService;
@@ -32,6 +32,11 @@ public class DistributionEditTabViewModel : ReactiveObject
     private string? _justSavedFilePath;
     private readonly Dictionary<DistributionEntryViewModel, IDisposable> _useChanceSubscriptions = new();
     private readonly Dictionary<DistributionEntryViewModel, IDisposable> _typeSubscriptions = new();
+
+    private IObservable<bool> _hasEntries;
+    private IObservable<bool> _notLoading;
+    private IObservable<bool> _canPaste;
+    private IObservable<bool> _canSave;
 
     public DistributionEditTabViewModel(
         DistributionFileWriterService fileWriterService,
@@ -60,19 +65,11 @@ public class DistributionEditTabViewModel : ReactiveObject
 
         _distributionEntries.CollectionChanged += OnDistributionEntriesChanged;
 
-        AddDistributionEntryCommand = ReactiveCommand.Create(AddDistributionEntry);
-        RemoveDistributionEntryCommand = ReactiveCommand.Create<DistributionEntryViewModel>(RemoveDistributionEntry);
-        SelectEntryCommand = ReactiveCommand.Create<DistributionEntryViewModel>(SelectEntry);
+        _hasEntries = this.WhenAnyValue(vm => vm.DistributionEntriesCount, count => count > 0);
 
-        var hasEntries = this.WhenAnyValue(vm => vm.DistributionEntriesCount, count => count > 0);
-        AddSelectedNpcsToEntryCommand = ReactiveCommand.Create(AddSelectedNpcsToEntry, hasEntries);
-        AddSelectedFactionsToEntryCommand = ReactiveCommand.Create(AddSelectedFactionsToEntry, hasEntries);
-        AddSelectedKeywordsToEntryCommand = ReactiveCommand.Create(AddSelectedKeywordsToEntry, hasEntries);
-        AddSelectedRacesToEntryCommand = ReactiveCommand.Create(AddSelectedRacesToEntry, hasEntries);
-        AddSelectedClassesToEntryCommand = ReactiveCommand.Create(AddSelectedClassesToEntry, hasEntries);
+        _notLoading = this.WhenAnyValue(vm => vm.IsLoading, loading => !loading);
 
-        var notLoading = this.WhenAnyValue(vm => vm.IsLoading, loading => !loading);
-        var canSave = this.WhenAnyValue(
+        _canSave = this.WhenAnyValue(
             vm => vm.DistributionEntriesCount,
             vm => vm.DistributionFilePath,
             vm => vm.IsCreatingNewFile,
@@ -81,16 +78,11 @@ public class DistributionEditTabViewModel : ReactiveObject
                 count > 0 &&
                 (!string.IsNullOrWhiteSpace(path) || (isNew && !string.IsNullOrWhiteSpace(newName))));
 
-        SaveDistributionFileCommand = ReactiveCommand.CreateFromTask(SaveDistributionFileAsync, canSave);
-        ScanNpcsCommand = ReactiveCommand.CreateFromTask(ScanNpcsAsync, notLoading);
-        SelectDistributionFilePathCommand = ReactiveCommand.Create(SelectDistributionFilePath);
-        PreviewEntryCommand = ReactiveCommand.CreateFromTask<DistributionEntryViewModel>(PreviewEntryAsync, notLoading);
-
-        var canPaste = this.WhenAnyValue(
+        _canPaste = this.WhenAnyValue(
             vm => vm.HasCopiedFilter,
             vm => vm.SelectedEntry,
             (hasCopied, entry) => hasCopied && entry != null);
-        PasteFilterToEntryCommand = ReactiveCommand.Create(PasteFilterToEntry, canPaste);
+
 
         this.WhenAnyValue(vm => vm.CopiedFilter)
             .Subscribe(_ => this.RaisePropertyChanged(nameof(HasCopiedFilter)));
@@ -122,11 +114,13 @@ public class DistributionEditTabViewModel : ReactiveObject
             .Subscribe(_ => this.RaisePropertyChanged(nameof(ActualFileName)));
     }
 
-    [Reactive] public bool IsLoading { get; private set; }
+    [Reactive]
+    private bool _isLoading;
 
-    [Reactive] public string StatusMessage { get; private set; } = string.Empty;
+    [Reactive]
+    private string _statusMessage = string.Empty;
 
-    [Reactive] public IReadOnlyList<DistributionParseError> ParseErrors { get; private set; } = [];
+    public IReadOnlyList<DistributionParseError> ParseErrors { get; private set; } = [];
 
     /// <summary>
     /// Actual parse errors (excludes preserved lines like keyword distributions).
@@ -195,14 +189,16 @@ public class DistributionEditTabViewModel : ReactiveObject
     /// <summary>Available classes for distribution entry selection (from cache).</summary>
     public ObservableCollection<ClassRecordViewModel> AvailableClasses => _cache.AllClasses;
 
-    [Reactive] public ObservableCollection<IOutfitGetter> AvailableOutfits { get; private set; } = [];
+    [ReactiveCollection]
+    private ObservableCollection<IOutfitGetter> _availableOutfits = [];
 
-    [Reactive] public ObservableCollection<DistributionFileSelectionItem> AvailableDistributionFiles { get; private set; } = [];
+    [ReactiveCollection]
+    private ObservableCollection<DistributionFileSelectionItem> _availableDistributionFiles = [];
 
     /// <summary>
     /// Organized dropdown items with headers and files for tree-ish display.
     /// </summary>
-    [Reactive] public IReadOnlyList<DistributionDropdownItem> DropdownItems { get; private set; } = [];
+    public IReadOnlyList<DistributionDropdownItem> DropdownItems { get; private set; } = [];
 
     /// <summary>
     /// The currently selected dropdown item. Headers are not selectable.
@@ -304,7 +300,8 @@ public class DistributionEditTabViewModel : ReactiveObject
         }
     }
 
-    [Reactive] public bool IsCreatingNewFile { get; private set; }
+    [Reactive]
+    private bool _isCreatingNewFile;
 
     public bool ShowNewFileNameInput => IsCreatingNewFile;
 
@@ -322,7 +319,8 @@ public class DistributionEditTabViewModel : ReactiveObject
         }
     }
 
-    [Reactive] public string DistributionFilePath { get; private set; } = string.Empty;
+    [Reactive]
+    private string _distributionFilePath = string.Empty;
 
     /// <summary>
     /// The actual filename that will be saved (derived from DistributionFilePath).
@@ -332,17 +330,23 @@ public class DistributionEditTabViewModel : ReactiveObject
         ? Path.GetFileName(DistributionFilePath)
         : string.Empty;
 
-    [Reactive] public string NpcSearchText { get; set; } = string.Empty;
+    [Reactive]
+    private string _npcSearchText = string.Empty;
 
-    [Reactive] public string FactionSearchText { get; set; } = string.Empty;
+    [Reactive]
+    private string _factionSearchText = string.Empty;
 
-    [Reactive] public string KeywordSearchText { get; set; } = string.Empty;
+    [Reactive]
+    private string _keywordSearchText = string.Empty;
 
-    [Reactive] public string RaceSearchText { get; set; } = string.Empty;
+    [Reactive]
+    private string _raceSearchText = string.Empty;
 
-    [Reactive] public string ClassSearchText { get; set; } = string.Empty;
+    [Reactive]
+    private string _classSearchText = string.Empty;
 
-    [Reactive] public string DistributionFileContent { get; private set; } = string.Empty;
+    [Reactive]
+    private string _distributionFileContent = string.Empty;
 
     /// <summary>
     /// The distribution file format (SPID or SkyPatcher).
@@ -373,43 +377,46 @@ public class DistributionEditTabViewModel : ReactiveObject
     /// True if any distribution entry has chance-based distribution enabled.
     /// When true, SkyPatcher format is not available (it doesn't support chance).
     /// </summary>
-    [Reactive] public bool HasChanceBasedEntries { get; private set; }
+    [Reactive]
+    private bool _hasChanceBasedEntries;
 
     /// <summary>
     /// True if any distribution entry is a keyword distribution.
     /// When true, SkyPatcher format is not available (it doesn't support keyword distributions).
     /// </summary>
-    [Reactive] public bool HasKeywordDistributions { get; private set; }
+    [Reactive]
+    private bool _hasKeywordDistributions;
 
-    [Reactive] public ObservableCollection<NpcRecordViewModel> FilteredNpcs { get; private set; } = [];
+    [ReactiveCollection]
+    private ObservableCollection<NpcRecordViewModel> _filteredNpcs = [];
 
-    [Reactive] public ObservableCollection<FactionRecordViewModel> FilteredFactions { get; private set; } = [];
+    [ReactiveCollection]
+    private ObservableCollection<FactionRecordViewModel> _filteredFactions = [];
 
-    [Reactive] public ObservableCollection<KeywordRecordViewModel> FilteredKeywords { get; private set; } = [];
+    [ReactiveCollection]
+    private ObservableCollection<KeywordRecordViewModel> _filteredKeywords = [];
 
-    [Reactive] public ObservableCollection<RaceRecordViewModel> FilteredRaces { get; private set; } = [];
+    [ReactiveCollection]
+    private ObservableCollection<RaceRecordViewModel> _filteredRaces = [];
 
-    [Reactive] public ObservableCollection<ClassRecordViewModel> FilteredClasses { get; private set; } = [];
-    [Reactive] public bool HasConflicts { get; private set; }
-    [Reactive] public bool ConflictsResolvedByFilename { get; private set; }
-    [Reactive] public string ConflictSummary { get; private set; } = string.Empty;
-    [Reactive] public string SuggestedFileName { get; private set; } = string.Empty;
-    [Reactive] public CopiedNpcFilter? CopiedFilter { get; set; }
+    [ReactiveCollection]
+    private ObservableCollection<ClassRecordViewModel> _filteredClasses = [];
+
+    [Reactive]
+    private bool _hasConflicts;
+
+    [Reactive]
+    private bool _conflictsResolvedByFilename;
+
+    [Reactive]
+    private string _conflictSummary = string.Empty;
+
+    [Reactive]
+    private string _suggestedFileName = string.Empty;
+
+    [Reactive]
+    private CopiedNpcFilter? _copiedFilter;
     public bool HasCopiedFilter => CopiedFilter != null;
-
-    public ReactiveCommand<Unit, Unit> AddDistributionEntryCommand { get; }
-    public ReactiveCommand<DistributionEntryViewModel, Unit> RemoveDistributionEntryCommand { get; }
-    public ReactiveCommand<DistributionEntryViewModel, Unit> SelectEntryCommand { get; }
-    public ReactiveCommand<Unit, Unit> AddSelectedNpcsToEntryCommand { get; }
-    public ReactiveCommand<Unit, Unit> AddSelectedFactionsToEntryCommand { get; }
-    public ReactiveCommand<Unit, Unit> AddSelectedKeywordsToEntryCommand { get; }
-    public ReactiveCommand<Unit, Unit> AddSelectedRacesToEntryCommand { get; }
-    public ReactiveCommand<Unit, Unit> AddSelectedClassesToEntryCommand { get; }
-    public ReactiveCommand<Unit, Unit> SaveDistributionFileCommand { get; }
-    public ReactiveCommand<Unit, Unit> ScanNpcsCommand { get; }
-    public ReactiveCommand<Unit, Unit> SelectDistributionFilePathCommand { get; }
-    public ReactiveCommand<DistributionEntryViewModel, Unit> PreviewEntryCommand { get; }
-    public ReactiveCommand<Unit, Unit> PasteFilterToEntryCommand { get; }
 
     public Interaction<ArmorPreviewSceneCollection, Unit> ShowPreview { get; } = new();
 
@@ -487,6 +494,7 @@ public class DistributionEditTabViewModel : ReactiveObject
     private void UpdateHasKeywordDistributions() =>
         HasKeywordDistributions = DistributionEntries.Any(e => e.Type == DistributionType.Keyword);
 
+    [ReactiveCommand]
     private void AddDistributionEntry()
     {
         _logger.Debug("AddDistributionEntry called");
@@ -577,6 +585,7 @@ public class DistributionEditTabViewModel : ReactiveObject
         }
     }
 
+    [ReactiveCommand(CanExecute = nameof(_hasEntries))]
     private void AddSelectedNpcsToEntry() =>
         AddSelectedCriteriaToEntry(
             FilteredNpcs,
@@ -584,6 +593,7 @@ public class DistributionEditTabViewModel : ReactiveObject
             (entry, npc) => entry.AddNpc(npc),
             "NPC");
 
+    [ReactiveCommand(CanExecute = nameof(_hasEntries))]
     private void AddSelectedFactionsToEntry() =>
         AddSelectedCriteriaToEntry(
             FilteredFactions,
@@ -591,6 +601,7 @@ public class DistributionEditTabViewModel : ReactiveObject
             (entry, faction) => entry.AddFaction(faction),
             "faction");
 
+    [ReactiveCommand(CanExecute = nameof(_hasEntries))]
     private void AddSelectedKeywordsToEntry() =>
         AddSelectedCriteriaToEntry(
             FilteredKeywords,
@@ -598,6 +609,7 @@ public class DistributionEditTabViewModel : ReactiveObject
             (entry, keyword) => entry.AddKeyword(keyword),
             "keyword");
 
+    [ReactiveCommand(CanExecute = nameof(_hasEntries))]
     private void AddSelectedRacesToEntry() =>
         AddSelectedCriteriaToEntry(
             FilteredRaces,
@@ -605,6 +617,7 @@ public class DistributionEditTabViewModel : ReactiveObject
             (entry, race) => entry.AddRace(race),
             "race");
 
+    [ReactiveCommand(CanExecute = nameof(_hasEntries))]
     private void AddSelectedClassesToEntry() =>
         AddSelectedCriteriaToEntry(
             FilteredClasses,
@@ -612,6 +625,7 @@ public class DistributionEditTabViewModel : ReactiveObject
             (entry, classVm) => entry.AddClass(classVm),
             "class");
 
+    [ReactiveCommand(CanExecute = nameof(_canPaste))]
     private void PasteFilterToEntry()
     {
         if (CopiedFilter == null)
@@ -640,7 +654,6 @@ public class DistributionEditTabViewModel : ReactiveObject
 
         ApplyFilterToEntry(SelectedEntry, CopiedFilter);
     }
-
     private void ApplyFilterToEntry(DistributionEntryViewModel entry, CopiedNpcFilter filter)
     {
         var addedItems = new List<string>();
@@ -720,6 +733,7 @@ public class DistributionEditTabViewModel : ReactiveObject
         }
     }
 
+    [ReactiveCommand]
     private void RemoveDistributionEntry(DistributionEntryViewModel entryVm)
     {
         if (DistributionEntries.Remove(entryVm))
@@ -733,12 +747,14 @@ public class DistributionEditTabViewModel : ReactiveObject
         }
     }
 
+    [ReactiveCommand]
     private void SelectEntry(DistributionEntryViewModel entryVm)
     {
         SelectedEntry = entryVm; // Property setter handles IsSelected updates
         _logger.Debug("Selected distribution entry: {Outfit}", entryVm?.SelectedOutfit?.EditorID ?? "(No outfit)");
     }
 
+    [ReactiveCommand(CanExecute = nameof(_canSave))]
     private async Task SaveDistributionFileAsync()
     {
         if (string.IsNullOrWhiteSpace(DistributionFilePath))
@@ -934,6 +950,7 @@ public class DistributionEditTabViewModel : ReactiveObject
         }
     }
 
+    [ReactiveCommand(CanExecute = nameof(_notLoading))]
     private async Task ScanNpcsAsync()
     {
         try
@@ -994,6 +1011,7 @@ public class DistributionEditTabViewModel : ReactiveObject
         }
     }
 
+    [ReactiveCommand]
     private void SelectDistributionFilePath()
     {
         if (!IsCreatingNewFile)
@@ -1416,6 +1434,7 @@ public class DistributionEditTabViewModel : ReactiveObject
             .Select(g => g.Key)
             .ToHashSet(StringComparer.OrdinalIgnoreCase);
 
+    [ReactiveCommand(CanExecute = nameof(_notLoading))]
     private async Task PreviewEntryAsync(DistributionEntryViewModel? entry)
     {
         if (entry == null || entry.SelectedOutfit == null)
