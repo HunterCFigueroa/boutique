@@ -1481,12 +1481,21 @@ public class MainViewModel : ReactiveObject
         try
         {
             StatusMessage = $"Building preview for '{draft.EditorId}'...";
-            var scene = await _previewService.BuildPreviewAsync(pieces, GenderedModelVariant.Female);
-            var sceneWithMetadata = scene with
-            {
-                OutfitLabel = draft.EditorId
-            };
-            var collection = new ArmorPreviewSceneCollection(sceneWithMetadata);
+
+            var metadata = new OutfitMetadata(draft.EditorId, null, false);
+            var collection = new ArmorPreviewSceneCollection(
+                count: 1,
+                initialIndex: 0,
+                metadata: new[] { metadata },
+                sceneBuilder: async (_, gender) =>
+                {
+                    var scene = await _previewService.BuildPreviewAsync(pieces, gender);
+                    return scene with
+                    {
+                        OutfitLabel = draft.EditorId
+                    };
+                });
+
             await ShowPreview.Handle(collection);
             StatusMessage = $"Preview ready for '{draft.EditorId}'.";
         }
@@ -1502,13 +1511,22 @@ public class MainViewModel : ReactiveObject
         try
         {
             StatusMessage = $"Building preview for '{armor.DisplayName}'...";
-            var scene = await _previewService.BuildPreviewAsync([armor], GenderedModelVariant.Female);
-            var sceneWithMetadata = scene with
-            {
-                OutfitLabel = armor.DisplayName,
-                SourceFile = armor.Armor.FormKey.ModKey.FileName.String
-            };
-            var collection = new ArmorPreviewSceneCollection(sceneWithMetadata);
+
+            var metadata = new OutfitMetadata(armor.DisplayName, armor.Armor.FormKey.ModKey.FileName.String, false);
+            var collection = new ArmorPreviewSceneCollection(
+                count: 1,
+                initialIndex: 0,
+                metadata: new[] { metadata },
+                sceneBuilder: async (_, gender) =>
+                {
+                    var scene = await _previewService.BuildPreviewAsync([armor], gender);
+                    return scene with
+                    {
+                        OutfitLabel = armor.DisplayName,
+                        SourceFile = armor.Armor.FormKey.ModKey.FileName.String
+                    };
+                });
+
             await ShowPreview.Handle(collection);
             StatusMessage = $"Preview ready for '{armor.DisplayName}'.";
         }
