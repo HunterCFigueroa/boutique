@@ -1616,6 +1616,8 @@ public class DistributionEditTabViewModel : ReactiveObject
     /// </summary>
     private DistributionEntryViewModel CreateEntryViewModel(DistributionEntry entry)
     {
+        var originalSpidFilter = entry.OriginalSpidFilter;
+
         var entryVm = new DistributionEntryViewModel(entry, RemoveDistributionEntry, IsFormatChangingToSpid);
         ResolveEntryOutfit(entryVm);
         var npcVms = ResolveNpcFormKeys(entry.NpcFormKeys);
@@ -1652,6 +1654,8 @@ public class DistributionEditTabViewModel : ReactiveObject
             entryVm.SelectedClasses = new ObservableCollection<ClassRecordViewModel>(classVms);
             entryVm.UpdateEntryClasses();
         }
+
+        entry.OriginalSpidFilter = originalSpidFilter;
 
         return entryVm;
     }

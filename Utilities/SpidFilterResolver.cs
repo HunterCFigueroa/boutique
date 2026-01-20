@@ -54,11 +54,14 @@ public static class SpidFilterResolver
             ProcessFormFilters(filter.FormFilters, linkCache, factionFormKeys, raceFormKeys, classFormKeys,
                 combatStyleFormKeys, outfitFilterFormKeys, perkFormKeys, voiceTypeFormKeys, locationFormKeys, formListFormKeys, logger);
 
-            // Must have at least one filter
+            var rawStringFilters = ExtractUnresolvableStringFilters(filter.StringFilters);
+            var rawFormFilters = ExtractUnresolvableFormFilters(filter.FormFilters);
+
             var hasAnyFilter = npcFormKeys.Count > 0 || factionFormKeys.Count > 0 || keywordEditorIds.Count > 0 ||
                                raceFormKeys.Count > 0 || classFormKeys.Count > 0 || combatStyleFormKeys.Count > 0 ||
                                outfitFilterFormKeys.Count > 0 || perkFormKeys.Count > 0 || voiceTypeFormKeys.Count > 0 ||
-                               locationFormKeys.Count > 0 || formListFormKeys.Count > 0;
+                               locationFormKeys.Count > 0 || formListFormKeys.Count > 0 ||
+                               !string.IsNullOrEmpty(rawStringFilters) || !string.IsNullOrEmpty(rawFormFilters);
 
             if (!hasAnyFilter)
             {
@@ -82,6 +85,8 @@ public static class SpidFilterResolver
                 FormListFormKeys = formListFormKeys,
                 TraitFilters = filter.TraitFilters,
                 LevelFilters = filter.LevelFilters,
+                RawStringFilters = rawStringFilters,
+                RawFormFilters = rawFormFilters,
                 OriginalSpidFilter = filter
             };
 
@@ -133,6 +138,9 @@ public static class SpidFilterResolver
             ProcessFormFilters(filter.FormFilters, linkCache, factionFormKeys, raceFormKeys, classFormKeys,
                 combatStyleFormKeys, outfitFilterFormKeys, perkFormKeys, voiceTypeFormKeys, locationFormKeys, formListFormKeys, logger);
 
+            var rawStringFilters = ExtractUnresolvableStringFilters(filter.StringFilters);
+            var rawFormFilters = ExtractUnresolvableFormFilters(filter.FormFilters);
+
             var entry = new DistributionEntry
             {
                 Type = DistributionType.Keyword,
@@ -150,6 +158,8 @@ public static class SpidFilterResolver
                 FormListFormKeys = formListFormKeys,
                 TraitFilters = filter.TraitFilters,
                 LevelFilters = filter.LevelFilters,
+                RawStringFilters = rawStringFilters,
+                RawFormFilters = rawFormFilters,
                 OriginalSpidFilter = filter
             };
 
@@ -412,5 +422,64 @@ public static class SpidFilterResolver
                 logger?.Debug("Could not resolve form filter: {Value}", part.Value);
             }
         }
+    }
+
+    private static string? ExtractUnresolvableStringFilters(SpidFilterSection stringFilters)
+    {
+        var unresolvableParts = new List<string>();
+
+        foreach (var expr in stringFilters.Expressions)
+        {
+            var exprParts = new List<string>();
+            foreach (var part in expr.Parts)
+            {
+                if (part.HasWildcard || part.IsNegated)
+                {
+                    var prefix = part.IsNegated ? "-" : string.Empty;
+                    exprParts.Add($"{prefix}{part.Value}");
+                }
+            }
+
+            if (exprParts.Count > 0)
+            {
+                unresolvableParts.Add(string.Join("+", exprParts));
+            }
+        }
+
+        foreach (var exclusion in stringFilters.GlobalExclusions)
+        {
+            unresolvableParts.Add($"-{exclusion.Value}");
+        }
+
+        return unresolvableParts.Count > 0 ? string.Join(",", unresolvableParts) : null;
+    }
+
+    private static string? ExtractUnresolvableFormFilters(SpidFilterSection formFilters)
+    {
+        var unresolvableParts = new List<string>();
+
+        foreach (var expr in formFilters.Expressions)
+        {
+            var exprParts = new List<string>();
+            foreach (var part in expr.Parts)
+            {
+                if (part.IsNegated)
+                {
+                    exprParts.Add($"-{part.Value}");
+                }
+            }
+
+            if (exprParts.Count > 0)
+            {
+                unresolvableParts.Add(string.Join("+", exprParts));
+            }
+        }
+
+        foreach (var exclusion in formFilters.GlobalExclusions)
+        {
+            unresolvableParts.Add($"-{exclusion.Value}");
+        }
+
+        return unresolvableParts.Count > 0 ? string.Join(",", unresolvableParts) : null;
     }
 }

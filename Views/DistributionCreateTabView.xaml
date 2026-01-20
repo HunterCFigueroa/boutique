@@ -341,6 +341,37 @@
                                                  ToolTip="{lex:Loc Key={x:Static res:LocalizationKeys+Distribution.LevelSkillTooltip}}" />
                                     </StackPanel>
 
+                                    <!-- Raw Filters (visible when selected or when content exists) -->
+                                    <StackPanel Margin="0,4,0,0">
+                                        <StackPanel.Style>
+                                            <Style TargetType="StackPanel">
+                                                <Setter Property="Visibility" Value="Collapsed" />
+                                                <Style.Triggers>
+                                                    <DataTrigger Binding="{Binding IsSelected}" Value="True">
+                                                        <Setter Property="Visibility" Value="Visible" />
+                                                    </DataTrigger>
+                                                    <DataTrigger Binding="{Binding RawStringFilters, Converter={StaticResource StringNotEmptyConverter}}" Value="True">
+                                                        <Setter Property="Visibility" Value="Visible" />
+                                                    </DataTrigger>
+                                                    <DataTrigger Binding="{Binding RawFormFilters, Converter={StaticResource StringNotEmptyConverter}}" Value="True">
+                                                        <Setter Property="Visibility" Value="Visible" />
+                                                    </DataTrigger>
+                                                </Style.Triggers>
+                                            </Style>
+                                        </StackPanel.Style>
+                                        <StackPanel Orientation="Horizontal">
+                                            <TextBlock Text="Raw Filters" Style="{DynamicResource {x:Static themes:ResourceKeys.SecondaryTextStyleKey}}" Margin="0,0,6,0" FontSize="11" />
+                                            <TextBlock Text="String:" VerticalAlignment="Center" Margin="0,0,4,0" FontSize="11" />
+                                            <TextBox Text="{Binding RawStringFilters, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                                                     MinWidth="180" Height="22" FontSize="11" FontFamily="Consolas" VerticalContentAlignment="Center"
+                                                     ToolTip="Raw string filters: wildcards (*Mage), negations (-Exclude), and SPID-distributed keywords. Comma-separated for OR, plus-separated for AND." />
+                                            <TextBlock Text="Form:" VerticalAlignment="Center" Margin="12,0,4,0" FontSize="11" />
+                                            <TextBox Text="{Binding RawFormFilters, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                                                     MinWidth="180" Height="22" FontSize="11" FontFamily="Consolas" VerticalContentAlignment="Center"
+                                                     ToolTip="Raw form filters: negated factions (-FactionName), races, etc. Comma-separated for OR." />
+                                        </StackPanel>
+                                    </StackPanel>
+
                                 </StackPanel>
                             </Border>
                         </DataTemplate>
