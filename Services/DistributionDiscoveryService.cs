@@ -390,13 +390,8 @@ public class DistributionDiscoveryService(ILogger logger)
     internal static IReadOnlyList<string> ExtractSkyPatcherOutfitKeys(string trimmed)
     {
         var keys = new List<string>();
-
-        // Extract from filterByOutfits= syntax
         ExtractFromMarker(trimmed, "filterByOutfits=", keys);
-
-        // Extract from outfitDefault= syntax
         ExtractFromMarker(trimmed, "outfitDefault=", keys);
-
         return keys;
     }
 
@@ -412,7 +407,7 @@ public class DistributionDiscoveryService(ILogger logger)
 
             index += marker.Length;
             var endIndex = trimmed.IndexOf(':', index);
-            string segment = endIndex >= 0 ? trimmed[index..endIndex] : trimmed[index..];
+            var segment = endIndex >= 0 ? trimmed[index..endIndex] : trimmed[index..];
             startIndex = endIndex >= 0 ? endIndex + 1 : trimmed.Length;
 
             if (string.IsNullOrWhiteSpace(segment))

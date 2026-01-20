@@ -340,12 +340,10 @@ public class PatchingService(MutagenService mutagenService, ILoggingService logg
 
     private static void CopyKeywords(Armor target, IArmorGetter source)
     {
-        if (source.Keywords == null)
+        if (source.Keywords is null)
             return;
-        target.Keywords = [];
 
-        foreach (var keyword in source.Keywords)
-            target.Keywords.Add(keyword);
+        target.Keywords = [..source.Keywords];
     }
 
     private static void CopyEnchantment(Armor target, IArmorGetter source)

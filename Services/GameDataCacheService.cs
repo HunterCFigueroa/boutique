@@ -403,10 +403,8 @@ public class GameDataCacheService
             {
                 var originalModKey = npc.FormKey.ModKey;
                 var filterData = BuildNpcFilterData(npc, linkCache, originalModKey);
-                if (filterData != null)
-                {
+                if (filterData is not null)
                     filterDataBag.Add(filterData);
-                }
 
                 var record = new NpcRecord(
                     npc.FormKey,
@@ -415,9 +413,7 @@ public class GameDataCacheService
                     originalModKey);
                 recordsBag.Add(new NpcRecordViewModel(record));
             }
-            catch
-            {
-            }
+            catch { }
         });
 
         return ([.. filterDataBag], [.. recordsBag]);

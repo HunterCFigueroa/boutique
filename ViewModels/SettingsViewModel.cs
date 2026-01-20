@@ -211,14 +211,11 @@ public class SettingsViewModel : ReactiveObject
         if (string.IsNullOrEmpty(path) || !Directory.Exists(path))
             return path ?? string.Empty;
 
-        // Check if the current path has plugins
         var hasPlugins = PathUtilities.HasPluginFiles(path);
 
         if (hasPlugins)
             return path;
 
-        // Common mistake: user selected "Game Root" instead of "Game Root\Data"
-        // This is common with Wabbajack modlists
         var dataSubfolder = Path.Combine(path, "Data");
         if (Directory.Exists(dataSubfolder))
         {
@@ -240,7 +237,6 @@ public class SettingsViewModel : ReactiveObject
 
     private void AutoDetectPath()
     {
-        // Try various MO2 environment variables - different MO2 versions/configs set different ones
         var mo2DataPath = Environment.GetEnvironmentVariable("MO_DATAPATH");
         if (!string.IsNullOrEmpty(mo2DataPath) && Directory.Exists(mo2DataPath))
         {
@@ -265,7 +261,6 @@ public class SettingsViewModel : ReactiveObject
             }
         }
 
-        // MO2 2.5+ may use different variable names
         var mo2VirtualPath = Environment.GetEnvironmentVariable("VIRTUAL_STORE");
         if (!string.IsNullOrEmpty(mo2VirtualPath) && Directory.Exists(mo2VirtualPath))
         {
@@ -276,21 +271,15 @@ public class SettingsViewModel : ReactiveObject
             return;
         }
 
-        // Check if running under USVFS (MO2's virtual filesystem hook)
         var usvfsLog = Environment.GetEnvironmentVariable("USVFS_LOGFILE");
         var mo2Profile = Environment.GetEnvironmentVariable("MO_PROFILE");
         if (!string.IsNullOrEmpty(usvfsLog) || !string.IsNullOrEmpty(mo2Profile))
         {
-            // We're running under MO2's USVFS but didn't get the data path
-            // Log this for debugging - the VFS should make the Data folder work
             IsRunningFromMO2 = true;
             DetectionSource = "Running under Mod Organizer 2 USVFS (data path not explicitly set)";
             DetectionFailed = false;
-
-            // Don't return - fall through to find the game's Data folder which USVFS will virtualize
         }
 
-        // Convert SkyrimRelease to GameRelease for Mutagen API
         var gameRelease = SelectedSkyrimRelease switch
         {
             SkyrimRelease.SkyrimSE => GameRelease.SkyrimSE,

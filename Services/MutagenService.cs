@@ -33,22 +33,16 @@ public class MutagenService(ILoggingService loggingService, PatcherSettings sett
 
     public GameRelease GameRelease => GetGameRelease();
 
-    private GameRelease GetGameRelease()
+    private GameRelease GetGameRelease() => GetSkyrimRelease() switch
     {
-        // Convert SkyrimRelease to GameRelease
-        var skyrimRelease = GetSkyrimRelease();
-        return skyrimRelease switch
-        {
-            SkyrimRelease.SkyrimSE => GameRelease.SkyrimSE,
-            SkyrimRelease.SkyrimVR => GameRelease.SkyrimVR,
-            SkyrimRelease.SkyrimSEGog => GameRelease.SkyrimSEGog,
-            _ => GameRelease.SkyrimSE
-        };
-    }
+        SkyrimRelease.SkyrimSE => GameRelease.SkyrimSE,
+        SkyrimRelease.SkyrimVR => GameRelease.SkyrimVR,
+        SkyrimRelease.SkyrimSEGog => GameRelease.SkyrimSEGog,
+        _ => GameRelease.SkyrimSE
+    };
 
     private SkyrimRelease GetSkyrimRelease()
     {
-        // Use the user-selected release from settings
         _logger.Information("Using user-selected Skyrim release: {Release}", _settings.SelectedSkyrimRelease);
         return _settings.SelectedSkyrimRelease != default ? _settings.SelectedSkyrimRelease : SkyrimRelease.SkyrimSE;
     }
@@ -160,13 +154,10 @@ public class MutagenService(ILoggingService loggingService, PatcherSettings sett
                     if (!string.IsNullOrEmpty(name))
                         armorPlugins.Add(name);
                 }
-                catch
-                {
-                }
+                catch { }
             }
 
             armorPlugins.Sort(StringComparer.OrdinalIgnoreCase);
-
             return armorPlugins;
         });
     }
@@ -233,7 +224,6 @@ public class MutagenService(ILoggingService loggingService, PatcherSettings sett
         {
             _environment?.Dispose();
 
-            // Use explicit path if it exists and has plugins, otherwise auto-detect
             var useExplicitPath = PathUtilities.HasPluginFiles(DataFolderPath);
 
             if (useExplicitPath)
