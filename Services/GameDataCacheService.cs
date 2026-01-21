@@ -15,6 +15,7 @@ namespace Boutique.Services;
 public class GameDataCacheService
 {
     private readonly DistributionDiscoveryService _discoveryService;
+    private readonly GuiSettingsService _guiSettings;
     private readonly ILogger _logger;
     private readonly MutagenService _mutagenService;
     private readonly NpcOutfitResolutionService _outfitResolutionService;
@@ -25,15 +26,20 @@ public class GameDataCacheService
         DistributionDiscoveryService discoveryService,
         NpcOutfitResolutionService outfitResolutionService,
         SettingsViewModel settings,
+        GuiSettingsService guiSettings,
         ILogger logger)
     {
         _mutagenService = mutagenService;
         _discoveryService = discoveryService;
         _outfitResolutionService = outfitResolutionService;
         _settings = settings;
+        _guiSettings = guiSettings;
         _logger = logger.ForContext<GameDataCacheService>();
         _mutagenService.Initialized += OnMutagenInitialized;
     }
+
+    private bool IsBlacklisted(ModKey modKey) =>
+        _guiSettings.BlacklistedPlugins?.Any(p => p.Equals(modKey.FileName, StringComparison.OrdinalIgnoreCase)) == true;
 
     public bool IsLoaded { get; private set; }
 
@@ -408,10 +414,9 @@ public class GameDataCacheService
 
     private (List<NpcFilterData>, List<NpcRecordViewModel>) LoadNpcs(ILinkCache<ISkyrimMod, ISkyrimModGetter> linkCache)
     {
-        var allNpcs = linkCache.WinningOverrides<INpcGetter>().ToList();
-
-        var validNpcs = allNpcs
+        var validNpcs = linkCache.WinningOverrides<INpcGetter>()
             .Where(npc => npc.FormKey != FormKey.Null && !string.IsNullOrWhiteSpace(npc.EditorID))
+            .Where(npc => !IsBlacklisted(npc.FormKey.ModKey))
             .ToList();
 
         var filterDataBag = new ConcurrentBag<NpcFilterData>();
@@ -494,10 +499,11 @@ public class GameDataCacheService
         }
     }
 
-    private static List<FactionRecordViewModel> LoadFactions(ILinkCache<ISkyrimMod, ISkyrimModGetter> linkCache)
+    private List<FactionRecordViewModel> LoadFactions(ILinkCache<ISkyrimMod, ISkyrimModGetter> linkCache)
     {
         return linkCache.WinningOverrides<IFactionGetter>()
             .Where(f => !string.IsNullOrWhiteSpace(f.EditorID))
+            .Where(f => !IsBlacklisted(f.FormKey.ModKey))
             .Select(f => new FactionRecordViewModel(new FactionRecord(
                 f.FormKey,
                 f.EditorID,
@@ -507,10 +513,11 @@ public class GameDataCacheService
             .ToList();
     }
 
-    private static List<RaceRecordViewModel> LoadRaces(ILinkCache<ISkyrimMod, ISkyrimModGetter> linkCache)
+    private List<RaceRecordViewModel> LoadRaces(ILinkCache<ISkyrimMod, ISkyrimModGetter> linkCache)
     {
         return linkCache.WinningOverrides<IRaceGetter>()
             .Where(r => !string.IsNullOrWhiteSpace(r.EditorID))
+            .Where(r => !IsBlacklisted(r.FormKey.ModKey))
             .Select(r => new RaceRecordViewModel(new RaceRecord(
                 r.FormKey,
                 r.EditorID,
@@ -520,10 +527,11 @@ public class GameDataCacheService
             .ToList();
     }
 
-    private static List<KeywordRecordViewModel> LoadKeywords(ILinkCache<ISkyrimMod, ISkyrimModGetter> linkCache)
+    private List<KeywordRecordViewModel> LoadKeywords(ILinkCache<ISkyrimMod, ISkyrimModGetter> linkCache)
     {
         return linkCache.WinningOverrides<IKeywordGetter>()
             .Where(k => !string.IsNullOrWhiteSpace(k.EditorID))
+            .Where(k => !IsBlacklisted(k.FormKey.ModKey))
             .Select(k => new KeywordRecordViewModel(new KeywordRecord(
                 k.FormKey,
                 k.EditorID,
@@ -532,10 +540,11 @@ public class GameDataCacheService
             .ToList();
     }
 
-    private static List<ClassRecordViewModel> LoadClasses(ILinkCache<ISkyrimMod, ISkyrimModGetter> linkCache)
+    private List<ClassRecordViewModel> LoadClasses(ILinkCache<ISkyrimMod, ISkyrimModGetter> linkCache)
     {
         return linkCache.WinningOverrides<IClassGetter>()
             .Where(c => !string.IsNullOrWhiteSpace(c.EditorID))
+            .Where(c => !IsBlacklisted(c.FormKey.ModKey))
             .Select(c => new ClassRecordViewModel(new ClassRecord(
                 c.FormKey,
                 c.EditorID,
@@ -545,6 +554,8 @@ public class GameDataCacheService
             .ToList();
     }
 
-    private static List<IOutfitGetter> LoadOutfits(ILinkCache<ISkyrimMod, ISkyrimModGetter> linkCache) =>
-        linkCache.WinningOverrides<IOutfitGetter>().ToList();
+    private List<IOutfitGetter> LoadOutfits(ILinkCache<ISkyrimMod, ISkyrimModGetter> linkCache) =>
+        linkCache.WinningOverrides<IOutfitGetter>()
+            .Where(o => !IsBlacklisted(o.FormKey.ModKey))
+            .ToList();
 }

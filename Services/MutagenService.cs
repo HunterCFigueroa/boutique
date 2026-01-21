@@ -12,12 +12,16 @@ using Serilog;
 
 namespace Boutique.Services;
 
-public class MutagenService(ILoggingService loggingService, PatcherSettings settings)
+public class MutagenService(ILoggingService loggingService, PatcherSettings settings, GuiSettingsService guiSettings)
 {
     private readonly SemaphoreSlim _initLock = new(1, 1);
+    private readonly GuiSettingsService _guiSettings = guiSettings;
     private readonly ILogger _logger = loggingService.ForContext<MutagenService>();
     private readonly PatcherSettings _settings = settings;
     private IGameEnvironment<ISkyrimMod, ISkyrimModGetter>? _environment;
+
+    private bool IsBlacklisted(string pluginName) =>
+        _guiSettings.BlacklistedPlugins?.Contains(pluginName, StringComparer.OrdinalIgnoreCase) == true;
 
     public ILinkCache<ISkyrimMod, ISkyrimModGetter>? LinkCache { get; private set; }
 
@@ -131,7 +135,7 @@ public class MutagenService(ILoggingService loggingService, PatcherSettings sett
         }
     }
 
-    public async Task<IEnumerable<string>> GetAvailablePluginsAsync()
+    public async Task<IEnumerable<string>> GetAvailablePluginsAsync(bool excludeBlacklisted = true)
     {
         return await Task.Run(() =>
         {
@@ -140,48 +144,39 @@ public class MutagenService(ILoggingService loggingService, PatcherSettings sett
                 return Enumerable.Empty<string>();
             }
 
-            var pluginFiles = PathUtilities.EnumeratePluginFiles(DataFolderPath)
-                .OrderBy(Path.GetFileName)
-                .ToList();
-
-            var armorPlugins = new List<string>();
-
             var skyrimRelease = GetSkyrimRelease();
 
-            foreach (var pluginPath in pluginFiles)
-            {
-                try
+            return PathUtilities.EnumeratePluginFiles(DataFolderPath)
+                .Select(path => (Path: path, Name: Path.GetFileName(path)))
+                .Where(p => !string.IsNullOrEmpty(p.Name))
+                .Where(p => !excludeBlacklisted || !IsBlacklisted(p.Name))
+                .Where(p =>
                 {
-                    using var mod = SkyrimMod.CreateFromBinaryOverlay(pluginPath, skyrimRelease);
-
-                    if (mod.Armors.Count <= 0 && mod.Outfits.Count <= 0)
+                    try
                     {
-                        continue;
+                        using var mod = SkyrimMod.CreateFromBinaryOverlay(p.Path, skyrimRelease);
+                        return mod.Armors.Count > 0 || mod.Outfits.Count > 0;
                     }
-
-                    var name = Path.GetFileName(pluginPath);
-                    if (!string.IsNullOrEmpty(name))
+                    catch
                     {
-                        armorPlugins.Add(name);
+                        return false;
                     }
-                }
-                catch { }
-            }
-
-            armorPlugins.Sort(StringComparer.OrdinalIgnoreCase);
-            return armorPlugins;
+                })
+                .Select(p => p.Name)
+                .OrderBy(name => name, StringComparer.OrdinalIgnoreCase)
+                .ToList();
         });
     }
 
     public async Task<IEnumerable<IArmorGetter>> LoadArmorsFromPluginAsync(string pluginFileName)
     {
+        if (string.IsNullOrEmpty(DataFolderPath) || IsBlacklisted(pluginFileName))
+        {
+            return [];
+        }
+
         return await Task.Run(() =>
         {
-            if (string.IsNullOrEmpty(DataFolderPath))
-            {
-                return [];
-            }
-
             var pluginPath = Path.Combine(DataFolderPath, pluginFileName);
 
             if (!File.Exists(pluginPath))
@@ -191,8 +186,7 @@ public class MutagenService(ILoggingService loggingService, PatcherSettings sett
 
             try
             {
-                var skyrimRelease = GetSkyrimRelease();
-                using var mod = SkyrimMod.CreateFromBinaryOverlay(pluginPath, skyrimRelease);
+                using var mod = SkyrimMod.CreateFromBinaryOverlay(pluginPath, GetSkyrimRelease());
                 return mod.Armors.ToList();
             }
             catch (Exception)
@@ -204,13 +198,13 @@ public class MutagenService(ILoggingService loggingService, PatcherSettings sett
 
     public async Task<IEnumerable<IOutfitGetter>> LoadOutfitsFromPluginAsync(string pluginFileName)
     {
+        if (string.IsNullOrEmpty(DataFolderPath) || IsBlacklisted(pluginFileName))
+        {
+            return [];
+        }
+
         return await Task.Run(() =>
         {
-            if (string.IsNullOrEmpty(DataFolderPath))
-            {
-                return [];
-            }
-
             var pluginPath = Path.Combine(DataFolderPath, pluginFileName);
 
             if (!File.Exists(pluginPath))
@@ -220,8 +214,7 @@ public class MutagenService(ILoggingService loggingService, PatcherSettings sett
 
             try
             {
-                var skyrimRelease = GetSkyrimRelease();
-                using var mod = SkyrimMod.CreateFromBinaryOverlay(pluginPath, skyrimRelease);
+                using var mod = SkyrimMod.CreateFromBinaryOverlay(pluginPath, GetSkyrimRelease());
                 return mod.Outfits.ToList();
             }
             catch (Exception)

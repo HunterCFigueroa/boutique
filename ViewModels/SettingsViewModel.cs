@@ -329,7 +329,7 @@ public partial class SettingsViewModel : ReactiveObject
 
     private async void OnMutagenInitialized(object? sender, EventArgs e)
     {
-        var plugins = await _mutagenService.GetAvailablePluginsAsync();
+        var plugins = await _mutagenService.GetAvailablePluginsAsync(excludeBlacklisted: false);
         Application.Current.Dispatcher.Invoke(() =>
             AvailableBlacklistPlugins = new ObservableCollection<string>(plugins));
     }
